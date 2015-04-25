@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Time Ordered Data &mdash; TOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Data Distribution" href="dist.html" />
+    <link rel="prev" title="TOAST" href="index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>TOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Time Ordered Data</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">TOAST</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="dist.html">Data Distribution</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="time-ordered-data">
+<span id="tod"></span><h1>Time Ordered Data<a class="headerlink" href="#time-ordered-data" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="toast.tod.Streams">
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Streams</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>timedist=True</em>, <em>detectors=None</em>, <em>flavors=None</em>, <em>samples=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/streams.html#Streams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Streams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for an object that provides a collection of streams.</p>
+<p>Each Streams class has one or more detectors, and each detctor
+might have different flavors of data and flags.</p>
+<dl class="attribute">
+<dt id="Streams.DEFAULT_FLAVOR">
+<code class="descname">DEFAULT_FLAVOR</code><a class="headerlink" href="#Streams.DEFAULT_FLAVOR" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>string</em></p>
+<p>the name of the default flavor which always exists.</p>
+</dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mpicomm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; the MPI communicator over which the data is distributed.</li>
+<li><strong>timedist</strong> (<em>bool</em>) &#8211; if True, the data is distributed by time, otherwise by
+detector.</li>
+<li><strong>detectors</strong> (<em>list</em>) &#8211; list of names to use for the detectors.</li>
+<li><strong>flavors</strong> (<em>list</em>) &#8211; list of <em>EXTRA</em> flavors to use (beyond the default).</li>
+<li><strong>samples</strong> (<em>int</em>) &#8211; pre-initialize the storage with this number of samples.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="toast.tod.StreamsWhiteNoise">
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">StreamsWhiteNoise</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>timedist=True</em>, <em>detectors=None</em>, <em>rms=1.0</em>, <em>samples=0</em>, <em>rngstream=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/streams.html#StreamsWhiteNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.StreamsWhiteNoise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Provide white noise streams.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mpicomm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; the MPI communicator over which the data is distributed.</li>
+<li><strong>timedist</strong> (<em>bool</em>) &#8211; if True, the data is distributed by time, otherwise by
+detector.</li>
+<li><strong>detectors</strong> (<em>list</em>) &#8211; list of names to use for the detectors.</li>
+<li><strong>rms</strong> (<em>float</em>) &#8211; RMS of the white noise.</li>
+<li><strong>samples</strong> (<em>int</em>) &#8211; maximum allowed samples.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="toast.tod.Pointing">
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Pointing</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>timedist=True</em>, <em>detectors=None</em>, <em>samples=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/pointing.html#Pointing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Pointing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for an object that provides detector pointing for
+an observation.</p>
+<p>Each Pointing class has one or more detectors, and this class
+provides pointing quaternions and flags for each detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mpicomm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; the MPI communicator over which the data is distributed.</li>
+<li><strong>timedist</strong> (<em>bool</em>) &#8211; if True, the data is distributed by time, otherwise by
+detector.</li>
+<li><strong>detectors</strong> (<em>list</em>) &#8211; list of names to use for the detectors.</li>
+<li><strong>samples</strong> (<em>int</em>) &#8211; pre-initialize the storage with this number of samples.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">TOAST</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="dist.html">Data Distribution</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+    </div>
+  </body>
+</html>
