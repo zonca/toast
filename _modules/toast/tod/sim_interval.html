@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.sim_interval &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.sim_interval</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.sim_interval</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.interval</span> <span class="kn">import</span> <span class="n">Interval</span>
+
+
+
+<div class="viewcode-block" id="regular_intervals"><a class="viewcode-back" href="../../../sim.html#toast.tod.regular_intervals">[docs]</a><span class="k">def</span> <span class="nf">regular_intervals</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">gap</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function to generate regular intervals.</span>
+
+<span class="sd">    This creates a list of intervals, given a start time/sample and time</span>
+<span class="sd">    span for the interval and the gap in time between intervals.  The </span>
+<span class="sd">    length of the interval and the gap are rounded to the nearest sample</span>
+<span class="sd">    and all intervals in the list are created using those lengths.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        n (int): the number of intervals.</span>
+<span class="sd">        start (float): the start time in seconds.</span>
+<span class="sd">        first (int): the first sample index, which occurs at &quot;start&quot;.</span>
+<span class="sd">        rate (float): the sample rate in Hz.</span>
+<span class="sd">        duration (float): the length of the interval in seconds.</span>
+<span class="sd">        gap (float): the length of the gap in seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dursamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">gapsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gap</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">totsamples</span> <span class="o">=</span> <span class="n">dursamples</span> <span class="o">+</span> <span class="n">gapsamples</span>
+    <span class="n">durtime</span> <span class="o">=</span> <span class="p">(</span><span class="n">dursamples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">rate</span>
+    <span class="n">gaptime</span> <span class="o">=</span> <span class="p">(</span><span class="n">gapsamples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">rate</span>
+    <span class="n">tottime</span> <span class="o">=</span> <span class="n">durtime</span> <span class="o">+</span> <span class="n">gaptime</span>
+
+    <span class="n">intervals</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">ifirst</span> <span class="o">=</span> <span class="n">first</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">totsamples</span>
+        <span class="n">ilast</span> <span class="o">=</span> <span class="n">ifirst</span> <span class="o">+</span> <span class="n">dursamples</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">istart</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">tottime</span>
+        <span class="n">istop</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">durtime</span>
+        <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Interval</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">istart</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">istop</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">ifirst</span><span class="p">,</span> <span class="n">last</span><span class="o">=</span><span class="n">ilast</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">intervals</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

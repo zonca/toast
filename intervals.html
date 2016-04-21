@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Search &mdash; PyTOAST 2.0 documentation</title>
+    <title>Data Intervals &mdash; PyTOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,60 +24,50 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/javascript" src="_static/searchtools.js"></script>
     <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
-  <script type="text/javascript">
-    jQuery(function() { Search.loadIndex("searchindex.js"); });
-  </script>
-  
-  <script type="text/javascript" id="searchindexloader"></script>
-   
-
+    <link rel="next" title="Noise Model" href="noise.html" />
+    <link rel="prev" title="Telescope TOD" href="tod.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
           <span>PyTOAST 2.0 documentation</span></a></h1>
-        <h2 class="heading"><span>Search</span></h2>
+        <h2 class="heading"><span>Data Intervals</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
       
         <p>
+        «&#160;&#160;<a href="tod.html">Telescope TOD</a>
+        &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="noise.html">Noise Model</a>&#160;&#160;»
         </p>
 
       </div>
       <div class="content">
         
         
-  <h1 id="search-documentation">Search</h1>
-  <div id="fallback" class="admonition warning">
-  <script type="text/javascript">$('#fallback').hide();</script>
-  <p>
-    Please activate JavaScript to enable the search
-    functionality.
-  </p>
-  </div>
-  <p>
-    From here you can search these documents. Enter your search
-    words into the box below and click "search". Note that the search
-    function will automatically search for all of the words. Pages
-    containing fewer words won't appear in the result list.
-  </p>
-  <form action="" method="get">
-    <input type="text" name="q" value="" />
-    <input type="submit" value="search" />
-    <span id="search-progress" style="padding-left: 10px"></span>
-  </form>
-  
-  <div id="search-results">
-  
-  </div>
+  <div class="section" id="data-intervals">
+<span id="intervals"></span><h1>Data Intervals<a class="headerlink" href="#data-intervals" title="Permalink to this headline">¶</a></h1>
+<p>Within each TOD object, a process contains some local set of detectors and range of samples.  That range of samples may contain one or more contiguous &#8220;chunks&#8221; that were used when distributing the data.  Separate from this data distribution, PyTOAST has the concept of valid data &#8220;intervals&#8221;.  This list of intervals applies to the whole TOD sample range, and all processes have a copy of this list.</p>
+<dl class="class">
+<dt id="toast.tod.Interval">
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Interval</code><span class="sig-paren">(</span><em>start=None</em>, <em>stop=None</em>, <em>first=None</em>, <em>last=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/interval.html#Interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class storing a time and sample range.</p>
+</dd></dl>
+
+</div>
+
 
       </div>
       <div class="bottomnav" role="navigation" aria-label="bottom navigation">
       
         <p>
+        «&#160;&#160;<a href="tod.html">Telescope TOD</a>
+        &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="noise.html">Noise Model</a>&#160;&#160;»
         </p>
 
       </div>

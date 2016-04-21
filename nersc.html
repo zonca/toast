@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Using at NERSC &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Developer’s Guide" href="dev.html" />
+    <link rel="prev" title="Map-making Tools" href="maptools.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Using at NERSC</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="maptools.html">Map-making Tools</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="dev.html">Developer&#8217;s Guide</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="using-at-nersc">
+<span id="nersc"></span><h1>Using at NERSC<a class="headerlink" href="#using-at-nersc" title="Permalink to this headline">¶</a></h1>
+<p>To use PyTOAST at NERSC, you need to have a Python3 software stack with all dependencies installed.  There are several ways to achieve this.</p>
+<div class="section" id="temporary-solution">
+<h2>Temporary Solution<a class="headerlink" href="#temporary-solution" title="Permalink to this headline">¶</a></h2>
+<p>For now, you can use a python 3.4 software stack built by Ted on edison:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="n">xxxxx</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span>
+</pre></div>
+</div>
+<p>OR:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="n">xxxxx</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span><span class="o">-</span><span class="n">deps</span>
+</pre></div>
+</div>
+<p>And then build and install your own copy of pytoast.</p>
+</div>
+<div class="section" id="nersc-intel-python-anaconda">
+<h2>NERSC Intel Python / Anaconda<a class="headerlink" href="#nersc-intel-python-anaconda" title="Permalink to this headline">¶</a></h2>
+<p>We will be moving towards a solution using NERSC-supported python3 within a conda environment, with some extra packages.  TBD.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="maptools.html">Map-making Tools</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="dev.html">Developer&#8217;s Guide</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

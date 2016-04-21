@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.map.noise &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.map.noise</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.map.noise</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">.pixels</span> <span class="kn">import</span> <span class="n">DistPixels</span>
+
+<span class="kn">from</span> <span class="nn">._helpers</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_accumulate_inverse_covariance</span><span class="p">,</span>
+    <span class="n">_invert_covariance</span><span class="p">,</span> <span class="n">_cond_covariance</span><span class="p">)</span>
+
+
+
+<div class="viewcode-block" id="OpInvCovariance"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpInvCovariance">[docs]</a><span class="k">class</span> <span class="nc">OpInvCovariance</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which computes the diagonal inverse pixel covariance.</span>
+
+<span class="sd">    This operator requires that the local pointing matrix has already been</span>
+<span class="sd">    computed.  Each process has a local piece of the inverse covariance.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        invnpp (DistPixels):  The matrix to accumulate.</span>
+<span class="sd">        hits (DistPixels):  (optional) the hits to accumulate.</span>
+<span class="sd">        detweights (dictionary): individual noise weights to use for each</span>
+<span class="sd">            detector.</span>
+<span class="sd">        pixels (str): the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pixel indices to use.</span>
+<span class="sd">        weights (str): the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pointing weights to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invnpp</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hits</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">detweights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span> <span class="o">=</span> <span class="n">detweights</span>
+
+        <span class="k">if</span> <span class="n">invnpp</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the invnpp to accumulate&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span> <span class="o">=</span> <span class="n">invnpp</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="o">=</span> <span class="n">hits</span>
+
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># the two-level pytoast communicator</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+        <span class="c1"># the global communicator</span>
+        <span class="n">cworld</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_world</span>
+        <span class="c1"># the communicator within the group</span>
+        <span class="n">cgroup</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_group</span>
+        <span class="c1"># the communicator with all processes with</span>
+        <span class="c1"># the same rank within their group</span>
+        <span class="n">crank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_rank</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+
+                <span class="c1"># get the pixels and weights from the cache</span>
+
+                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">weightsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">weightsname</span><span class="p">)</span>
+
+                <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">global_to_local</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+                
+                <span class="n">detweight</span> <span class="o">=</span> <span class="mf">1.0</span>
+                
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;no detector weights found for {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">))</span>
+                    <span class="n">detweight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">_accumulate_inverse_covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">fakehits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+                    <span class="n">_accumulate_inverse_covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="n">fakehits</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="covariance_invert"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_invert">[docs]</a><span class="k">def</span> <span class="nf">covariance_invert</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
+    <span class="n">_invert_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="covariance_rcond"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_rcond">[docs]</a><span class="k">def</span> <span class="nf">covariance_rcond</span><span class="p">(</span><span class="n">npp</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
+    <span class="n">rcond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">_cond_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">rcond</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rcond</span></div>
+
+    
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Developer’s Guide &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="prev" title="Using at NERSC" href="nersc.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Developer’s Guide</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="nersc.html">Using at NERSC</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="developer-s-guide">
+<span id="dev"></span><h1>Developer&#8217;s Guide<a class="headerlink" href="#developer-s-guide" title="Permalink to this headline">¶</a></h1>
+<p>PyTOAST aims to follow Python best practices whenever reasonably possible.  If you are submitting a pull request to contribute some code, please ensure that you are using indents consisting of 4 spaces (no tabs).  Also look at <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP-8</a>.  Contributions correcting existing code are also welcome!</p>
+<p>When documenting classes and methods, we use <a class="reference external" href="http://google.github.io/styleguide/pyguide.html?showone=Comments#Comments">google-style docstrings</a>.</p>
+<div class="section" id="running-from-the-source-tree">
+<h2>Running from the Source Tree<a class="headerlink" href="#running-from-the-source-tree" title="Permalink to this headline">¶</a></h2>
+<p>For rapid development, it is sometimes useful to work directly in the source tree.  The standard setup.py &#8220;develop&#8221; target does not work well for pytoast, since it contains a compiled C library as well as compiled extensions.  Here are the recommended steps:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">clean</span>
+<span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">build</span>
+<span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">test</span> <span class="o">&lt;</span><span class="n">test_file</span><span class="o">.</span><span class="n">py</span><span class="o">&gt;</span>
+<span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">env</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="nersc.html">Using at NERSC</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

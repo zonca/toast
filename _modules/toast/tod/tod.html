@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.tod &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.tod</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.tod</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">distribute_samples</span>
+
+<span class="kn">from</span> <span class="nn">.cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+
+
+<div class="viewcode-block" id="TOD"><a class="viewcode-back" href="../../../tod.html#toast.tod.TOD">[docs]</a><span class="k">class</span> <span class="nc">TOD</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for an object that provides detector pointing and</span>
+<span class="sd">    timestreams for a single observation.</span>
+
+<span class="sd">    Each TOD class has one or more detectors, and this class provides </span>
+<span class="sd">    pointing quaternions and flags for each detector.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mpicomm (mpi4py.MPI.Comm): the MPI communicator over which the data is distributed.</span>
+<span class="sd">        timedist (bool): if True, the data is distributed by time, otherwise by</span>
+<span class="sd">            detector.</span>
+<span class="sd">        detectors (list): list of names to use for the detectors.</span>
+<span class="sd">        samples (int): the number of global samples represented by this TOD object.</span>
+<span class="sd">        sizes (list): specify the indivisible chunks in which to split the samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">timedist</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span> <span class="o">=</span> <span class="n">mpicomm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span> <span class="o">=</span> <span class="n">timedist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dets</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">detectors</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dets</span> <span class="o">=</span> <span class="n">detectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nsamp</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sizes</span> <span class="o">=</span> <span class="n">sizes</span>
+
+        <span class="c1"># if sizes is specified, it must be consistent with</span>
+        <span class="c1"># the total number of samples.</span>
+        <span class="k">if</span> <span class="n">sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sizes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">samples</span> <span class="o">!=</span> <span class="n">test</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Sum of sizes ({}) does not equal total samples ({})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">test</span><span class="p">,</span> <span class="n">samples</span><span class="p">))</span>
+
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dist_dets</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_sizes</span><span class="p">)</span> <span class="o">=</span> <span class="n">distribute_samples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dets</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsamp</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sizes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># check that all processes have some data, otherwise print warning</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dist_samples</span><span class="p">[</span><span class="n">r</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;WARNING: process {} has no data assigned in TOD.  Use fewer processes.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pref_detdata</span> <span class="o">=</span> <span class="s1">&#39;toast_tod_detdata_&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pref_detflags</span> <span class="o">=</span> <span class="s1">&#39;toast_tod_detflags_&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pref_detpntg</span> <span class="o">=</span> <span class="s1">&#39;toast_tod_detpntg_&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common</span> <span class="o">=</span> <span class="s1">&#39;toast_tod_common_flags&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stamps</span> <span class="o">=</span> <span class="s1">&#39;toast_tod_stamps&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">()</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">detectors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The total list of detectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dets</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">local_dets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The detectors assigned to this process.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_dets</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timedist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">total_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sizes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dist_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_sizes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">local_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_sizes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mysizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_sizes</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span><span class="o">.</span><span class="n">rank</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mysizes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">mysizes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">total_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsamp</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dist_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_samples</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">local_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">mysamples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dist_samples</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span><span class="o">.</span><span class="n">rank</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mysamples</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">mysamples</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">mpicomm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mpicomm</span>
+
+    <span class="c1"># The base class methods that get and put just use the cache.</span>
+
+    <span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not assigned to local process&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">cachedata</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detdata</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="n">cacheflags</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detflags</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachedata</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} data not yet written&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} flags not yet written&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;common flags not yet written&#39;</span><span class="p">)</span>
+        <span class="n">dataref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachedata</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">flagsref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">comref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">dataref</span><span class="p">,</span> <span class="n">flagsref</span><span class="p">,</span> <span class="n">comref</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not assigned to local process&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">cacheflags</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detflags</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} flags not yet written&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;common flags not yet written&#39;</span><span class="p">)</span>
+        <span class="n">flagsref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">comref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">flagsref</span><span class="p">,</span> <span class="n">comref</span>
+
+
+    <span class="k">def</span> <span class="nf">_put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not assigned to local process&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">cachedata</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detdata</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="n">cacheflags</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detflags</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachedata</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachedata</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+        
+        <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">refdata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachedata</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">refflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+
+        <span class="n">refdata</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">refflags</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not assigned to local process&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">cacheflags</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detflags</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+        
+        <span class="n">n</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">refflags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cacheflags</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+
+        <span class="n">refflags</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not assigned to local process&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">cachepntg</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detpntg</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachepntg</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} pointing data not yet written&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">pntgref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachepntg</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">,:]</span>
+        <span class="k">return</span> <span class="n">pntgref</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not assigned to local process&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="n">cachepntg</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pref_detpntg</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachepntg</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachepntg</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mi">4</span><span class="p">))</span>
+        <span class="n">pntgref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachepntg</span><span class="p">)[</span><span class="n">start</span><span class="p">:(</span><span class="n">start</span><span class="o">+</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),:]</span>
+        <span class="n">pntgref</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;common flags not yet written&#39;</span><span class="p">)</span>
+        <span class="n">comref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">comref</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">flags</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">comref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">comref</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">flags</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stamps</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;timestamps not yet written&#39;</span><span class="p">)</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stamps</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">ref</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stamps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stamps</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stamps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">stamps</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stamps</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span><span class="o">+</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">ref</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">stamps</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the detector&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot read- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">local_start</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">read_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the detector&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot read flags- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_flags</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">local_start</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the detector&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">flags</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;both data and flags must be specified&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">flags</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;data and flags arrays must be the same length&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">local_start</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">write_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the detector&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">flags</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;flags must be specified&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write flags- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_flags</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">local_start</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">read_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot read times- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_times</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">write_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stamps</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stamps</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the vector of time stamps&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write times- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">stamps</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">stamps</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_times</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">stamps</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">read_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the detector&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot read pntg- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_pntg</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">local_start</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">write_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;you must specify the detector&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">detector</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;detector {} not found&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detector</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;data must be specified&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;data should be a 2D array&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;data should have second dimension of size 4&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write pntg- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range is invalid&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_pntg</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">local_start</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">read_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot read pntg flags- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_common_flags</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">write_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">flags</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;flags must be specified&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write pntg flags- process has no assigned local samples&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">local_start</span> <span class="o">+</span> <span class="n">flags</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;local sample range {} - {} is invalid&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">local_start</span><span class="o">+</span><span class="n">flags</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_put_common_flags</span><span class="p">(</span><span class="n">local_start</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,519 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.sim_tod &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.sim_tod</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.sim_tod</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">scipy.fftpack</span> <span class="kn">as</span> <span class="nn">sft</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="kn">as</span> <span class="nn">si</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="kn">as</span> <span class="nn">sp</span>
+
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+
+<span class="kn">import</span> <span class="nn">quaternionarray</span> <span class="kn">as</span> <span class="nn">qa</span>
+
+<span class="kn">from</span> <span class="nn">.tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+
+<span class="kn">from</span> <span class="nn">.noise</span> <span class="kn">import</span> <span class="n">Noise</span>
+
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+
+
+<div class="viewcode-block" id="slew_precession_axis"><a class="viewcode-back" href="../../../sim.html#toast.tod.slew_precession_axis">[docs]</a><span class="k">def</span> <span class="nf">slew_precession_axis</span><span class="p">(</span><span class="n">nsim</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">firstsamp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">samplerate</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">degday</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate quaternions for constantly slewing precession axis.</span>
+
+<span class="sd">    This constructs quaternions which rotates the Z coordinate axis</span>
+<span class="sd">    to the X/Y plane, and then slowly rotates this.  This can be used</span>
+<span class="sd">    to generate quaternions for the precession axis used in satellite</span>
+<span class="sd">    scanning simulations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        nsim (int): The number of samples to simulate.</span>
+<span class="sd">        firstsamp (int): The offset in samples from the start</span>
+<span class="sd">            of rotation.</span>
+<span class="sd">        samplerate (float): The sampling rate in Hz.</span>
+<span class="sd">        degday (float): The rotation rate in degrees per day.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Array of quaternions stored as an ndarray of</span>
+<span class="sd">        shape (nsim, 4).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># this is the increment in radians per sample</span>
+    <span class="n">angincr</span> <span class="o">=</span> <span class="n">degday</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">24.0</span> <span class="o">*</span> <span class="mf">3600.0</span> <span class="o">*</span> <span class="n">samplerate</span><span class="p">)</span>
+
+    <span class="c1"># Compute the time-varying quaternions representing the rotation</span>
+    <span class="c1"># from the coordinate frame to the precession axis frame.  The</span>
+    <span class="c1"># angle of rotation is fixed (PI/2), but the axis starts at the Y</span>
+    <span class="c1"># coordinate axis and sweeps.</span>
+
+    <span class="n">satang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">satang</span> <span class="o">*=</span> <span class="n">angincr</span>
+    <span class="n">satang</span> <span class="o">+=</span> <span class="n">angincr</span> <span class="o">*</span> <span class="n">firstsamp</span> <span class="o">+</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">cang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">satang</span><span class="p">)</span>
+    <span class="n">sang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">satang</span><span class="p">)</span>
+
+    <span class="c1"># this is the time-varying rotation axis</span>
+    <span class="n">sataxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">cang</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">sang</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nsim</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># the rotation about the axis is always pi/2</span>
+    <span class="n">csatrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="n">ssatrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+
+    <span class="c1"># now construct the axis-angle quaternions for the precession</span>
+    <span class="c1"># axis</span>
+    <span class="n">sataxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">ssatrot</span><span class="p">,</span> <span class="n">nsim</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">sataxis</span><span class="p">)</span>
+    <span class="n">satquat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">sataxis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">csatrot</span><span class="p">,</span> <span class="n">nsim</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">satquat</span></div>
+
+
+<div class="viewcode-block" id="satellite_scanning"><a class="viewcode-back" href="../../../sim.html#toast.tod.satellite_scanning">[docs]</a><span class="k">def</span> <span class="nf">satellite_scanning</span><span class="p">(</span><span class="n">nsim</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">firstsamp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">samplerate</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">qprec</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">spinperiod</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">spinangle</span><span class="o">=</span><span class="mf">85.0</span><span class="p">,</span> <span class="n">precperiod</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">precangle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate boresight quaternions for a generic satellite.</span>
+
+<span class="sd">    Given scan strategy parameters and the relevant angles</span>
+<span class="sd">    and rates, generate an array of quaternions representing</span>
+<span class="sd">    the rotation of the ecliptic coordinate axes to the</span>
+<span class="sd">    boresight.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        nsim (int) : The number of samples to simulate.</span>
+<span class="sd">        qprec (ndarray): If None (the default), then the</span>
+<span class="sd">            precession axis will be fixed along the</span>
+<span class="sd">            X axis.  If a 1D array of size 4 is given,</span>
+<span class="sd">            This will be the fixed quaternion used</span>
+<span class="sd">            to rotate the Z coordinate axis to the </span>
+<span class="sd">            precession axis.  If a 2D array of shape</span>
+<span class="sd">            (nsim, 4) is given, this is the time-varying</span>
+<span class="sd">            rotation of the Z axis to the precession axis.</span>
+<span class="sd">        samplerate (float): The sampling rate in Hz.</span>
+<span class="sd">        spinperiod (float): The period (in minutes) of the</span>
+<span class="sd">            rotation about the spin axis.</span>
+<span class="sd">        spinangle (float): The opening angle (in degrees) </span>
+<span class="sd">            of the boresight from the spin axis.</span>
+<span class="sd">        precperiod (float): The period (in minutes) of the</span>
+<span class="sd">            rotation about the precession axis.</span>
+<span class="sd">        precangle (float): The opening angle (in degrees)</span>
+<span class="sd">            of the spin axis from the precession axis.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Array of quaternions stored as an ndarray of</span>
+<span class="sd">        shape (nsim, 4).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">spinperiod</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">spinrate</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">60.0</span> <span class="o">*</span> <span class="n">spinperiod</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">spinrate</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">spinangle</span> <span class="o">=</span> <span class="n">spinangle</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span>
+
+    <span class="k">if</span> <span class="n">precperiod</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">precrate</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">60.0</span> <span class="o">*</span> <span class="n">precperiod</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">precrate</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">precangle</span> <span class="o">=</span> <span class="n">precangle</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span>
+
+    <span class="n">xaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">yaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">zaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="n">satrot</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="n">qprec</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c1"># in this case, we just have a fixed precession axis, pointing</span>
+        <span class="c1"># along the ecliptic X axis.</span>
+        <span class="n">satrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">qa</span><span class="o">.</span><span class="n">rotation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="n">nsim</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">qprec</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="c1"># we have a fixed precession axis.</span>
+        <span class="n">satrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">qprec</span><span class="p">,</span> <span class="n">nsim</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">qprec</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">nsim</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="c1"># we have full vector of quaternions</span>
+        <span class="n">satrot</span> <span class="o">=</span> <span class="n">qprec</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;qprec has wrong dimensions&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Time-varying rotation about precession axis.  </span>
+    <span class="c1"># Increment per sample is</span>
+    <span class="c1"># (2pi radians) X (precrate) / (samplerate)</span>
+    <span class="c1"># Construct quaternion from axis / angle form.</span>
+
+    <span class="c1">#print(&quot;satrot = &quot;, satrot[-1])</span>
+
+    <span class="n">precang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">precang</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">firstsamp</span><span class="p">)</span>
+    <span class="n">precang</span> <span class="o">*=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">precrate</span> <span class="o">/</span> <span class="n">samplerate</span>
+    <span class="c1">#print(&quot;precang = &quot;, precang[-1])</span>
+
+    <span class="n">cang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">precang</span><span class="p">)</span>
+    <span class="n">sang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">precang</span><span class="p">)</span>
+
+    <span class="n">precaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">sang</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">zaxis</span><span class="p">,</span> <span class="n">nsim</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1">#print(&quot;precaxis = &quot;, precaxis[-1])</span>
+    
+    <span class="n">precrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">precaxis</span><span class="p">,</span> <span class="n">cang</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1">#print(&quot;precrot = &quot;, precrot[-1])</span>
+
+    <span class="c1"># Rotation which performs the precession opening angle</span>
+
+    <span class="n">precopen</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">precangle</span><span class="p">)</span>
+    <span class="c1">#print(&quot;precopen = &quot;, precopen)</span>
+
+    <span class="c1"># Time-varying rotation about spin axis.  Increment </span>
+    <span class="c1"># per sample is</span>
+    <span class="c1"># (2pi radians) X (spinrate) / (samplerate)</span>
+    <span class="c1"># Construct quaternion from axis / angle form.</span>
+
+    <span class="n">spinang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">spinang</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">firstsamp</span><span class="p">)</span>
+    <span class="n">spinang</span> <span class="o">*=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">spinrate</span> <span class="o">/</span> <span class="n">samplerate</span>
+    <span class="c1">#print(&quot;spinang = &quot;, spinang[-1])</span>
+
+    <span class="n">cang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">spinang</span><span class="p">)</span>
+    <span class="n">sang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">spinang</span><span class="p">)</span>
+
+    <span class="n">spinaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">sang</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">zaxis</span><span class="p">,</span> <span class="n">nsim</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1">#print(&quot;spinaxis = &quot;, spinaxis[-1])</span>
+    
+    <span class="n">spinrot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">spinaxis</span><span class="p">,</span> <span class="n">cang</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1">#print(&quot;spinrot = &quot;, spinrot[-1])</span>
+
+    <span class="c1"># Rotation which performs the spin axis opening angle</span>
+
+    <span class="n">spinopen</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotation</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]),</span> <span class="n">spinangle</span><span class="p">)</span>
+    <span class="c1">#print(&quot;spinopen = &quot;, spinopen)</span>
+
+    <span class="c1"># compose final rotation</span>
+
+    <span class="n">boresight</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="n">satrot</span><span class="p">,</span> <span class="n">qa</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="n">precrot</span><span class="p">,</span> <span class="n">qa</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="n">precopen</span><span class="p">,</span> <span class="n">qa</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="n">spinrot</span><span class="p">,</span> <span class="n">spinopen</span><span class="p">))))</span>
+    <span class="c1">#print(&quot;boresight = &quot;, boresight[-1])</span>
+
+    <span class="k">return</span> <span class="n">boresight</span></div>
+
+
+<div class="viewcode-block" id="TODHpixSpiral"><a class="viewcode-back" href="../../../sim.html#toast.tod.TODHpixSpiral">[docs]</a><span class="k">class</span> <span class="nc">TODHpixSpiral</span><span class="p">(</span><span class="n">TOD</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provide a simple generator of fake detector pointing.</span>
+
+<span class="sd">    Detector focalplane offsets are specified as a dictionary of 4-element</span>
+<span class="sd">    ndarrays.  The boresight pointing is a simple looping over HealPix </span>
+<span class="sd">    ring ordered pixel centers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mpicomm (mpi4py.MPI.Comm): the MPI communicator over which the data is distributed.</span>
+<span class="sd">        detectors (dictionary): each key is the detector name, and each value</span>
+<span class="sd">                  is a quaternion tuple.</span>
+<span class="sd">        samples (int): maximum allowed samples.</span>
+<span class="sd">        firsttime (float): starting time of data.</span>
+<span class="sd">        rate (float): sample rate in Hz.</span>
+<span class="sd">        sizes (list): specify the indivisible chunks in which to split the samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">firsttime</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">detectors</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;boresight&#39;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fp</span> <span class="o">=</span> <span class="n">detectors</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detlist</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fp</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">=</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">timedist</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_detlist</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="n">sizes</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_firsttime</span> <span class="o">=</span> <span class="n">firsttime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">=</span> <span class="n">nside</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_npix</span> <span class="o">=</span> <span class="mi">12</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span>
+
+
+    <span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c1"># This class just returns data streams of zeros</span>
+        <span class="k">return</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span> <span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">_put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write data to simulated data streams&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write flags to simulated data streams&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="n">start_abs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_firsttime</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">start_abs</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span>
+        <span class="n">stop_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span>
+        <span class="n">stamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stamps</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stamps</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write timestamps to simulated data streams&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c1"># compute the absolute sample offset</span>
+        <span class="n">start_abs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span>
+
+        <span class="n">detquat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fp</span><span class="p">[</span><span class="n">detector</span><span class="p">])</span>
+
+        <span class="c1"># pixel offset</span>
+        <span class="n">start_pix</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_abs</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_npix</span><span class="p">)</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_pix</span><span class="p">,</span> <span class="n">start_pix</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">pixels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_npix</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+        <span class="c1"># the result of this is normalized</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">pix2vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">pixels</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+        <span class="c1"># z axis is obviously normalized</span>
+        <span class="n">zaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">ztiled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">zaxis</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># ... so dir is already normalized</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">)))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># get the rotation axis</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">ztiled</span><span class="p">,</span> <span class="nb">dir</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">v</span> <span class="o">*</span> <span class="n">v</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># this is the vector-wise dot product</span>
+        <span class="n">zdot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ztiled</span> <span class="o">*</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ang</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">zdot</span><span class="p">)</span>
+
+        <span class="c1"># angle element</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">ang</span><span class="p">)</span>
+
+        <span class="c1"># axis</span>
+        <span class="n">v</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ang</span><span class="p">)</span>
+
+        <span class="c1"># build the un-normalized quaternion</span>
+        <span class="n">boresight</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">v</span><span class="p">,</span> <span class="n">s</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">boresight</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">boresight</span><span class="p">)</span>
+
+        <span class="c1"># boredir = qa.rotate(boresight, zaxis)</span>
+        <span class="c1"># boredir = boredir / np.sum(boredir * boredir, axis=1).reshape(-1,1)</span>
+
+        <span class="c1"># check = hp.vec2pix(self._nside, boredir[:,0], boredir[:,1], boredir[:,2], nest=False)</span>
+        <span class="c1"># if not np.array_equal(pixels, check):</span>
+        <span class="c1">#     print(list(enumerate(zip(dir,boredir))))</span>
+        <span class="c1">#     print(pixels)</span>
+        <span class="c1">#     print(check)</span>
+        <span class="c1">#     raise RuntimeError(&#39;FAIL on TODFake&#39;)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="n">boresight</span><span class="p">,</span> <span class="n">detquat</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write data to simulated pointing&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write common flags to simulated data&#39;</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+
+
+<div class="viewcode-block" id="TODSatellite"><a class="viewcode-back" href="../../../sim.html#toast.tod.TODSatellite">[docs]</a><span class="k">class</span> <span class="nc">TODSatellite</span><span class="p">(</span><span class="n">TOD</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Provide a simple generator of satellite detector pointing.</span>
+
+<span class="sd">    Detector focalplane offsets are specified as a dictionary of 4-element</span>
+<span class="sd">    ndarrays.  The boresight pointing is a generic 2-angle model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mpicomm (mpi4py.MPI.Comm): the MPI communicator over which the data is distributed.</span>
+<span class="sd">        detectors (dictionary): each key is the detector name, and each value</span>
+<span class="sd">                  is a quaternion tuple.</span>
+<span class="sd">        samples (int): maximum allowed samples.</span>
+<span class="sd">        firsttime (float): starting time of data.</span>
+<span class="sd">        rate (float): sample rate in Hz.</span>
+<span class="sd">        spinperiod (float): The period (in minutes) of the</span>
+<span class="sd">            rotation about the spin axis.</span>
+<span class="sd">        spinangle (float): The opening angle (in degrees) </span>
+<span class="sd">            of the boresight from the spin axis.</span>
+<span class="sd">        precperiod (float): The period (in minutes) of the</span>
+<span class="sd">            rotation about the precession axis.</span>
+<span class="sd">        precangle (float): The opening angle (in degrees)</span>
+<span class="sd">            of the spin axis from the precession axis.</span>
+<span class="sd">        sizes (list): specify the indivisible chunks in which to split the samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">firsttime</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">spinperiod</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">spinangle</span><span class="o">=</span><span class="mf">85.0</span><span class="p">,</span> <span class="n">precperiod</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">precangle</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">detectors</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;boresight&#39;</span> <span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fp</span> <span class="o">=</span> <span class="n">detectors</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detlist</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fp</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        
+        <span class="c1"># call base class constructor to distribute data</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">=</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">timedist</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_detlist</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="n">sizes</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_firsttime</span> <span class="o">=</span> <span class="n">firsttime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spinperiod</span> <span class="o">=</span> <span class="n">spinperiod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spinangle</span> <span class="o">=</span> <span class="n">spinangle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precperiod</span> <span class="o">=</span> <span class="n">precperiod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_precangle</span> <span class="o">=</span> <span class="n">precangle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_boresight</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+<div class="viewcode-block" id="TODSatellite.set_prec_axis"><a class="viewcode-back" href="../../../sim.html#toast.tod.TODSatellite.set_prec_axis">[docs]</a>    <span class="k">def</span> <span class="nf">set_prec_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">qprec</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the fixed or time-varying precession axis.</span>
+
+<span class="sd">        This function sets the precession axis for the locally assigned samples.</span>
+<span class="sd">        It also triggers the generation and caching of the boresight pointing.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            qprec (ndarray): If None (the default), then the</span>
+<span class="sd">                precession axis will be fixed along the</span>
+<span class="sd">                X axis.  If a 1D array of size 4 is given,</span>
+<span class="sd">                This will be the fixed quaternion used</span>
+<span class="sd">                to rotate the Z coordinate axis to the </span>
+<span class="sd">                precession axis.  If a 2D array of shape</span>
+<span class="sd">                (local samples, 4) is given, this is the time-varying</span>
+<span class="sd">                rotation of the Z axis to the precession axis.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">qprec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">qprec</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">qprec</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">4</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;precession quaternion has incorrect dimensions&quot;</span><span class="p">)</span>
+
+        <span class="c1"># generate and cache the boresight pointing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_boresight</span> <span class="o">=</span> <span class="n">satellite_scanning</span><span class="p">(</span><span class="n">nsim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">firstsamp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qprec</span><span class="o">=</span><span class="n">qprec</span><span class="p">,</span> <span class="n">samplerate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_rate</span><span class="p">,</span> <span class="n">spinperiod</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_spinperiod</span><span class="p">,</span> <span class="n">spinangle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_spinangle</span><span class="p">,</span> <span class="n">precperiod</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_precperiod</span><span class="p">,</span> <span class="n">precangle</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_precangle</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c1"># This class just returns data streams of zeros</span>
+        <span class="k">return</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span> <span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write data to simulated data streams&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write flags to simulated data streams&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="n">start_abs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_firsttime</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">start_abs</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span>
+        <span class="n">stop_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">+</span> <span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span>
+        <span class="n">stamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stamps</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stamps</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write timestamps to simulated data streams&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_boresight</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must set the precession axis before reading detector pointing&quot;</span><span class="p">)</span>
+        <span class="n">detquat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fp</span><span class="p">[</span><span class="n">detector</span><span class="p">]</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_boresight</span><span class="p">,</span> <span class="n">detquat</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_pntg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write data to simulated pointing&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">_get_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">_put_common_flags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">flags</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;cannot write common flags to simulated data&#39;</span><span class="p">)</span>
+        <span class="k">return</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

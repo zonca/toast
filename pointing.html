@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Pointing Matrices &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Simulations" href="sim.html" />
+    <link rel="prev" title="Noise Model" href="noise.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Pointing Matrices</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="noise.html">Noise Model</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="sim.html">Simulations</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="pointing-matrices">
+<span id="pointing"></span><h1>Pointing Matrices<a class="headerlink" href="#pointing-matrices" title="Permalink to this headline">¶</a></h1>
+<p>A &#8220;pointing matrix&#8221; in PyTOAST terms is the sparse matrix that describes how sky signal is projected to the timestream.  In particular, the model we use is</p>
+<div class="math">
+\[d_t = \mathcal{A}_{tp} s_p + n_t\]</div>
+<p>where we write <span class="math">\(s_p\)</span> as a column vector having a number of rows given by the number of pixels in the sky.  So the <span class="math">\(\mathcal{A}_{tp}\)</span> matrix has a number rows given by the number of time samples and a column for every sky pixel.  In practice, the pointing matrix is sparse, and we only store the nonzero elements in each row.  Also, our sky model often includes multiple terms (e.g. I, Q, and U).  This is equivalent to have a set of values at each sky pixel.  In PyTOAST we represent the pointing matrix as a vector of pixel indices (one for each sample) and a 2D array of &#8220;weights&#8221; whose values are the nonzero values of the matrix for each sample.  PyTOAST includes a generic HEALPix operator to generate a pointing matrix:</p>
+<div class="section" id="generic-healpix-representation">
+<h2>Generic HEALPix Representation<a class="headerlink" href="#generic-healpix-representation" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="toast.tod.OpPointingHpix">
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpPointingHpix</code><span class="sig-paren">(</span><em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>nside=64</em>, <em>nest=False</em>, <em>mode='I'</em>, <em>cal=None</em>, <em>epsilon=None</em>, <em>hwprpm=None</em>, <em>hwpstep=None</em>, <em>hwpsteptime=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/pointing.html#OpPointingHpix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpPointingHpix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator which generates I/Q/U healpix pointing weights.</p>
+<p>Given the individual detector pointing, this computes the pointing weights
+assuming that the detector is a linear polarizer followed by a total
+power measurement.  An optional dictionary of calibration factors may
+be specified.  Additional options include specifying a constant cross-polar
+response (eps) and a rotating, perfect half-wave plate.  The timestream
+model is then (see Jones, et al, 2006):</p>
+<div class="math">
+\[d = cal \left[\frac{(1+eps)}{2} I + \frac{(1-eps)}{2} \left[Q \cos{2a} + U \sin{2a}\right]\right]\]</div>
+<p>Or, if a HWP is included in the response with time varying angle &#8220;w&#8221;, then
+the total response is:</p>
+<div class="math">
+\[d = cal \left[\frac{(1+eps)}{2} I + \frac{(1-eps)}{2} \left[Q \cos{4(a+w)} + U \sin{4(a+w)}\right]\right]\]</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pixels</strong> (<em>str</em>) &#8211; write pixels to the cache with name &lt;pixels&gt;_&lt;detector&gt;.
+If the named cache objects do not exist, then they are created.</li>
+<li><strong>weights</strong> (<em>str</em>) &#8211; write pixel weights to the cache with name
+&lt;weights&gt;_&lt;detector&gt;.  If the named cache objects do not exist,
+then they are created.</li>
+<li><strong>nside</strong> (<em>int</em>) &#8211; NSIDE resolution for Healpix NEST ordered intensity map.</li>
+<li><strong>nest</strong> (<em>bool</em>) &#8211; if True, use NESTED ordering.</li>
+<li><strong>mode</strong> (<em>string</em>) &#8211; either &#8220;I&#8221; or &#8220;IQU&#8221;</li>
+<li><strong>cal</strong> (<em>dict</em>) &#8211; dictionary of calibration values per detector. A None
+value means a value of 1.0 for all detectors.</li>
+<li><strong>epsilon</strong> (<em>dict</em>) &#8211; dictionary of cross-polar response per detector. A
+None value means epsilon is zero for all detectors.</li>
+<li><strong>hwprpm</strong> &#8211; if None, a constantly rotating HWP is not included.  Otherwise
+it is the rate (in RPM) of constant rotation.</li>
+<li><strong>hwpstep</strong> &#8211; if None, then a stepped HWP is not included.  Otherwise, this
+is the step in degrees.</li>
+<li><strong>hwpsteptime</strong> &#8211; The time in minutes between HWP steps.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p>Each experiment might create other specialized pointing matrices used in solving for instrument-specific signals.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="noise.html">Noise Model</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="sim.html">Simulations</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

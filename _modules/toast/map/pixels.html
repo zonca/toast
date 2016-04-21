@@ -1,0 +1,245 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.map.pixels &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.map.pixels</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.map.pixels</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+
+
+<div class="viewcode-block" id="OpLocalPixels"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpLocalPixels">[docs]</a><span class="k">class</span> <span class="nc">OpLocalPixels</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which computes the set of locally hit pixels.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        pixels (str): the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pixel indices to use.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">):</span>
+        
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="c1"># madam uses time-based distribution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timedist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span>
+
+
+    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># the two-level pytoast communicator</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+        <span class="c1"># the global communicator</span>
+        <span class="n">cworld</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_world</span>
+        <span class="c1"># the communicator within the group</span>
+        <span class="n">cgroup</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_group</span>
+        <span class="c1"># the communicator with all processes with</span>
+        <span class="c1"># the same rank within their group</span>
+        <span class="n">crank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_rank</span>
+
+        <span class="c1"># initialize the local pixel set</span>
+        <span class="n">local</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
+                <span class="n">local</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pixels</span><span class="p">))</span>
+
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">local</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">ret</span><span class="p">[:]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">local</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+
+<div class="viewcode-block" id="DistPixels"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels">[docs]</a><span class="k">class</span> <span class="nc">DistPixels</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A distributed map with multiple values per pixel.</span>
+
+<span class="sd">    Pixel domain data is distributed across an MPI communicator.  each</span>
+<span class="sd">    process has a local data stored in one or more &quot;submaps&quot;.  The size</span>
+<span class="sd">    of the submap can be tuned to balance storage (smaller submap size</span>
+<span class="sd">    means fewer wasted pixels stored) and ease of indexing (larger</span>
+<span class="sd">    submap means faster global-to-local pixel lookups).</span>
+
+<span class="sd">    Although multiple processes may have the same submap of data stored</span>
+<span class="sd">    locally, the lowest-rank process that has a given submap is the</span>
+<span class="sd">    &quot;owner&quot; for operations like serialization. </span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        comm (mpi4py.MPI.Comm): the MPI communicator containing all </span>
+<span class="sd">            processes.</span>
+<span class="sd">        size (int): the total number of pixels.</span>
+<span class="sd">        nnz (int): the number of values per pixel.</span>
+<span class="sd">        submap (int): the locally stored data is in units of this size.</span>
+<span class="sd">        local (array): the list of local submaps (integers).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span> <span class="o">=</span> <span class="n">comm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="n">nnz</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">=</span> <span class="n">submap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_local</span> <span class="o">=</span> <span class="n">local</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># our data is a 3D array of submap, pixel, values</span>
+        <span class="c1"># we allocate this as a contiguous block</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">:</span>
+                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;local submap indices out of range&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">comm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nnz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">local</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">submap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">nsubmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span>
+
+
+    <span class="k">def</span> <span class="nf">global_to_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gl</span><span class="p">):</span>
+        <span class="n">safe_gl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">gl</span><span class="p">)</span>
+        <span class="n">good</span> <span class="o">=</span> <span class="p">(</span><span class="n">gl</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">bad</span> <span class="o">=</span> <span class="p">(</span><span class="n">gl</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">safe_gl</span><span class="p">[</span><span class="n">good</span><span class="p">]</span> <span class="o">=</span> <span class="n">gl</span><span class="p">[</span><span class="n">good</span><span class="p">]</span>
+        <span class="n">sm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor_divide</span><span class="p">(</span><span class="n">safe_gl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
+        <span class="n">pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">safe_gl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
+        <span class="n">pix</span><span class="p">[</span><span class="n">bad</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sm</span><span class="p">)</span>
+        <span class="n">lsm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">sm</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">lsm</span><span class="p">,</span> <span class="n">pix</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">duplicate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">DistPixels</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ret</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span>
+
+
+    <span class="k">def</span> <span class="nf">read_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="nb">buffer</span><span class="o">=</span><span class="mi">5000000</span><span class="p">):</span>
+
+        <span class="n">elems</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="n">nblock</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elems</span><span class="p">)</span>
+        <span class="n">nnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span><span class="o">*</span><span class="n">nblock</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+
+        <span class="c1"># with memmap enabled, we read the underlying file</span>
+        <span class="c1"># in chunks based on the internal FITS blocksize (2880 bytes)</span>
+
+        <span class="n">nsmbuf</span> <span class="o">=</span> <span class="nb">buffer</span> 
+
+
+        <span class="k">return</span>
+
+
+    <span class="k">def</span> <span class="nf">write_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="c1"># healpy will be slow, since it must read the whole file NNZ</span>
+        <span class="c1"># times as it grabs each column.  The long term solution is to</span>
+        <span class="c1"># use a better format like HDF5.</span>
+
+        <span class="k">return</span></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

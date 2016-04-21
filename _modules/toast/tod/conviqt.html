@@ -1,0 +1,388 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.conviqt &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.conviqt</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.conviqt</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">ctypes</span> <span class="kn">as</span> <span class="nn">ct</span>
+<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="kn">import</span> <span class="n">find_library</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.ctypeslib</span> <span class="kn">as</span> <span class="nn">npc</span>
+
+<span class="kn">import</span> <span class="nn">quaternionarray</span> <span class="kn">as</span> <span class="nn">qa</span>
+
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">Interval</span>
+
+<span class="c1"># Define portably the MPI communicator datatype</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">MPI</span><span class="o">.</span><span class="n">_sizeof</span><span class="p">(</span><span class="n">MPI</span><span class="o">.</span><span class="n">Comm</span><span class="p">)</span> <span class="o">==</span> <span class="n">ct</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">c_int</span><span class="p">):</span>
+        <span class="n">MPI_Comm</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">MPI_Comm</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Failed to set the portable MPI communicator datatype. MPI4py is probably too old. You need to have at version 2.0. ({})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">libconviqt</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="s1">&#39;libconviqt.so&#39;</span><span class="p">)</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="n">libconviqt</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="c1"># Beam functions</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_del</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_del</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_read</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_read</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_byte</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,</span>
+        <span class="n">MPI_Comm</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Sky functions</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_del</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_del</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_read</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_read</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_byte</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_double</span><span class="p">,</span>
+        <span class="n">MPI_Comm</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Detector functions</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_new_with_id</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_new_with_id</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_char_p</span><span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_del</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_del</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_set_epsilon</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_set_epsilon</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_double</span>
+    <span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_get_epsilon</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_get_epsilon</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">c_double</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_get_id</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_get_id</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_char_p</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Pointing functions</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_del</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_del</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_alloc</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_alloc</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span>
+    <span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_data</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ct</span><span class="o">.</span><span class="n">c_double</span><span class="p">)</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_data</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+    <span class="c1"># Convolver functions</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_new</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_byte</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_long</span><span class="p">,</span>
+        <span class="n">MPI_Comm</span>
+    <span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_convolve</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_convolve</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">,</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">c_byte</span>
+    <span class="p">]</span>
+
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_del</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_int</span>
+    <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_del</span><span class="o">.</span><span class="n">argtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="OpSimConviqt"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimConviqt">[docs]</a><span class="k">class</span> <span class="nc">OpSimConviqt</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which uses libconviqt to generate beam-convolved timestreams.</span>
+
+<span class="sd">    This passes through each observation and loops over each detector.  </span>
+<span class="sd">    For each detector, it produces the beam-convolved timestream.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lmax (int): sky maximum ell (and m). Actual resolution in the Healpix FITS </span>
+<span class="sd">            file may differ.</span>
+<span class="sd">        beamlmax (int): beam maximum ell. Actual resolution in the Healpix FITS </span>
+<span class="sd">            file may differ.</span>
+<span class="sd">        beammmax (int): beam maximum m. Actual resolution in the Healpix FITS file </span>
+<span class="sd">            may differ.</span>
+<span class="sd">        detectordata (list): list of (detector_name, detector_sky_file, </span>
+<span class="sd">            detector_beam_file, epsilon, psipol[radian]) tuples</span>
+<span class="sd">        pol (bool) : boolean to determine if polarized simulation is needed</span>
+<span class="sd">        fwhm (float) : width of a symmetric gaussian beam [in arcmin] already </span>
+<span class="sd">            present in the skyfile (will be deconvolved away).</span>
+<span class="sd">        nbetafac (int) : conviqt resolution parameter (expert mode)</span>
+<span class="sd">        mcsamples (0) : reserved input for future Monte Carlo mode</span>
+<span class="sd">        lmaxout (int) : Convolution resolution</span>
+<span class="sd">        order (int) : conviqt order parameter (expert mode)</span>
+<span class="sd">        calibrate (bool) : Calibrate intensity to 1.0, rather than (1+epsilon)/2</span>
+<span class="sd">        dxx (bool) : The beam frame is either Dxx or Pxx. Pxx includes the </span>
+<span class="sd">            rotation to polarization sensitive basis, Dxx does not.  When </span>
+<span class="sd">            Dxx=True, detector orientation from attitude quaternions is </span>
+<span class="sd">            corrected for the polarization angle.</span>
+<span class="sd">        out (str): the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to</span>
+<span class="sd">            use for output of the detector timestream.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lmax</span><span class="p">,</span> <span class="n">beamlmax</span><span class="p">,</span> <span class="n">beammmax</span><span class="p">,</span> <span class="n">detectordata</span><span class="p">,</span> <span class="n">pol</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">nbetafac</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">mcsamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lmaxout</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">calibrate</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">dxx</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;conviqt&#39;</span><span class="p">):</span>
+
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span> <span class="o">=</span> <span class="n">lmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beamlmax</span> <span class="o">=</span> <span class="n">beamlmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_beammmax</span> <span class="o">=</span> <span class="n">beammmax</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detectordata</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">detectordata</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_detectordata</span><span class="p">[</span><span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pol</span> <span class="o">=</span> <span class="n">pol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fwhm</span> <span class="o">=</span> <span class="n">fwhm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nbetafac</span> <span class="o">=</span> <span class="n">nbetafac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mcsamples</span> <span class="o">=</span> <span class="n">mcsamples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lmaxout</span> <span class="o">=</span> <span class="n">lmaxout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_order</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate</span> <span class="o">=</span> <span class="n">calibrate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dxx</span> <span class="o">=</span> <span class="n">dxx</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+        
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="OpSimConviqt.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimConviqt.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calling exec will perform the convolution over the communicator, one detector at a time.</span>
+<span class="sd">        All MPI tasks must have the same list of detectors.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The conviqt library was not found&quot;</span><span class="p">)</span>
+
+        <span class="c1"># the two-level pytoast communicator</span>
+        <span class="c1">#comm = data.comm</span>
+        <span class="c1"># the global communicator</span>
+        <span class="c1">#cworld = comm.comm_world</span>
+        <span class="c1"># the communicator within the group</span>
+        <span class="c1">#cgroup = comm.comm_group</span>
+        <span class="c1"># the communicator with all processes with</span>
+        <span class="c1"># the same rank within their group</span>
+        <span class="c1">#crank = comm.comm_rank</span>
+
+        <span class="n">xaxis</span><span class="p">,</span> <span class="n">yaxis</span><span class="p">,</span> <span class="n">zaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">nullquat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="n">intrvl</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;intervals&#39;</span><span class="p">]</span>
+
+            <span class="n">comm_ptr</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">_addressof</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">mpicomm</span><span class="p">)</span>
+            <span class="n">comm</span> <span class="o">=</span> <span class="n">MPI_Comm</span><span class="o">.</span><span class="n">from_address</span><span class="p">(</span><span class="n">comm_ptr</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">skyfile</span><span class="p">,</span> <span class="n">beamfile</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">psipol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detectordata</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;ERROR: conviqt object not initialized to convolve detector {}. Available detectors are {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detectordata</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+                    
+                <span class="n">sky</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_new</span><span class="p">()</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_read</span><span class="p">(</span><span class="n">sky</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pol</span><span class="p">,</span> <span class="n">skyfile</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fwhm</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Failed to load &#39;</span> <span class="o">+</span> <span class="n">skyfile</span><span class="p">)</span>
+
+                <span class="n">beam</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_new</span><span class="p">()</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_read</span><span class="p">(</span><span class="n">beam</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beamlmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beammmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pol</span><span class="p">,</span> <span class="n">beamfile</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">comm</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Failed to load &#39;</span> <span class="o">+</span> <span class="n">beamfile</span><span class="p">)</span>
+
+                <span class="n">detector</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_new_with_id</span><span class="p">(</span><span class="n">det</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+                <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_set_epsilon</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
+                
+                <span class="c1"># We need the three pointing angles to describe the pointing. read_pntg returns the attitude quaternions.</span>
+                <span class="n">flags</span><span class="p">,</span> <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">totflags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span>
+                <span class="n">totflags</span> <span class="o">|=</span> <span class="n">common</span>
+                <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+                <span class="n">pdata</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">nullquat</span>
+                
+                <span class="n">vec_dir</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span> <span class="n">pdata</span><span class="p">,</span> <span class="n">zaxis</span> <span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                
+                <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">vec2dir</span><span class="p">(</span><span class="o">*</span><span class="n">vec_dir</span><span class="p">)</span>
+                <span class="n">theta</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">phi</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="n">vec_orient</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span> <span class="n">pdata</span><span class="p">,</span> <span class="n">xaxis</span> <span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+                <span class="n">ypa</span> <span class="o">=</span> <span class="n">vec_orient</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">vec_dir</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">vec_orient</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">vec_dir</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">xpa</span> <span class="o">=</span> <span class="o">-</span><span class="n">vec_dir</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">vec_orient</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">vec_dir</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">vec_orient</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">vec_dir</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">vec_orient</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">vec_dir</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">vec_dir</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+                <span class="n">psi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">ypa</span><span class="p">,</span> <span class="n">xpa</span><span class="p">)</span>
+
+                <span class="c1"># Is the psi angle in Pxx or Dxx? Pxx will include the detector polarization angle, Dxx will not.</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dxx</span><span class="p">:</span>
+                    <span class="n">psi</span> <span class="o">-=</span> <span class="n">psipol</span>
+
+                <span class="n">pnt</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_new</span><span class="p">()</span>
+
+                <span class="n">err</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_alloc</span><span class="p">(</span> <span class="n">pnt</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="mi">5</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Failed to allocate pointing array&#39;</span><span class="p">)</span>
+
+                <span class="n">ppnt</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_data</span><span class="p">(</span><span class="n">pnt</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">ppnt</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">phi</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+                    <span class="n">ppnt</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+                    <span class="n">ppnt</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">psi</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+                    <span class="n">ppnt</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># This column will host the convolved data upon exit</span>
+                    <span class="n">ppnt</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="mi">5</span> <span class="o">+</span> <span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="c1"># libconviqt will assign the running indices to this column.</span>
+
+                <span class="n">convolver</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_new</span><span class="p">(</span><span class="n">sky</span><span class="p">,</span> <span class="n">beam</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beammmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nbetafac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mcsamples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmaxout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_order</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">convolver</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Failed to instantiate convolver&quot;</span><span class="p">)</span>
+
+                <span class="n">err</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_convolve</span><span class="p">(</span><span class="n">convolver</span><span class="p">,</span> <span class="n">pnt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Convolution FAILED!&#39;</span><span class="p">)</span>
+
+                <span class="c1"># The pointer to the data will have changed during the convolution call ...</span>
+
+                <span class="n">ppnt</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_data</span><span class="p">(</span> <span class="n">pnt</span> <span class="p">)</span>
+
+                <span class="n">convolved_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="n">convolved_data</span><span class="p">[</span><span class="n">row</span><span class="p">]</span> <span class="o">=</span> <span class="n">ppnt</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="mi">5</span><span class="o">+</span><span class="mi">3</span><span class="p">]</span>
+
+                <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_del</span><span class="p">(</span><span class="n">convolver</span><span class="p">)</span>
+
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                    <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+                <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                <span class="n">ref</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">convolved_data</span>
+
+                <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_pointing_del</span><span class="p">(</span><span class="n">pnt</span><span class="p">)</span>
+                <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_del</span><span class="p">(</span><span class="n">detector</span><span class="p">)</span>
+                <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_del</span><span class="p">(</span><span class="n">beam</span><span class="p">)</span>
+                <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_sky_del</span><span class="p">(</span><span class="n">sky</span><span class="p">)</span>
+
+        <span class="k">return</span></div></div>
+
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

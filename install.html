@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Pipelines" href="pipelines.html" />
+    <link rel="prev" title="Introduction" href="intro.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Installation</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="intro.html">Introduction</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="pipelines.html">Pipelines</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="installation">
+<span id="install"></span><h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>PyTOAST is written in python3 and depends on several commonly available
+packages.  It also has some optional functionality for calling externally
+installed packages.</p>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>This package uses python 3, which was first released in 2008.  The setup.py
+file checks for python &gt;= 3.4.0, but it may work with older versions of
+python 3.</p>
+<p>Other dependencies are:</p>
+<blockquote>
+<div><ul class="simple">
+<li>numpy</li>
+<li>scipy</li>
+<li>healpy</li>
+<li>quaternionarray</li>
+<li>matplotlib</li>
+<li>mpi4py (&gt;= 2.0.0)</li>
+<li>cython (if installed from a git checkout)</li>
+</ul>
+</div></blockquote>
+<p>All of these are available from standard locations (e.g. PyPi, with
+&#8220;pip install &lt;package&gt;&#8221;).  Make sure to install the python3 versions of
+these!</p>
+<p>In order to not mess up your system-installed python tools, I highly
+recommend this procedure:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>install python3 and python3-virtualenv with your standard package
+manager (apt, macports, cygwin, etc).</li>
+<li>create a virtualenv for your work.</li>
+<li>inside the virtualenv, pip install the dependencies above.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="using-setup-py">
+<h2>Using setup.py<a class="headerlink" href="#using-setup-py" title="Permalink to this headline">¶</a></h2>
+<p>You can install a stand-alone version of the package like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">some</span><span class="o">/</span><span class="n">path</span>
+</pre></div>
+</div>
+<p>If you don&#8217;t specify the prefix, it will install to your main virtualenv
+location, or to the main python install location on the system.  This
+might not be what you want.  Installing in &#8220;development&#8221; mode is somewhat
+more complex, due to the use of compiled C libraries and extensions.  See
+more details in <a class="reference internal" href="dev.html#dev"><span class="std std-ref">Developer&#8217;s Guide</span></a>.</p>
+<p>After installation, you can run a set of unit tests with:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">test</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="intro.html">Introduction</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="pipelines.html">Pipelines</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

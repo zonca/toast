@@ -1,0 +1,398 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.sim_detdata &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.sim_detdata</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.sim_detdata</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+
+<span class="kn">import</span> <span class="nn">unittest</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">scipy.fftpack</span> <span class="kn">as</span> <span class="nn">sft</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="kn">as</span> <span class="nn">si</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="kn">as</span> <span class="nn">sp</span>
+
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+
+<span class="kn">import</span> <span class="nn">quaternionarray</span> <span class="kn">as</span> <span class="nn">qa</span>
+
+<span class="kn">from</span> <span class="nn">.tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+
+<span class="kn">from</span> <span class="nn">.noise</span> <span class="kn">import</span> <span class="n">Noise</span>
+
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+
+
+
+<div class="viewcode-block" id="OpSimNoise"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimNoise">[docs]</a><span class="k">class</span> <span class="nc">OpSimNoise</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which generates noise timestreams.</span>
+
+<span class="sd">    This passes through each observation and every process generates data</span>
+<span class="sd">    for its assigned samples.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
+<span class="sd">            If the named cache objects do not exist, then they are created.</span>
+<span class="sd">        stream (int): random stream offset.  This should be the same for</span>
+<span class="sd">            all processes within a group, and should be offset between</span>
+<span class="sd">            groups in such a way to ensure different streams between every</span>
+<span class="sd">            detector, in every chunk, of every TOD, across every observation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">accum</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the random stream index&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oversample</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rngstream</span> <span class="o">=</span> <span class="n">stream</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">timedist</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span>
+
+
+    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+        <span class="n">rngobs</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="n">nse</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;noise simulation for uniform distributed samples not implemented&#39;</span><span class="p">)</span>
+
+            <span class="c1"># for purposes of incrementing the random seed, find</span>
+            <span class="c1"># the number of detectors</span>
+            <span class="n">alldets</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">detectors</span>
+            <span class="n">ndet</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">alldets</span><span class="p">)</span>
+
+            <span class="c1"># compute effective sample rate</span>
+
+            <span class="n">times</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_times</span><span class="p">(</span><span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">times</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">dt</span>
+
+            <span class="c1"># eventually we&#39;ll redistribute, to allow long correlations...</span>
+
+            <span class="c1"># iterate over each chunk (stationary interval)</span>
+
+            <span class="n">tod_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">for</span> <span class="n">curchunk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">abschunk</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">curchunk</span>
+                <span class="n">chksamp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">total_chunks</span><span class="p">[</span><span class="n">abschunk</span><span class="p">]</span>
+                <span class="n">nsedata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">chksamp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+                <span class="n">fftlen</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="k">while</span> <span class="n">fftlen</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_oversample</span> <span class="o">*</span> <span class="n">chksamp</span><span class="p">):</span>
+                    <span class="n">fftlen</span> <span class="o">*=</span> <span class="mi">2</span>
+                <span class="n">half</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fftlen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">half</span><span class="p">;</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">/</span> <span class="n">fftlen</span>
+
+                <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="o">*</span><span class="n">half</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">half</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">logfreq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+
+                <span class="n">tempdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">chksamp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+                <span class="n">tempflags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">chksamp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+                <span class="n">tdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fftlen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+                <span class="n">fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fftlen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+                <span class="c1"># ignore zero frequency</span>
+                <span class="n">trimzero</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">if</span> <span class="n">nse</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">trimzero</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="k">if</span> <span class="n">trimzero</span><span class="p">:</span>
+                    <span class="n">rawfreq</span> <span class="o">=</span> <span class="n">nse</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rawfreq</span> <span class="o">=</span> <span class="n">nse</span><span class="o">.</span><span class="n">freq</span>
+                <span class="n">lograwfreq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">rawfreq</span><span class="p">)</span>
+
+                <span class="n">idet</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+
+                    <span class="c1"># interpolate the psd</span>
+
+                    <span class="k">if</span> <span class="n">trimzero</span><span class="p">:</span>
+                        <span class="n">rawpsd</span> <span class="o">=</span> <span class="n">nse</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">det</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">rawpsd</span> <span class="o">=</span> <span class="n">nse</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">det</span><span class="p">)</span>
+
+                    <span class="c1">#np.savetxt(&quot;out_simnoise_rawpsd.txt&quot;, np.transpose(np.vstack((rawfreq, rawpsd))))</span>
+
+                    <span class="n">lograwpsd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">rawpsd</span><span class="p">)</span>
+
+                    <span class="n">interp</span> <span class="o">=</span> <span class="n">si</span><span class="o">.</span><span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="n">lograwfreq</span><span class="p">,</span> <span class="n">lograwpsd</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ext</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+                    <span class="n">logpsd</span> <span class="o">=</span> <span class="n">interp</span><span class="p">(</span><span class="n">logfreq</span><span class="p">)</span>
+
+                    <span class="n">psd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">logpsd</span><span class="p">)</span>
+
+                    <span class="c1"># High-pass filter the PSD to not contain power below</span>
+                    <span class="c1"># fmin to limit the correlation length.  Also cut</span>
+                    <span class="c1"># Nyquist.</span>
+                    <span class="n">fmin</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">chksamp</span><span class="p">)</span>
+                    <span class="n">psd</span><span class="p">[</span><span class="n">freq</span> <span class="o">&lt;</span> <span class="n">fmin</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="n">psd</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+                    <span class="c1">#np.savetxt(&quot;out_simnoise_psd.txt&quot;, np.transpose(np.vstack((freq, psd))))</span>
+
+                    <span class="c1"># gaussian Re/Im randoms</span>
+
+                    <span class="c1"># FIXME: Setting the seed like this does NOT guarantee uncorrelated</span>
+                    <span class="c1"># results from the generator.  This is just a place holder until</span>
+                    <span class="c1"># the streamed rng is implemented.</span>
+
+                    <span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rngstream</span> <span class="o">+</span> <span class="n">rngobs</span> <span class="o">+</span> <span class="p">(</span><span class="n">abschunk</span> <span class="o">*</span> <span class="n">ndet</span><span class="p">)</span> <span class="o">+</span> <span class="n">idet</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fftlen</span><span class="p">)</span>
+                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">fftlen</span><span class="p">)</span>
+                    <span class="c1">#np.savetxt(&quot;out_simnoise_fdata_uni.txt&quot;, fdata, delimiter=&#39;\n&#39;)</span>
+
+                    <span class="c1"># scale by PSD</span>
+
+                    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">psd</span> <span class="o">*</span> <span class="n">norm</span><span class="p">)</span>
+
+                    <span class="n">fdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.0</span>
+                    <span class="n">fdata</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">half</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">fdata</span><span class="p">[</span><span class="n">half</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">fdata</span><span class="p">[</span><span class="n">half</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">scale</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+                    <span class="c1">#np.savetxt(&quot;out_simnoise_fdata.txt&quot;, fdata, delimiter=&#39;\n&#39;)</span>
+
+                    <span class="c1"># make the noise TOD</span>
+
+                    <span class="n">tdata</span> <span class="o">=</span> <span class="n">sft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">fdata</span><span class="p">)</span>
+                    <span class="c1">#np.savetxt(&quot;out_simnoise_tdata.txt&quot;, tdata, delimiter=&#39;\n&#39;)</span>
+
+                    <span class="c1"># write to cache</span>
+
+                    <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                        <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+                    <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)[</span><span class="n">tod_offset</span><span class="p">:</span><span class="n">tod_offset</span><span class="o">+</span><span class="n">chksamp</span><span class="p">]</span>
+                    <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">tdata</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">chksamp</span><span class="p">]</span>
+
+                    <span class="n">idet</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">tod_offset</span> <span class="o">+=</span> <span class="n">chksamp</span>
+
+            <span class="c1"># increment the observation rng stream offset</span>
+            <span class="c1"># by the number of chunks times number of detectors</span>
+            <span class="n">rngobs</span> <span class="o">+=</span> <span class="p">(</span><span class="n">ndet</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">total_chunks</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="OpSimGradient"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient">[docs]</a><span class="k">class</span> <span class="nc">OpSimGradient</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which generates fake sky signal as a gradient between the poles</span>
+<span class="sd">    and accumulates this.</span>
+
+<span class="sd">    This passes through each observation and ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
+<span class="sd">            If the named cache objects do not exist, then they are created.</span>
+
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mf">100.0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">=</span> <span class="n">nside</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min</span> <span class="o">=</span> <span class="nb">min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">=</span> <span class="nb">max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nest</span> <span class="o">=</span> <span class="n">nest</span>
+
+    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+
+        <span class="n">zaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">nullquat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="nb">range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;baselines&#39;</span><span class="p">]</span>
+            <span class="n">nse</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+            <span class="n">intrvl</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;intervals&#39;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+                <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">flags</span><span class="p">,</span> <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">totflags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span>
+                <span class="n">totflags</span> <span class="o">|=</span> <span class="n">common</span>
+
+                <span class="n">pdata</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">nullquat</span>
+
+                <span class="nb">dir</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">pdata</span><span class="p">,</span> <span class="n">zaxis</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">vec2pix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">pix2vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">pixels</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+                <span class="n">z</span> <span class="o">+=</span> <span class="mf">1.0</span>
+                <span class="n">z</span> <span class="o">*=</span> <span class="mf">0.5</span>
+                <span class="n">z</span> <span class="o">*=</span> <span class="nb">range</span>
+                <span class="n">z</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+                <span class="n">z</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                    <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+                <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">z</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="OpSimGradient.sigmap"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient.sigmap">[docs]</a>    <span class="k">def</span> <span class="nf">sigmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the underlying signal map.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+        <span class="n">pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">pix2vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">pix</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">+=</span> <span class="mf">1.0</span>
+        <span class="n">z</span> <span class="o">*=</span> <span class="mf">0.5</span>
+        <span class="n">z</span> <span class="o">*=</span> <span class="nb">range</span>
+        <span class="n">z</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+        <span class="k">return</span> <span class="n">z</span></div></div>
+
+
+<div class="viewcode-block" id="OpSimScan"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimScan">[docs]</a><span class="k">class</span> <span class="nc">OpSimScan</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which generates sky signal by scanning from a map.</span>
+
+<span class="sd">    The signal to use should already be in a distributed pixel structure,</span>
+<span class="sd">    and local pointing should already exist.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        distmap (DistPixels): the distributed map domain data.</span>
+<span class="sd">        pixels (str): the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pixel indices to use.</span>
+<span class="sd">        weights (str): the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pointing weights to use.</span>
+<span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
+<span class="sd">            If the named cache objects do not exist, then they are created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distmap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;scan&#39;</span><span class="p">):</span>
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_map</span> <span class="o">=</span> <span class="n">distmap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+
+
+    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+        <span class="c1"># the global communicator</span>
+        <span class="n">cworld</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_world</span>
+        <span class="c1"># the communicator within the group</span>
+        <span class="n">cgroup</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_group</span>
+        <span class="c1"># the communicator with all processes with</span>
+        <span class="c1"># the same rank within their group</span>
+        <span class="n">crank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_rank</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+
+                <span class="c1"># get the pixels and weights from the cache</span>
+
+                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">weightsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">weightsname</span><span class="p">)</span>
+
+                <span class="n">nnz</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map</span><span class="o">.</span><span class="n">global_to_local</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+
+                <span class="n">f</span> <span class="o">=</span> <span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">sm</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">lpix</span><span class="p">[</span><span class="n">x</span><span class="p">]])</span> <span class="k">if</span> <span class="p">(</span><span class="n">lpix</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="p">)</span>
+                <span class="n">maptod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                    <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+                <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">maptod</span>
+
+        <span class="k">return</span></div>
+
+
+
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Data Distribution &mdash; TOAST 2.0 documentation</title>
+    <title>Data Distribution &mdash; PyTOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,20 +24,23 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
-    <link rel="prev" title="Time Ordered Data" href="tod.html" /> 
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Telescope TOD" href="tod.html" />
+    <link rel="prev" title="Pipelines" href="pipelines.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>PyTOAST 2.0 documentation</span></a></h1>
         <h2 class="heading"><span>Data Distribution</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
       
         <p>
-        «&#160;&#160;<a href="tod.html">Time Ordered Data</a>
+        «&#160;&#160;<a href="pipelines.html">Pipelines</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="tod.html">Telescope TOD</a>&#160;&#160;»
         </p>
 
       </div>
@@ -46,6 +49,10 @@
         
   <div class="section" id="data-distribution">
 <span id="dist"></span><h1>Data Distribution<a class="headerlink" href="#data-distribution" title="Permalink to this headline">¶</a></h1>
+<p>The toast package is designed for data that is distributed across many
+processes.  When passing the data to toast processing routines, you can either
+use pre-defined base classes as a container and copy your data into them, or
+you can create your own derived classes that provide a standard interface.</p>
 <dl class="class">
 <dt id="toast.Comm">
 <em class="property">class </em><code class="descclassname">toast.</code><code class="descname">Comm</code><span class="sig-paren">(</span><em>world=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>groupsize=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Comm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Comm" title="Permalink to this definition">¶</a></dt>
@@ -69,38 +76,67 @@ consider, a &#8220;group&#8221; communicator (one per group)</p>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="toast.Comm.comm_group">
+<code class="descname">comm_group</code><a class="headerlink" href="#toast.Comm.comm_group" title="Permalink to this definition">¶</a></dt>
+<dd><p>The communicator shared by processes within this group.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.comm_rank">
+<code class="descname">comm_rank</code><a class="headerlink" href="#toast.Comm.comm_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>The communicator shared by processes with the same group_rank.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.comm_world">
+<code class="descname">comm_world</code><a class="headerlink" href="#toast.Comm.comm_world" title="Permalink to this definition">¶</a></dt>
+<dd><p>The world communicator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.group">
+<code class="descname">group</code><a class="headerlink" href="#toast.Comm.group" title="Permalink to this definition">¶</a></dt>
+<dd><p>The group containing this process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.group_rank">
+<code class="descname">group_rank</code><a class="headerlink" href="#toast.Comm.group_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>The rank of this process in the group communicator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.group_size">
+<code class="descname">group_size</code><a class="headerlink" href="#toast.Comm.group_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of the group containing this process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.ngroups">
+<code class="descname">ngroups</code><a class="headerlink" href="#toast.Comm.ngroups" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of process groups.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.world_rank">
+<code class="descname">world_rank</code><a class="headerlink" href="#toast.Comm.world_rank" title="Permalink to this definition">¶</a></dt>
+<dd><p>The rank of this process in the world communicator.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Comm.world_size">
+<code class="descname">world_size</code><a class="headerlink" href="#toast.Comm.world_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>The size of the world communicator.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
-<dt id="toast.Obs">
-<em class="property">class </em><code class="descclassname">toast.</code><code class="descname">Obs</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>streams=None</em>, <em>pointing=None</em>, <em>baselines=None</em>, <em>noise=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/obs.html#Obs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Obs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class which represents a single observation.</p>
-<p>Each observation contains one instance (or None) of each
-type of class: Pointing, Streams, Baselines, and Noise.</p>
-<p>An Obs class is basically just a container of these data
-classes.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>mpicomm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; The MPI communicator sharing this observation</li>
-<li><strong>streams</strong> (<a class="reference internal" href="tod.html#toast.tod.Streams" title="toast.tod.Streams"><em>toast.tod.Streams</em></a>) &#8211; An instance of the Streams class</li>
-<li><strong>pointing</strong> (<a class="reference internal" href="tod.html#toast.tod.Pointing" title="toast.tod.Pointing"><em>toast.tod.Pointing</em></a>) &#8211; An instance of the Pointing class</li>
-<li><strong>baselines</strong> (<em>toast.tod.Baselines</em>) &#8211; An instance of the Baselines class</li>
-<li><strong>noise</strong> (<em>toast.tod.Noise</em>) &#8211; An instance of the Noise class</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="class">
-<dt id="toast.Dist">
-<em class="property">class </em><code class="descclassname">toast.</code><code class="descname">Dist</code><span class="sig-paren">(</span><em>comm=&lt;toast.dist.Comm object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Dist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Dist" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.Data">
+<em class="property">class </em><code class="descclassname">toast.</code><code class="descname">Data</code><span class="sig-paren">(</span><em>comm=&lt;toast.dist.Comm object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class which represents distributed data</p>
-<p>A Dist object contains a list of observations assigned to
+<p>A Data object contains a list of observations assigned to
 each process group in the Comm.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -110,44 +146,64 @@ each process group in the Comm.</p>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.Data.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Data.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Data.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the dictionary of all observations, so that they can be garbage collected.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Data.comm">
+<code class="descname">comm</code><a class="headerlink" href="#toast.Data.comm" title="Permalink to this definition">¶</a></dt>
+<dd><p>The toast.Comm over which the data is distributed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.Data.info">
+<code class="descname">info</code><span class="sig-paren">(</span><em>handle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Data.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Data.info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print information about the distributed data to the
+specified file handle.  Only the rank 0 process writes.</p>
+</dd></dl>
+
 </dd></dl>
 
 <div class="section" id="example">
 <h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">toast</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
 
-<span class="c"># Split COMM_WORLD into groups of 4 processes each</span>
+<span class="kn">import</span> <span class="nn">mpi4py.MPI</span> <span class="k">as</span> <span class="nn">MPI</span>
+
+<span class="kn">import</span> <span class="nn">toast</span>
+<span class="kn">import</span> <span class="nn">toast.tod</span> <span class="k">as</span> <span class="nn">tt</span>
+
+<span class="c1"># Split COMM_WORLD into groups of 4 processes each</span>
 <span class="n">cm</span> <span class="o">=</span> <span class="n">toast</span><span class="o">.</span><span class="n">Comm</span><span class="p">(</span><span class="n">world</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">groupsize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
-<span class="c"># Create the distributed data object</span>
-<span class="n">dd</span> <span class="o">=</span> <span class="n">toast</span><span class="o">.</span><span class="n">Dist</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="n">cm</span><span class="p">)</span>
+<span class="c1"># Create the distributed data object</span>
+<span class="n">dd</span> <span class="o">=</span> <span class="n">toast</span><span class="o">.</span><span class="n">Data</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="n">cm</span><span class="p">)</span>
 
-<span class="c"># Each process group appends some observations.</span>
-<span class="c"># For this example, each observation is going to have the same</span>
-<span class="c"># number of samples, and the same list of detectors.  We just</span>
-<span class="c"># use the base Streams and Pointing classes, which contains</span>
-<span class="c"># the data directly as numpy arrays.</span>
+<span class="c1"># Each process group appends some observations.</span>
+<span class="c1"># For this example, each observation is going to have the same</span>
+<span class="c1"># number of samples, and the same list of detectors.  We just</span>
+<span class="c1"># use the base TOD class, which contains the data in memory.</span>
 
 <span class="n">obs_samples</span> <span class="o">=</span> <span class="mi">100</span>
-<span class="n">obs_dets</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;detA&#39;</span><span class="p">,</span> <span class="s">&#39;detB&#39;</span><span class="p">,</span> <span class="s">&#39;detC&#39;</span><span class="p">]</span>
+<span class="n">obs_dets</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;detA&#39;</span><span class="p">,</span> <span class="s1">&#39;detB&#39;</span><span class="p">,</span> <span class="s1">&#39;detC&#39;</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
-    <span class="c"># Streams object, with just the default flavor and the</span>
-    <span class="c"># default time slicing</span>
-    <span class="n">strms</span> <span class="o">=</span> <span class="n">toast</span><span class="o">.</span><span class="n">Streams</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">comm_group</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="n">obs_dets</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">obs_samples</span><span class="p">)</span>
+    <span class="n">tod</span> <span class="o">=</span> <span class="n">tt</span><span class="o">.</span><span class="n">TOD</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">comm_group</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="n">obs_dets</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">obs_samples</span><span class="p">)</span>
+    <span class="n">ob</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">ob</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="n">ob</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tod</span>
+    <span class="n">ob</span><span class="p">[</span><span class="s1">&#39;intervals&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ob</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dd</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ob</span><span class="p">)</span>
 
-    <span class="c"># Pointing object</span>
-    <span class="n">pntg</span> <span class="o">=</span> <span class="n">toast</span><span class="o">.</span><span class="n">Pointing</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">comm_group</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="n">obs_dets</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="n">obs_samples</span><span class="p">)</span>
+<span class="c1"># Now at the end we have 4 process groups, each of which is assigned</span>
+<span class="c1"># 10 observations.  Each of these observations has 3 detectors and 100</span>
+<span class="c1"># samples.  So the Data object contains a total of 40 observations and</span>
+<span class="c1"># 12000 samples.</span>
 
-    <span class="c"># Observation</span>
-    <span class="n">obs</span> <span class="o">=</span> <span class="n">toast</span><span class="o">.</span><span class="n">Obs</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">=</span><span class="n">cm</span><span class="o">.</span><span class="n">comm_group</span><span class="p">,</span> <span class="n">streams</span><span class="o">=</span><span class="n">strms</span><span class="p">,</span> <span class="n">pointing</span><span class="o">=</span><span class="n">pntg</span><span class="p">)</span>
-
-    <span class="n">dd</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
-
-<span class="c"># Now at the end we have 4 process groups, each of which is assigned</span>
-<span class="c"># 10 observations.  Each of these observations has 3 detectors and 100</span>
-<span class="c"># samples.  So the Dist object contains a total of 40 observations and</span>
-<span class="c"># 12000 samples.</span>
 </pre></div>
 </div>
 </div>
@@ -158,16 +214,18 @@ each process group in the Comm.</p>
       <div class="bottomnav" role="navigation" aria-label="bottom navigation">
       
         <p>
-        «&#160;&#160;<a href="tod.html">Time Ordered Data</a>
+        «&#160;&#160;<a href="pipelines.html">Pipelines</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="tod.html">Telescope TOD</a>&#160;&#160;»
         </p>
 
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
     </div>
   </body>
 </html>

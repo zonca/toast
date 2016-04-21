@@ -1,0 +1,191 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Map-making Tools &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Using at NERSC" href="nersc.html" />
+    <link rel="prev" title="Simulations" href="sim.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Map-making Tools</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="sim.html">Simulations</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="nersc.html">Using at NERSC</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="map-making-tools">
+<span id="maptools"></span><h1>Map-making Tools<a class="headerlink" href="#map-making-tools" title="Permalink to this headline">¶</a></h1>
+<p>This broad class of operations include anything that generates pixel-space data products.</p>
+<div class="section" id="distributed-pixel-space-data">
+<h2>Distributed Pixel-space Data<a class="headerlink" href="#distributed-pixel-space-data" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="toast.map.OpLocalPixels">
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpLocalPixels</code><span class="sig-paren">(</span><em>pixels='pixels'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#OpLocalPixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpLocalPixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator which computes the set of locally hit pixels.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pixels</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)
+containing the pixel indices to use.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="toast.map.DistPixels">
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">DistPixels</code><span class="sig-paren">(</span><em>comm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>size=0</em>, <em>nnz=1</em>, <em>dtype=&lt;class 'numpy.float64'&gt;</em>, <em>submap=None</em>, <em>local=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>A distributed map with multiple values per pixel.</p>
+<p>Pixel domain data is distributed across an MPI communicator.  each
+process has a local data stored in one or more &#8220;submaps&#8221;.  The size
+of the submap can be tuned to balance storage (smaller submap size
+means fewer wasted pixels stored) and ease of indexing (larger
+submap means faster global-to-local pixel lookups).</p>
+<p>Although multiple processes may have the same submap of data stored
+locally, the lowest-rank process that has a given submap is the
+&#8220;owner&#8221; for operations like serialization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>comm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; the MPI communicator containing all
+processes.</li>
+<li><strong>size</strong> (<em>int</em>) &#8211; the total number of pixels.</li>
+<li><strong>nnz</strong> (<em>int</em>) &#8211; the number of values per pixel.</li>
+<li><strong>submap</strong> (<em>int</em>) &#8211; the locally stored data is in units of this size.</li>
+<li><strong>local</strong> (<em>array</em>) &#8211; the list of local submaps (integers).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="diagonal-noise-covariance">
+<h2>Diagonal Noise Covariance<a class="headerlink" href="#diagonal-noise-covariance" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="toast.map.OpInvCovariance">
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpInvCovariance</code><span class="sig-paren">(</span><em>invnpp=None</em>, <em>hits=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpInvCovariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpInvCovariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator which computes the diagonal inverse pixel covariance.</p>
+<p>This operator requires that the local pointing matrix has already been
+computed.  Each process has a local piece of the inverse covariance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>invnpp</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; The matrix to accumulate.</li>
+<li><strong>hits</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; (optional) the hits to accumulate.</li>
+<li><strong>detweights</strong> (<em>dictionary</em>) &#8211; individual noise weights to use for each
+detector.</li>
+<li><strong>pixels</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)
+containing the pixel indices to use.</li>
+<li><strong>weights</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)
+containing the pointing weights to use.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="toast.map.covariance_invert">
+<code class="descclassname">toast.map.</code><code class="descname">covariance_invert</code><span class="sig-paren">(</span><em>npp</em>, <em>threshold</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_invert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_invert" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="toast.map.covariance_rcond">
+<code class="descclassname">toast.map.</code><code class="descname">covariance_rcond</code><span class="sig-paren">(</span><em>npp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_rcond"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_rcond" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="external-madam-interface">
+<h2>External Madam Interface<a class="headerlink" href="#external-madam-interface" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="toast.map.OpMadam">
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>purge=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator which passes data to libmadam for map-making.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>params</strong> (<em>dictionary</em>) &#8211; parameters to pass to madam.</li>
+<li><strong>detweights</strong> (<em>dictionary</em>) &#8211; individual noise weights to use for each
+detector.</li>
+<li><strong>pixels</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)
+containing the pixel indices to use.</li>
+<li><strong>weights</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)
+containing the pointing weights to use.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
+use for the detector timestream.  If None, use the TOD.</li>
+<li><strong>purge</strong> (<em>bool</em>) &#8211; if True, clear any cached data that is copied intersection
+the Madam buffers.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="sim.html">Simulations</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="nersc.html">Using at NERSC</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>

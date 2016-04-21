@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; PyTOAST 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="next" title="Installation" href="install.html" />
+    <link rel="prev" title="PyTOAST" href="index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="index.html">
+          <span>PyTOAST 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Introduction</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">PyTOAST</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="install.html">Installation</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="introduction">
+<span id="intro"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>Telescopes which collect data as timestreams rather than images give us a unique set of analysis challenges.  Detector data usually contains noise which is correlated in time and sources of correlated signal from the instrument and the environment.  Large pieces of data must often be analyzed simultaneously to extract an estimate of the sky signal.  PyTOAST evolved as a re-implementation (in Python) of an earlier codebase written in C++.  This was a pragmatic choice given the need to interface better with instrument scientists, and was made possible by improving support for Python on HPC systems.</p>
+<p>PyTOAST is a Python package with tools for:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Distributing data among many processes</li>
+<li>Performing operations on the local pieces of the data</li>
+<li>Creating customized processing operations</li>
+</ul>
+</div></blockquote>
+<p>This package comes with a set of basic operations that will expand as development continues.  All of the experiment-specific classes and pipeline scripts are kept in separate git repositories.  Currently repositories exist for:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Planck</li>
+<li>LiteBIRD</li>
+<li>CMB &#8220;Stage 4&#8221;</li>
+</ul>
+</div></blockquote>
+<p>This list will grow over time.</p>
+<div class="section" id="data-organization-and-terminology">
+<h2>Data Organization and Terminology<a class="headerlink" href="#data-organization-and-terminology" title="Permalink to this headline">¶</a></h2>
+<p>Example:  Satellite</p>
+<p>Example:  Ground-Based</p>
+<p>Example:  Balloon</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="index.html">PyTOAST</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="install.html">Installation</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+    </div>
+  </body>
+</html>
