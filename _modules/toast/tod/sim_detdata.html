@@ -86,7 +86,7 @@
 <span class="sd">            detector, in every chunk, of every TOD, across every observation.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">accum</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
@@ -104,7 +104,22 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span>
 
 
-    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="OpSimNoise.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimNoise.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate noise timestreams.</span>
+
+<span class="sd">        This iterates over all observations and detectors.  For each</span>
+<span class="sd">        locally stored piece of the data, we query which chunks of the</span>
+<span class="sd">        original data distribution we have.  A &quot;stream&quot; index is</span>
+<span class="sd">        computed using the observation number, the detector number, and</span>
+<span class="sd">        the absolute chunk index.  For each chunk assigned to this process,</span>
+<span class="sd">        generate a noise realization.  The PSD that is valid for the</span>
+<span class="sd">        current chunk (obtained from the Noise object for each observation)</span>
+<span class="sd">        is used when generating the timestream.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
         <span class="n">rngobs</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -236,21 +251,24 @@
             <span class="c1"># by the number of chunks times number of detectors</span>
             <span class="n">rngobs</span> <span class="o">+=</span> <span class="p">(</span><span class="n">ndet</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">total_chunks</span><span class="p">))</span>
 
-        <span class="k">return</span></div>
+        <span class="k">return</span></div></div>
 
 
 <div class="viewcode-block" id="OpSimGradient"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient">[docs]</a><span class="k">class</span> <span class="nc">OpSimGradient</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Operator which generates fake sky signal as a gradient between the poles</span>
-<span class="sd">    and accumulates this.</span>
+<span class="sd">    Generate a fake sky signal as a gradient between the poles.</span>
 
-<span class="sd">    This passes through each observation and ...</span>
+<span class="sd">    This passes through each observation and creates a fake signal timestream</span>
+<span class="sd">    based on the cartesian Z coordinate of the HEALPix pixel containing the</span>
+<span class="sd">    detector pointing.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
 <span class="sd">            If the named cache objects do not exist, then they are created.</span>
-
-<span class="sd">        </span>
+<span class="sd">        nside (int): the HEALPix NSIDE value to use.</span>
+<span class="sd">        min (float): the minimum value to use at the South Pole.</span>
+<span class="sd">        max (float): the maximum value to use at the North Pole.</span>
+<span class="sd">        nest (bool): whether to use NESTED ordering.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mf">100.0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
@@ -262,7 +280,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">=</span> <span class="nb">max</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nest</span> <span class="o">=</span> <span class="n">nest</span>
 
-    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+
+<div class="viewcode-block" id="OpSimGradient.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the gradient timestreams.</span>
+
+<span class="sd">        This pixelizes each detector&#39;s pointing and then assigns a </span>
+<span class="sd">        timestream value based on the cartesian Z coordinate of the pixel</span>
+<span class="sd">        center.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
 
         <span class="n">zaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -299,11 +328,11 @@
                 <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
                 <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">z</span>
 
-        <span class="k">return</span>
+        <span class="k">return</span></div>
 
 <div class="viewcode-block" id="OpSimGradient.sigmap"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient.sigmap">[docs]</a>    <span class="k">def</span> <span class="nf">sigmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return the underlying signal map.</span>
+<span class="sd">        (array): Return the underlying signal map (full map on all processes).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
         <span class="n">pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
@@ -340,7 +369,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
 
 
-    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="OpSimScan.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimScan.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the timestreams by scanning from the map.</span>
+
+<span class="sd">        This loops over all observations and detectors and uses the pointing</span>
+<span class="sd">        matrix to project the distributed map into a timestream.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
         <span class="c1"># the global communicator</span>
         <span class="n">cworld</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_world</span>
@@ -375,7 +413,7 @@
                 <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
                 <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">maptod</span>
 
-        <span class="k">return</span></div>
+        <span class="k">return</span></div></div>
 
 
 

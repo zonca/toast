@@ -74,6 +74,9 @@
 <span class="sd">        rate (float): the sample rate in Hz.</span>
 <span class="sd">        duration (float): the length of the interval in seconds.</span>
 <span class="sd">        gap (float): the length of the gap in seconds.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (list): a list of Interval objects.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dursamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
     <span class="n">gapsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gap</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>

@@ -76,13 +76,47 @@ detector.</li>
 <dl class="attribute">
 <dt id="toast.tod.TOD.detectors">
 <code class="descname">detectors</code><a class="headerlink" href="#toast.tod.TOD.detectors" title="Permalink to this definition">¶</a></dt>
-<dd><p>The total list of detectors.</p>
+<dd><p><em>(list)</em> &#8211; The total list of detectors.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="toast.tod.TOD.local_dets">
 <code class="descname">local_dets</code><a class="headerlink" href="#toast.tod.TOD.local_dets" title="Permalink to this definition">¶</a></dt>
-<dd><p>The detectors assigned to this process.</p>
+<dd><p><em>(list)</em> &#8211; The detectors assigned to this process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.local_samples">
+<code class="descname">local_samples</code><a class="headerlink" href="#toast.tod.TOD.local_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(2-tuple)</em> &#8211; The first element of the tuple is the first global
+sample assigned to this process.  The second element of
+the tuple is the number of samples assigned to this
+process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.mpicomm">
+<code class="descname">mpicomm</code><a class="headerlink" href="#toast.tod.TOD.mpicomm" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(mpi4py.MPI.Comm)</em> &#8211; the communicator assigned to this TOD.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.timedist">
+<code class="descname">timedist</code><a class="headerlink" href="#toast.tod.TOD.timedist" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; if True, the data is time-distributed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.total_chunks">
+<code class="descname">total_chunks</code><a class="headerlink" href="#toast.tod.TOD.total_chunks" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(list)</em> &#8211; the full list of sample sizes that were used in computing
+the data distribution.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.total_samples">
+<code class="descname">total_samples</code><a class="headerlink" href="#toast.tod.TOD.total_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(int)</em> &#8211; the total number of samples in this TOD.</p>
 </dd></dl>
 
 </dd></dl>
@@ -92,25 +126,104 @@ detector.</li>
 <dt id="toast.tod.Cache">
 <em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Cache</code><span class="sig-paren">(</span><em>pymem=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Timestream data cache with explicit memory management.</p>
-<p>Args:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pymem</strong> (<em>bool</em>) &#8211; if True, use python memory rather than external
+allocations in C.  Only used for testing.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="toast.tod.Cache.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><em>pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear one or more buffers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pattern</strong> (<em>str</em>) &#8211; a regular expression to match against the buffer
+names when determining what should be cleared.  If None,
+then all buffers are cleared.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="method">
 <dt id="toast.tod.Cache.create">
 <code class="descname">create</code><span class="sig-paren">(</span><em>name</em>, <em>type</em>, <em>shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a named data buffer of the give type and shape.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) &#8211; the name to assign to the buffer.</li>
+<li><strong>type</strong> (<em>numpy.dtype</em>) &#8211; one of the supported numpy types.</li>
+<li><strong>shape</strong> (<em>tuple</em>) &#8211; a tuple containing the shape of the buffer.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="toast.tod.Cache.destroy">
 <code class="descname">destroy</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.destroy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deallocate the specified buffer.  Only call this if all numpy arrays
-that reference the memory are out of use.</p>
+<dd><p>Deallocate the specified buffer.</p>
+<p>Only call this if all numpy arrays that reference the memory
+are out of use.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; the name of the buffer to destroy.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.Cache.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether a buffer exists.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; the name of the buffer to search for.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the buffer exists.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(bool)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="toast.tod.Cache.reference">
 <code class="descname">reference</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.reference" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a numpy array that contains a reference to the specified data
-buffer.</p>
+<dd><p>Return a numpy array pointing to the buffer.</p>
+<p>The returned array will wrap a pointer to the raw buffer, but will
+not claim ownership.  When the numpy array is garbage collected, it
+will NOT attempt to free the memory (you must manually use the
+destroy method).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) &#8211; the name of the buffer to return.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a numpy array wrapping the raw data buffer.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(array)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

@@ -148,16 +148,28 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">fmin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (float): the minimum frequency in Hz, used as a high pass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmin</span>
 
-    <span class="k">def</span> <span class="nf">fknee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+<div class="viewcode-block" id="AnalyticNoise.fknee"><a class="viewcode-back" href="../../../sim.html#toast.tod.AnalyticNoise.fknee">[docs]</a>    <span class="k">def</span> <span class="nf">fknee</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (float): the knee frequency in Hz.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">det</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+<div class="viewcode-block" id="AnalyticNoise.alpha"><a class="viewcode-back" href="../../../sim.html#toast.tod.AnalyticNoise.alpha">[docs]</a>    <span class="k">def</span> <span class="nf">alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (float): the (positive!) slope exponent.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">det</span><span class="p">]</span></div>
 
-    <span class="k">def</span> <span class="nf">NET</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NET</span><span class="p">[</span><span class="n">det</span><span class="p">]</span></div>
+<div class="viewcode-block" id="AnalyticNoise.NET"><a class="viewcode-back" href="../../../sim.html#toast.tod.AnalyticNoise.NET">[docs]</a>    <span class="k">def</span> <span class="nf">NET</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (float): the NET.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NET</span><span class="p">[</span><span class="n">det</span><span class="p">]</span></div></div>
 
 </pre></div>
 

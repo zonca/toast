@@ -65,6 +65,30 @@ containing the pixel indices to use.</td>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.map.OpLocalPixels.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#OpLocalPixels.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpLocalPixels.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over all observations and detectors and compute local pixels.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array of the locally hit pixel indices.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.OpLocalPixels.timedist">
+<code class="descname">timedist</code><a class="headerlink" href="#toast.map.OpLocalPixels.timedist" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; Whether this operator requires data that time-distributed.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -95,6 +119,81 @@ processes.</li>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="toast.map.DistPixels.comm">
+<code class="descname">comm</code><a class="headerlink" href="#toast.map.DistPixels.comm" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(mpi4py.MPI.Comm)</em> &#8211; The MPI communicator used.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.DistPixels.dtype">
+<code class="descname">dtype</code><a class="headerlink" href="#toast.map.DistPixels.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(numpy.dtype)</em> &#8211; The data type of the values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.map.DistPixels.duplicate">
+<code class="descname">duplicate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels.duplicate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels.duplicate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a deep copy of the distributed data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A copy of the object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">(DistPixels)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.map.DistPixels.global_to_local">
+<code class="descname">global_to_local</code><span class="sig-paren">(</span><em>gl</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels.global_to_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels.global_to_local" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert global pixel indices into the local submap and pixel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>gl</strong> (<em>int</em>) &#8211; The global pixel number.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A tuple containing the local submap index (int) and the
+pixel index local to that submap (int).</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.DistPixels.local">
+<code class="descname">local</code><a class="headerlink" href="#toast.map.DistPixels.local" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(array)</em> &#8211; The list of local submaps or None if process has no data.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.DistPixels.nnz">
+<code class="descname">nnz</code><a class="headerlink" href="#toast.map.DistPixels.nnz" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(int)</em> &#8211; The number of non-zero values per pixel.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.DistPixels.nsubmap">
+<code class="descname">nsubmap</code><a class="headerlink" href="#toast.map.DistPixels.nsubmap" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(int)</em> &#8211; The number of submaps stored on this process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.DistPixels.size">
+<code class="descname">size</code><a class="headerlink" href="#toast.map.DistPixels.size" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(int)</em> &#8211; The global number of pixels.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.DistPixels.submap">
+<code class="descname">submap</code><a class="headerlink" href="#toast.map.DistPixels.submap" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(int)</em> &#8211; The number of pixels in each submap.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -124,17 +223,66 @@ containing the pointing weights to use.</li>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.map.OpInvCovariance.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpInvCovariance.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpInvCovariance.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over all observations and detectors and accumulate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">
 <dt id="toast.map.covariance_invert">
 <code class="descclassname">toast.map.</code><code class="descname">covariance_invert</code><span class="sig-paren">(</span><em>npp</em>, <em>threshold</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_invert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_invert" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Invert the local piece of a diagonal noise covariance.</p>
+<p>This does an in-place inversion of the covariance.  The threshold is
+applied to the condition number of each block of the matrix.  Pixels
+failing the cut are set to zero.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>npp</strong> (<em>3D array</em>) &#8211; The data member of a distributed covariance.</li>
+<li><strong>threshold</strong> (<em>float</em>) &#8211; The condition number threshold to apply.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="toast.map.covariance_rcond">
 <code class="descclassname">toast.map.</code><code class="descname">covariance_rcond</code><span class="sig-paren">(</span><em>npp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_rcond"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_rcond" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Return the local piece of the inverse condition number map.</p>
+<p>This computes the local piece of the inverse condition number map
+from the supplied covariance matrix data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>npp</strong> (<em>3D array</em>) &#8211; The data member of a distributed covariance.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rcond</strong> &#8211;<dl class="docutils">
+<dt>The local data piece of the distributed</dt>
+<dd>inverse condition number map.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">3D array</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </div>
 <div class="section" id="external-madam-interface">
@@ -164,6 +312,32 @@ the Madam buffers.</li>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="toast.map.OpMadam.available">
+<code class="descname">available</code><a class="headerlink" href="#toast.map.OpMadam.available" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; True if libmadam is found in the library search path.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.map.OpMadam.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy data to Madam-compatible buffers and make a map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.map.OpMadam.timedist">
+<code class="descname">timedist</code><a class="headerlink" href="#toast.map.OpMadam.timedist" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; Whether this operator requires data that time-distributed.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

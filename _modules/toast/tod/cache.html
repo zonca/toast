@@ -58,7 +58,8 @@
 <span class="sd">    Timestream data cache with explicit memory management.</span>
 
 <span class="sd">    Args:</span>
-
+<span class="sd">        pymem (bool): if True, use python memory rather than external</span>
+<span class="sd">            allocations in C.  Only used for testing.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pymem</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
@@ -74,7 +75,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Cache.clear"><a class="viewcode-back" href="../../../tod.html#toast.tod.Cache.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clear one or more buffers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pattern (str): a regular expression to match against the buffer</span>
+<span class="sd">                names when determining what should be cleared.  If None,</span>
+<span class="sd">                then all buffers are cleared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="c1"># free all buffers</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span><span class="p">:</span>
@@ -92,12 +101,17 @@
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span><span class="p">:</span>
                     <span class="n">_free</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-        <span class="k">return</span>
+        <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="Cache.create"><a class="viewcode-back" href="../../../tod.html#toast.tod.Cache.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a named data buffer of the give type and shape.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): the name to assign to the buffer.</span>
+<span class="sd">            type (numpy.dtype): one of the supported numpy types.</span>
+<span class="sd">            shape (tuple): a tuple containing the shape of the buffer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">type</span><span class="p">)</span>
@@ -109,8 +123,13 @@
 
 <div class="viewcode-block" id="Cache.destroy"><a class="viewcode-back" href="../../../tod.html#toast.tod.Cache.destroy">[docs]</a>    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deallocate the specified buffer.  Only call this if all numpy arrays</span>
-<span class="sd">        that reference the memory are out of use.</span>
+<span class="sd">        Deallocate the specified buffer.</span>
+
+<span class="sd">        Only call this if all numpy arrays that reference the memory </span>
+<span class="sd">        are out of use.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): the name of the buffer to destroy.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer {} does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
@@ -120,15 +139,34 @@
         <span class="k">return</span></div>
 
 
-    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Cache.exists"><a class="viewcode-back" href="../../../tod.html#toast.tod.Cache.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether a buffer exists.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): the name of the buffer to search for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (bool): True if the buffer exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
 
 <div class="viewcode-block" id="Cache.reference"><a class="viewcode-back" href="../../../tod.html#toast.tod.Cache.reference">[docs]</a>    <span class="k">def</span> <span class="nf">reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return a numpy array that contains a reference to the specified data</span>
-<span class="sd">        buffer.</span>
+<span class="sd">        Return a numpy array pointing to the buffer.</span>
+
+<span class="sd">        The returned array will wrap a pointer to the raw buffer, but will</span>
+<span class="sd">        not claim ownership.  When the numpy array is garbage collected, it</span>
+<span class="sd">        will NOT attempt to free the memory (you must manually use the </span>
+<span class="sd">        destroy method).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): the name of the buffer to return.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (array): a numpy array wrapping the raw data buffer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer {} does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>

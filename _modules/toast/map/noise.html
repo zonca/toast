@@ -97,7 +97,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="OpInvCovariance.exec"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpInvCovariance.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Iterate over all observations and detectors and accumulate.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># the two-level pytoast communicator</span>
         <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
         <span class="c1"># the global communicator</span>
@@ -133,10 +139,21 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">fakehits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
                     <span class="n">_accumulate_inverse_covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="n">fakehits</span><span class="p">)</span>
-        <span class="k">return</span></div>
+        <span class="k">return</span></div></div>
 
 
 <div class="viewcode-block" id="covariance_invert"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_invert">[docs]</a><span class="k">def</span> <span class="nf">covariance_invert</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Invert the local piece of a diagonal noise covariance.</span>
+
+<span class="sd">    This does an in-place inversion of the covariance.  The threshold is</span>
+<span class="sd">    applied to the condition number of each block of the matrix.  Pixels</span>
+<span class="sd">    failing the cut are set to zero.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        npp (3D array): The data member of a distributed covariance.</span>
+<span class="sd">        threshold (float): The condition number threshold to apply.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
     <span class="n">_invert_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
@@ -144,6 +161,19 @@
 
 
 <div class="viewcode-block" id="covariance_rcond"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_rcond">[docs]</a><span class="k">def</span> <span class="nf">covariance_rcond</span><span class="p">(</span><span class="n">npp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the local piece of the inverse condition number map.</span>
+
+<span class="sd">    This computes the local piece of the inverse condition number map</span>
+<span class="sd">    from the supplied covariance matrix data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        npp (3D array): The data member of a distributed covariance.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rcond (3D array): The local data piece of the distributed</span>
+<span class="sd">            inverse condition number map.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
     <span class="n">rcond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>

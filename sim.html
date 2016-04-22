@@ -230,6 +230,30 @@ minimum frequency, etc.</p>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.tod.AnalyticNoise.NET">
+<code class="descname">NET</code><span class="sig-paren">(</span><em>det</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_noise.html#AnalyticNoise.NET"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.AnalyticNoise.NET" title="Permalink to this definition">¶</a></dt>
+<dd><p>(float): the NET.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.AnalyticNoise.alpha">
+<code class="descname">alpha</code><span class="sig-paren">(</span><em>det</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_noise.html#AnalyticNoise.alpha"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.AnalyticNoise.alpha" title="Permalink to this definition">¶</a></dt>
+<dd><p>(float): the (positive!) slope exponent.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.AnalyticNoise.fknee">
+<code class="descname">fknee</code><span class="sig-paren">(</span><em>det</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_noise.html#AnalyticNoise.fknee"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.AnalyticNoise.fknee" title="Permalink to this definition">¶</a></dt>
+<dd><p>(float): the knee frequency in Hz.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.AnalyticNoise.fmin">
+<code class="descname">fmin</code><a class="headerlink" href="#toast.tod.AnalyticNoise.fmin" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(float)</em> &#8211; the minimum frequency in Hz, used as a high pass.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -247,7 +271,7 @@ and all intervals in the list are created using those lengths.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>n</strong> (<em>int</em>) &#8211; the number of intervals.</li>
 <li><strong>start</strong> (<em>float</em>) &#8211; the start time in seconds.</li>
 <li><strong>first</strong> (<em>int</em>) &#8211; the first sample index, which occurs at &#8220;start&#8221;.</li>
@@ -255,6 +279,12 @@ and all intervals in the list are created using those lengths.</p>
 <li><strong>duration</strong> (<em>float</em>) &#8211; the length of the interval in seconds.</li>
 <li><strong>gap</strong> (<em>float</em>) &#8211; the length of the gap in seconds.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a list of Interval objects.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(list)</p>
 </td>
 </tr>
 </tbody>
@@ -266,7 +296,7 @@ and all intervals in the list are created using those lengths.</p>
 <h2>Simulated Detector Data<a class="headerlink" href="#simulated-detector-data" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.tod.OpSimNoise">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimNoise</code><span class="sig-paren">(</span><em>out='noise'</em>, <em>stream=None</em>, <em>accum=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimNoise</code><span class="sig-paren">(</span><em>out='noise'</em>, <em>stream=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which generates noise timestreams.</p>
 <p>This passes through each observation and every process generates data
 for its assigned samples.</p>
@@ -286,27 +316,74 @@ detector, in every chunk, of every TOD, across every observation.</li>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.tod.OpSimNoise.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimNoise.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate noise timestreams.</p>
+<p>This iterates over all observations and detectors.  For each
+locally stored piece of the data, we query which chunks of the
+original data distribution we have.  A &#8220;stream&#8221; index is
+computed using the observation number, the detector number, and
+the absolute chunk index.  For each chunk assigned to this process,
+generate a noise realization.  The PSD that is valid for the
+current chunk (obtained from the Noise object for each observation)
+is used when generating the timestream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="toast.tod.OpSimGradient">
 <em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimGradient</code><span class="sig-paren">(</span><em>out='grad'</em>, <em>nside=512</em>, <em>min=-100.0</em>, <em>max=100.0</em>, <em>nest=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimGradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient" title="Permalink to this definition">¶</a></dt>
-<dd><p>Operator which generates fake sky signal as a gradient between the poles
-and accumulates this.</p>
-<p>This passes through each observation and ...</p>
+<dd><p>Generate a fake sky signal as a gradient between the poles.</p>
+<p>This passes through each observation and creates a fake signal timestream
+based on the cartesian Z coordinate of the HEALPix pixel containing the
+detector pointing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>out</strong> (<em>str</em>) &#8211; accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.
-If the named cache objects do not exist, then they are created.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>out</strong> (<em>str</em>) &#8211; accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.
+If the named cache objects do not exist, then they are created.</li>
+<li><strong>nside</strong> (<em>int</em>) &#8211; the HEALPix NSIDE value to use.</li>
+<li><strong>min</strong> (<em>float</em>) &#8211; the minimum value to use at the South Pole.</li>
+<li><strong>max</strong> (<em>float</em>) &#8211; the maximum value to use at the North Pole.</li>
+<li><strong>nest</strong> (<em>bool</em>) &#8211; whether to use NESTED ordering.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
+<dt id="toast.tod.OpSimGradient.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimGradient.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the gradient timestreams.</p>
+<p>This pixelizes each detector&#8217;s pointing and then assigns a
+timestream value based on the cartesian Z coordinate of the pixel
+center.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="toast.tod.OpSimGradient.sigmap">
 <code class="descname">sigmap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimGradient.sigmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient.sigmap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the underlying signal map.</p>
+<dd><p>(array): Return the underlying signal map (full map on all processes).</p>
 </dd></dl>
 
 </dd></dl>
@@ -334,6 +411,22 @@ If the named cache objects do not exist, then they are created.</li>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.tod.OpSimScan.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimScan.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimScan.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the timestreams by scanning from the map.</p>
+<p>This loops over all observations and detectors and uses the pointing
+matrix to project the distributed map into a timestream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <p>This operator uses an externally installed libconviqt.</p>
@@ -375,11 +468,26 @@ use for output of the detector timestream.</li>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="toast.tod.OpSimConviqt.available">
+<code class="descname">available</code><a class="headerlink" href="#toast.tod.OpSimConviqt.available" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; True if libconviqt is found in the library search path.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="toast.tod.OpSimConviqt.exec">
 <code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/conviqt.html#OpSimConviqt.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimConviqt.exec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calling exec will perform the convolution over the communicator, one detector at a time.
-All MPI tasks must have the same list of detectors.</p>
+<dd><p>Loop over all observations and perform the convolution.</p>
+<p>This is done one detector at a time.  For each detector, all data
+products are read from disk.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>

@@ -69,6 +69,42 @@ for each detector.</li>
 </tr>
 </tbody>
 </table>
+<dl class="attribute">
+<dt id="toast.tod.Noise.detectors">
+<code class="descname">detectors</code><a class="headerlink" href="#toast.tod.Noise.detectors" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(list)</em> &#8211; list of strings containing the detector names.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.Noise.freq">
+<code class="descname">freq</code><a class="headerlink" href="#toast.tod.Noise.freq" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(array)</em> &#8211; the frequency bins that are used for all PSDs.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.Noise.psd">
+<code class="descname">psd</code><span class="sig-paren">(</span><em>detector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/noise.html#Noise.psd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Noise.psd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the PSD for a detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>detector</strong> (<em>str</em>) &#8211; the detector name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">an array containing the PSD for the detector.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(array)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.Noise.rate">
+<code class="descname">rate</code><a class="headerlink" href="#toast.tod.Noise.rate" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(float)</em> &#8211; the sample rate in Hz.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>

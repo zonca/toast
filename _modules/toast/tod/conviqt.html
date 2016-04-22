@@ -249,15 +249,22 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (bool): True if libconviqt is found in the library search path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="OpSimConviqt.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimConviqt.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Calling exec will perform the convolution over the communicator, one detector at a time.</span>
-<span class="sd">        All MPI tasks must have the same list of detectors.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Loop over all observations and perform the convolution.</span>
 
+<span class="sd">        This is done one detector at a time.  For each detector, all data</span>
+<span class="sd">        products are read from disk.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The conviqt library was not found&quot;</span><span class="p">)</span>
 

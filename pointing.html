@@ -98,6 +98,41 @@ is the step in degrees.</li>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.tod.OpPointingHpix.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/pointing.html#OpPointingHpix.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpPointingHpix.exec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create pixels and weights.</p>
+<p>This iterates over all observations and detectors, and creates
+the pixel and weight arrays representing the pointing matrix.
+This data is stored in the TOD cache.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference internal" href="dist.html#toast.Data" title="toast.Data"><em>toast.Data</em></a>) &#8211; The distributed data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.OpPointingHpix.mode">
+<code class="descname">mode</code><a class="headerlink" href="#toast.tod.OpPointingHpix.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(str)</em> &#8211; the pointing mode &#8220;I&#8221;, &#8220;IQU&#8221;, etc.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.OpPointingHpix.nest">
+<code class="descname">nest</code><a class="headerlink" href="#toast.tod.OpPointingHpix.nest" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; if True, the pointing is NESTED ordering.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.OpPointingHpix.nside">
+<code class="descname">nside</code><a class="headerlink" href="#toast.tod.OpPointingHpix.nside" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(int)</em> &#8211; the HEALPix NSIDE value used.</p>
+</dd></dl>
+
 </dd></dl>
 
 <p>Each experiment might create other specialized pointing matrices used in solving for instrument-specific signals.</p>

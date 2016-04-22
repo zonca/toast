@@ -139,18 +139,37 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">nside</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (int): the HEALPix NSIDE value used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">nest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (bool): if True, the pointing is NESTED ordering.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nest</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (str): the pointing mode &quot;I&quot;, &quot;IQU&quot;, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span>
 
 
-    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="OpPointingHpix.exec"><a class="viewcode-back" href="../../../pointing.html#toast.tod.OpPointingHpix.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create pixels and weights.</span>
+
+<span class="sd">        This iterates over all observations and detectors, and creates</span>
+<span class="sd">        the pixel and weight arrays representing the pointing matrix.</span>
+<span class="sd">        This data is stored in the TOD cache.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># the two-level pytoast communicator</span>
         <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
         <span class="c1"># the global communicator</span>
@@ -275,7 +294,7 @@
                 <span class="n">pixelsref</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">pixels</span>
                 <span class="n">weightsref</span><span class="p">[:,:]</span> <span class="o">=</span> <span class="n">weights</span>
 
-        <span class="k">return</span></div>
+        <span class="k">return</span></div></div>
 
 </pre></div>
 
