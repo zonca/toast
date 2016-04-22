@@ -53,6 +53,12 @@
 processes.  When passing the data to toast processing routines, you can either
 use pre-defined base classes as a container and copy your data into them, or
 you can create your own derived classes that provide a standard interface.</p>
+<p>In either case the full dataset is divided into one or more observations, and
+each observation has one TOD object (and optionally other objects that describe
+the noise, valid data intervals, etc).  The toast &#8220;Comm&#8221; class has two levels of
+MPI communicators that can be used to divide many observations between whole
+groups of processes.  In practice this is not always needed, and the default
+construction of the Comm object just results in one group with all processes.</p>
 <dl class="class">
 <dt id="toast.Comm">
 <em class="property">class </em><code class="descclassname">toast.</code><code class="descname">Comm</code><span class="sig-paren">(</span><em>world=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>groupsize=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Comm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Comm" title="Permalink to this definition">¶</a></dt>
@@ -132,6 +138,8 @@ consider, a &#8220;group&#8221; communicator (one per group)</p>
 
 </dd></dl>
 
+<p>The Data class below is essentially just a list of observations for each
+process group.</p>
 <dl class="class">
 <dt id="toast.Data">
 <em class="property">class </em><code class="descclassname">toast.</code><code class="descname">Data</code><span class="sig-paren">(</span><em>comm=&lt;toast.dist.Comm object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Data" title="Permalink to this definition">¶</a></dt>
@@ -163,6 +171,12 @@ each process group in the Comm.</p>
 <code class="descname">info</code><span class="sig-paren">(</span><em>handle</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/dist.html#Data.info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.Data.info" title="Permalink to this definition">¶</a></dt>
 <dd><p>Print information about the distributed data to the
 specified file handle.  Only the rank 0 process writes.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.Data.obs">
+<code class="descname">obs</code><em class="property"> = None</em><a class="headerlink" href="#toast.Data.obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>The list of observations.</p>
 </dd></dl>
 
 </dd></dl>

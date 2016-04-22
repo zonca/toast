@@ -52,17 +52,26 @@
 <p>To use PyTOAST at NERSC, you need to have a Python3 software stack with all dependencies installed.  There are several ways to achieve this.</p>
 <div class="section" id="temporary-solution">
 <h2>Temporary Solution<a class="headerlink" href="#temporary-solution" title="Permalink to this headline">¶</a></h2>
-<p>For now, you can use a python 3.4 software stack built by Ted on edison:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="n">xxxxx</span>
+<p>For now, you can use a python 3.4 software stack built by Ted on edison and cori.  On edison:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="n">scratch1</span><span class="o">/</span><span class="n">scratchdirs</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
 <span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span>
 </pre></div>
 </div>
 <p>OR:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="n">xxxxx</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="n">scratch1</span><span class="o">/</span><span class="n">scratchdirs</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
 <span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span><span class="o">-</span><span class="n">deps</span>
 </pre></div>
 </div>
-<p>And then build and install your own copy of pytoast.</p>
+<p>And then build and install your own copy of pytoast.  On cori, the path is different:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="k">global</span><span class="o">/</span><span class="n">cscratch1</span><span class="o">/</span><span class="n">sd</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span>
+</pre></div>
+</div>
+<p>OR:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="k">global</span><span class="o">/</span><span class="n">cscratch1</span><span class="o">/</span><span class="n">sd</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span><span class="o">-</span><span class="n">deps</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="nersc-intel-python-anaconda">
 <h2>NERSC Intel Python / Anaconda<a class="headerlink" href="#nersc-intel-python-anaconda" title="Permalink to this headline">¶</a></h2>

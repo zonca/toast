@@ -50,13 +50,27 @@
 <p>When documenting classes and methods, we use <a class="reference external" href="http://google.github.io/styleguide/pyguide.html?showone=Comments#Comments">google-style docstrings</a>.</p>
 <div class="section" id="running-from-the-source-tree">
 <h2>Running from the Source Tree<a class="headerlink" href="#running-from-the-source-tree" title="Permalink to this headline">¶</a></h2>
-<p>For rapid development, it is sometimes useful to work directly in the source tree.  The standard setup.py &#8220;develop&#8221; target does not work well for pytoast, since it contains a compiled C library as well as compiled extensions.  Here are the recommended steps:</p>
+<p>For rapid development, it is sometimes useful to work directly in the source tree.  The standard setup.py &#8220;develop&#8221; target does not work well for pytoast, since it contains a compiled C library as well as compiled extensions.  Here are the recommended steps.  Instead, you can use the enclosed top-level script called &#8220;develop&#8221;.  To clean all build products, do:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">clean</span>
-<span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">build</span>
-<span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">test</span> <span class="o">&lt;</span><span class="n">test_file</span><span class="o">.</span><span class="n">py</span><span class="o">&gt;</span>
-<span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">env</span>
 </pre></div>
 </div>
+<p>To build everything inside the source tree, do:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">build</span>
+</pre></div>
+</div>
+<p>To run a single file in the unittest directory, you can do:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">test</span> <span class="o">&lt;</span><span class="n">test_file</span><span class="o">.</span><span class="n">py</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Or, if you leave out the name of the test file then all tests are run.  If you want to prepend your source tree to your PATH and PYTHONPATH, you can use this command to get the necessary shell modifiers:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">env</span>
+</pre></div>
+</div>
+<p>To actually run those commands, do this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>%&gt; eval `./develop env`
+</pre></div>
+</div>
+<p>Now your source tree is in your search paths, and you can go to other directories and import the toast module and run the pipeline scripts.</p>
 </div>
 </div>
 

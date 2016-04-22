@@ -49,7 +49,7 @@
         
   <div class="section" id="telescope-tod">
 <span id="tod"></span><h1>Telescope TOD<a class="headerlink" href="#telescope-tod" title="Permalink to this headline">¶</a></h1>
-<p>The TOD base class represents the timestream information describing a telescope that is acquiring data.  The base class enforces a minimal set of methods for reading and writing detector data and flags, detector pointing, and timestamps.  The base class also provide methods for returning information about the data distribution, including which samples are local to a given process.</p>
+<p>The TOD base class represents the timestream information associated with a telescope.  The base class enforces a minimal set of methods for reading and writing detector data and flags, detector pointing, and timestamps.  The base class also provide methods for returning information about the data distribution, including which samples are local to a given process.</p>
 <dl class="class">
 <dt id="toast.tod.TOD">
 <em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">TOD</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>timedist=True</em>, <em>detectors=None</em>, <em>samples=0</em>, <em>sizes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD" title="Permalink to this definition">¶</a></dt>
@@ -74,9 +74,40 @@ detector.</li>
 </tbody>
 </table>
 <dl class="attribute">
+<dt id="toast.tod.TOD.cache">
+<code class="descname">cache</code><em class="property"> = None</em><a class="headerlink" href="#toast.tod.TOD.cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>The timestream data cache.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="toast.tod.TOD.detectors">
 <code class="descname">detectors</code><a class="headerlink" href="#toast.tod.TOD.detectors" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>(list)</em> &#8211; The total list of detectors.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.dist_chunks">
+<code class="descname">dist_chunks</code><a class="headerlink" href="#toast.tod.TOD.dist_chunks" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(list)</em> &#8211; this is a list of 2-tuples, one for each process.  Each
+element of the list is the same as the information returned by
+the &#8220;local_chunks&#8221; member for the given process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.dist_samples">
+<code class="descname">dist_samples</code><a class="headerlink" href="#toast.tod.TOD.dist_samples" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(list)</em> &#8211; This is a list of 2-tuples, with one element per process.
+Each tuple is the same information returned by the &#8220;local_samples&#8221;
+member for the corresponding process.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="toast.tod.TOD.local_chunks">
+<code class="descname">local_chunks</code><a class="headerlink" href="#toast.tod.TOD.local_chunks" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(2-tuple)</em> &#8211; the first element of the tuple is the index of the
+first chunk assigned to this process (i.e. the index in the list
+given by the &#8220;total_chunks&#8221; member).  The second element of the
+tuple is the number of chunks assigned to this process.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -100,6 +131,139 @@ process.</p>
 <dd><p><em>(mpi4py.MPI.Comm)</em> &#8211; the communicator assigned to this TOD.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="toast.tod.TOD.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read detector data and flags.</p>
+<p>This returns the timestream data for a single detector, as well
+as the detector-specific flags and the common flags.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A 3-tuple of arrays, containing the data, the detector flags, and
+the common flags.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.read_common_flags">
+<code class="descname">read_common_flags</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read_common_flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read_common_flags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read common flags.</p>
+<p>This reads the common set of flags that should be applied to all
+detectors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a numpy array containing the flags.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.read_flags">
+<code class="descname">read_flags</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read_flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read_flags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read detector flags.</p>
+<p>This returns the detector-specific flags and the common flags.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><dl class="docutils">
+<dt>A 2-tuple of arrays, containing the detector flags and the common</dt>
+<dd><p class="first last">flags.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.read_pntg">
+<code class="descname">read_pntg</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read_pntg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read_pntg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read detector quaternion pointing.</p>
+<p>This returns the pointing for a single detector in quaternions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A 2D array of shape (n, 4)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.read_times">
+<code class="descname">read_times</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read timestamps.</p>
+<p>This reads the common set of timestamps that apply to all detectors
+in the TOD.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a numpy array containing the timestamps.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="toast.tod.TOD.timedist">
 <code class="descname">timedist</code><a class="headerlink" href="#toast.tod.TOD.timedist" title="Permalink to this definition">¶</a></dt>
@@ -110,13 +274,120 @@ process.</p>
 <dt id="toast.tod.TOD.total_chunks">
 <code class="descname">total_chunks</code><a class="headerlink" href="#toast.tod.TOD.total_chunks" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>(list)</em> &#8211; the full list of sample sizes that were used in computing
-the data distribution.</p>
+the data distribution (i.e. what was passed to the constructor
+as the &#8220;sizes&#8221; parameter).</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="toast.tod.TOD.total_samples">
 <code class="descname">total_samples</code><a class="headerlink" href="#toast.tod.TOD.total_samples" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>(int)</em> &#8211; the total number of samples in this TOD.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>data=None</em>, <em>flags=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write detector data and flags.</p>
+<p>This writes the detector data and the detector-specific flags.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>data</strong> (<em>array</em>) &#8211; the data array.</li>
+<li><strong>flags</strong> (<em>array</em>) &#8211; the detector flags.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.write_common_flags">
+<code class="descname">write_common_flags</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>flags=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_common_flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_common_flags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write common flags.</p>
+<p>This writes the common set of flags that should be applied to all
+detectors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>flags</strong> (<em>array</em>) &#8211; array containing the flags to write.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.write_flags">
+<code class="descname">write_flags</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>flags=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_flags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write detector flags.</p>
+<p>This writes the detector-specific flags.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>flags</strong> (<em>array</em>) &#8211; the detector flags.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.write_pntg">
+<code class="descname">write_pntg</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>data=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_pntg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_pntg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write detector quaternion pointing.</p>
+<p>This writes the quaternion pointing for a single detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>data</strong> (<em>array</em>) &#8211; 2D array of quaternions with shape[1] == 4.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.write_times">
+<code class="descname">write_times</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>stamps=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_times" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write timestamps.</p>
+<p>This writes the common set of timestamps that apply to all detectors
+in the TOD.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>stamps</strong> (<em>array</em>) &#8211; the array of timestamps to write.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
