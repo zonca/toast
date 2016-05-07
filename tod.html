@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Telescope TOD &mdash; PyTOAST 2.0 documentation</title>
+    <title>Telescope TOD &mdash; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,13 +24,13 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
     <link rel="next" title="Data Intervals" href="intervals.html" />
     <link rel="prev" title="Data Distribution" href="dist.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>PyTOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.0 documentation</span></a></h1>
         <h2 class="heading"><span>Telescope TOD</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -55,8 +55,10 @@
 <em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">TOD</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>timedist=True</em>, <em>detectors=None</em>, <em>samples=0</em>, <em>sizes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for an object that provides detector pointing and
 timestreams for a single observation.</p>
-<p>Each TOD class has one or more detectors, and this class provides
-pointing quaternions and flags for each detector.</p>
+<p>This class provides high-level functions that are common to all derived
+classes.  It also defines the internal methods that should be overridden
+by all derived classes.  These internal methods throw an exception if they
+are called.  A TOD base class should never be directly instantiated.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -134,9 +136,8 @@ process.</p>
 <dl class="method">
 <dt id="toast.tod.TOD.read">
 <code class="descname">read</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read detector data and flags.</p>
-<p>This returns the timestream data for a single detector, as well
-as the detector-specific flags and the common flags.</p>
+<dd><p>Read detector data.</p>
+<p>This returns the timestream data for a single detector.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -145,12 +146,11 @@ as the detector-specific flags and the common flags.</p>
 <li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
 <li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
 assigned sample.</li>
-<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A 3-tuple of arrays, containing the data, the detector flags, and
-the common flags.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An array containing the data.</p>
 </td>
 </tr>
 </tbody>
@@ -170,7 +170,7 @@ detectors.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
 assigned sample.</li>
-<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
 </ul>
 </td>
 </tr>
@@ -197,7 +197,7 @@ assigned sample.</li>
 <li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
 <li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
 assigned sample.</li>
-<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
 </ul>
 </td>
 </tr>
@@ -226,11 +226,43 @@ assigned sample.</li>
 <li><strong>detector</strong> (<em>str</em>) &#8211; the name of the detector.</li>
 <li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
 assigned sample.</li>
-<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A 2D array of shape (n, 4)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.read_position">
+<code class="descname">read_position</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read telescope position.</p>
+<p>This reads the telescope position in solar system barycenter
+coordinates (in Kilometers).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>a 2D numpy array containing the x,y,z coordinates at each</dt>
+<dd><p class="first last">sample.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(array)</p>
 </td>
 </tr>
 </tbody>
@@ -250,11 +282,43 @@ in the TOD.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
 assigned sample.</li>
-<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a numpy array containing the timestamps.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(array)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.tod.TOD.read_velocity">
+<code class="descname">read_velocity</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>n=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.read_velocity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.read_velocity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read telescope velocity.</p>
+<p>This reads the telescope velocity in solar system barycenter
+coordinates (in Kilometers/s).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>n</strong> (<em>int</em>) &#8211; the number of samples to read.  If zero, read to end.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>a 2D numpy array containing the x,y,z velocity components</dt>
+<dd><p class="first last">at each sample.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(array)</p>
@@ -286,9 +350,9 @@ as the &#8220;sizes&#8221; parameter).</p>
 
 <dl class="method">
 <dt id="toast.tod.TOD.write">
-<code class="descname">write</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>data=None</em>, <em>flags=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write detector data and flags.</p>
-<p>This writes the detector data and the detector-specific flags.</p>
+<code class="descname">write</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>data=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write detector data.</p>
+<p>This writes the detector data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -298,7 +362,6 @@ as the &#8220;sizes&#8221; parameter).</p>
 <li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
 assigned sample.</li>
 <li><strong>data</strong> (<em>array</em>) &#8211; the data array.</li>
-<li><strong>flags</strong> (<em>array</em>) &#8211; the detector flags.</li>
 </ul>
 </td>
 </tr>
@@ -328,8 +391,8 @@ assigned sample.</li>
 </dd></dl>
 
 <dl class="method">
-<dt id="toast.tod.TOD.write_flags">
-<code class="descname">write_flags</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>flags=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_flags" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.tod.TOD.write_det_flags">
+<code class="descname">write_det_flags</code><span class="sig-paren">(</span><em>detector=None</em>, <em>local_start=0</em>, <em>flags=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_det_flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_det_flags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write detector flags.</p>
 <p>This writes the detector-specific flags.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -370,6 +433,27 @@ assigned sample.</li>
 </dd></dl>
 
 <dl class="method">
+<dt id="toast.tod.TOD.write_position">
+<code class="descname">write_position</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>pos=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_position"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_position" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write telescope position.</p>
+<p>This writes the telescope position in solar system barycenter
+coordinates (in Kilometers).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>pos</strong> (<em>array</em>) &#8211; the 2D array of x,y,z coordinates at each sample.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="toast.tod.TOD.write_times">
 <code class="descname">write_times</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>stamps=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_times" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write timestamps.</p>
@@ -390,12 +474,34 @@ assigned sample.</li>
 </table>
 </dd></dl>
 
+<dl class="method">
+<dt id="toast.tod.TOD.write_velocity">
+<code class="descname">write_velocity</code><span class="sig-paren">(</span><em>local_start=0</em>, <em>vel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/tod.html#TOD.write_velocity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TOD.write_velocity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write telescope velocity.</p>
+<p>This writes the telescope velocity in solar system barycenter
+coordinates (in Kilometers/s).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>local_start</strong> (<em>int</em>) &#8211; the sample offset relative to the first locally
+assigned sample.</li>
+<li><strong>vel</strong> (<em>array</em>) &#8211; the 2D array of x,y,z velocity components at each
+sample.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </dd></dl>
 
 <p>The base TOD class contains a member which is an instance of a Cache object.  This is similar to a dictionary of arrays, but by default the memory used in these arrays is allocated in C, rather than using the python memory pool.  This allows us to do aligned memory allocation and explicitly manage the lifetime of the memory.</p>
 <dl class="class">
-<dt id="toast.tod.Cache">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Cache</code><span class="sig-paren">(</span><em>pymem=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.cache.Cache">
+<em class="property">class </em><code class="descclassname">toast.cache.</code><code class="descname">Cache</code><span class="sig-paren">(</span><em>pymem=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/cache.html#Cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.cache.Cache" title="Permalink to this definition">¶</a></dt>
 <dd><p>Timestream data cache with explicit memory management.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -407,8 +513,8 @@ allocations in C.  Only used for testing.</td>
 </tbody>
 </table>
 <dl class="method">
-<dt id="toast.tod.Cache.clear">
-<code class="descname">clear</code><span class="sig-paren">(</span><em>pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.clear" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.cache.Cache.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><em>pattern=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/cache.html#Cache.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.cache.Cache.clear" title="Permalink to this definition">¶</a></dt>
 <dd><p>Clear one or more buffers.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -423,8 +529,8 @@ then all buffers are cleared.</td>
 </dd></dl>
 
 <dl class="method">
-<dt id="toast.tod.Cache.create">
-<code class="descname">create</code><span class="sig-paren">(</span><em>name</em>, <em>type</em>, <em>shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.create" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.cache.Cache.create">
+<code class="descname">create</code><span class="sig-paren">(</span><em>name</em>, <em>type</em>, <em>shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/cache.html#Cache.create"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.cache.Cache.create" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a named data buffer of the give type and shape.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -442,8 +548,8 @@ then all buffers are cleared.</td>
 </dd></dl>
 
 <dl class="method">
-<dt id="toast.tod.Cache.destroy">
-<code class="descname">destroy</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.destroy" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.cache.Cache.destroy">
+<code class="descname">destroy</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/cache.html#Cache.destroy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.cache.Cache.destroy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deallocate the specified buffer.</p>
 <p>Only call this if all numpy arrays that reference the memory
 are out of use.</p>
@@ -458,8 +564,8 @@ are out of use.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="toast.tod.Cache.exists">
-<code class="descname">exists</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.exists" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.cache.Cache.exists">
+<code class="descname">exists</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/cache.html#Cache.exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.cache.Cache.exists" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check whether a buffer exists.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -476,8 +582,8 @@ are out of use.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="toast.tod.Cache.reference">
-<code class="descname">reference</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/cache.html#Cache.reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Cache.reference" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.cache.Cache.reference">
+<code class="descname">reference</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/cache.html#Cache.reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.cache.Cache.reference" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a numpy array pointing to the buffer.</p>
 <p>The returned array will wrap a pointer to the raw buffer, but will
 not claim ownership.  When the numpy array is garbage collected, it

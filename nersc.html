@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using at NERSC &mdash; PyTOAST 2.0 documentation</title>
+    <title>Using at NERSC &mdash; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,13 +24,13 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
     <link rel="next" title="Developer’s Guide" href="dev.html" />
     <link rel="prev" title="Map-making Tools" href="maptools.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>PyTOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.0 documentation</span></a></h1>
         <h2 class="heading"><span>Using at NERSC</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -49,27 +49,27 @@
         
   <div class="section" id="using-at-nersc">
 <span id="nersc"></span><h1>Using at NERSC<a class="headerlink" href="#using-at-nersc" title="Permalink to this headline">¶</a></h1>
-<p>To use PyTOAST at NERSC, you need to have a Python3 software stack with all dependencies installed.  There are several ways to achieve this.</p>
+<p>To use TOAST at NERSC, you need to have a Python3 software stack with all dependencies installed.  There are several ways to achieve this.</p>
 <div class="section" id="temporary-solution">
 <h2>Temporary Solution<a class="headerlink" href="#temporary-solution" title="Permalink to this headline">¶</a></h2>
 <p>For now, you can use a python 3.4 software stack built by Ted on edison and cori.  On edison:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="n">scratch1</span><span class="o">/</span><span class="n">scratchdirs</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
-<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">toast</span>
 </pre></div>
 </div>
 <p>OR:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="n">scratch1</span><span class="o">/</span><span class="n">scratchdirs</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
-<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span><span class="o">-</span><span class="n">deps</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">toast</span><span class="o">-</span><span class="n">deps</span>
 </pre></div>
 </div>
-<p>And then build and install your own copy of pytoast.  On cori, the path is different:</p>
+<p>And then build and install your own copy of toast.  On cori, the path is different:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="k">global</span><span class="o">/</span><span class="n">cscratch1</span><span class="o">/</span><span class="n">sd</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
-<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">toast</span>
 </pre></div>
 </div>
 <p>OR:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">use</span> <span class="o">/</span><span class="k">global</span><span class="o">/</span><span class="n">cscratch1</span><span class="o">/</span><span class="n">sd</span><span class="o">/</span><span class="n">kisner</span><span class="o">/</span><span class="n">software</span><span class="o">/</span><span class="n">modulefiles</span>
-<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">pytoast</span><span class="o">-</span><span class="n">deps</span>
+<span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">toast</span><span class="o">-</span><span class="n">deps</span>
 </pre></div>
 </div>
 </div>

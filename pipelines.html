@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pipelines &mdash; PyTOAST 2.0 documentation</title>
+    <title>Pipelines &mdash; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,13 +24,13 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="PyTOAST 2.0 documentation" href="index.html" />
+    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
     <link rel="next" title="Data Distribution" href="dist.html" />
     <link rel="prev" title="Installation" href="install.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>PyTOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.0 documentation</span></a></h1>
         <h2 class="heading"><span>Pipelines</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -49,7 +49,7 @@
         
   <div class="section" id="pipelines">
 <span id="id1"></span><h1>Pipelines<a class="headerlink" href="#pipelines" title="Permalink to this headline">¶</a></h1>
-<p>Before delving into the structure of the pytoast package, it is sometimes
+<p>Before delving into the structure of the toast package, it is sometimes
 useful to look at (and use!) an example.  One such program is the simple script
 below which simulates a fake satellite scanning strategy with a focalplane of
 detectors and then makes a map.</p>
@@ -156,7 +156,7 @@ requires the use of libmadam (the &#8211;madam option).</p>
 </div>
 <div class="section" id="creating-your-own-pipeline">
 <h2>Creating Your Own Pipeline<a class="headerlink" href="#creating-your-own-pipeline" title="Permalink to this headline">¶</a></h2>
-<p>PyTOAST is designed to give you tools to piece together your own data processing workflow.  Here is a slightly modified version of the pipeline script above.  This takes a boresight detector with 1/f noise properties, simulates a sort-of Planck scanning strategy, generates a noise timestream, and then generates a fake signal timestream and adds it to the noise.  Then it uses madam to make a map.</p>
+<p>TOAST is designed to give you tools to piece together your own data processing workflow.  Here is a slightly modified version of the pipeline script above.  This takes a boresight detector with 1/f noise properties, simulates a sort-of Planck scanning strategy, generates a noise timestream, and then generates a fake signal timestream and adds it to the noise.  Then it uses madam to make a map.</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
 
 <span class="kn">import</span> <span class="nn">mpi4py.MPI</span> <span class="k">as</span> <span class="nn">MPI</span>
