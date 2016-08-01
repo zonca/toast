@@ -64,6 +64,8 @@
 <span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
 <span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">TOD</span>
 
+<span class="kn">from</span> <span class="nn">..cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+
 
 <div class="viewcode-block" id="OpLocalPixels"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpLocalPixels">[docs]</a><span class="k">class</span> <span class="nc">OpLocalPixels</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -147,15 +149,30 @@
 <span class="sd">        nnz (int): the number of values per pixel.</span>
 <span class="sd">        submap (int): the locally stored data is in units of this size.</span>
 <span class="sd">        local (array): the list of local submaps (integers).</span>
+<span class="sd">        localpix (array): the list of local pixels (integers).</span>
+<span class="sd">        nest (bool): nested pixel order flag</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">localpix</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span> <span class="o">=</span> <span class="n">comm</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="n">nnz</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span> <span class="o">=</span> <span class="n">dtype</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">=</span> <span class="n">submap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nest</span> <span class="o">=</span> <span class="n">nest</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;submap size must evenly divide into total number of pixels&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">localpix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">local</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Must not set local with localpix&quot;</span><span class="p">)</span>
+            <span class="n">allsm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor_divide</span><span class="p">(</span><span class="n">localpix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
+            <span class="n">sm</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">allsm</span><span class="p">)</span>
+            <span class="n">local</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">sm</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_local</span> <span class="o">=</span> <span class="n">local</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span> <span class="o">=</span> <span class="mi">5000000</span>
 
         <span class="c1"># our data is a 3D array of submap, pixel, values</span>
         <span class="c1"># we allocate this as a contiguous block</span>
@@ -168,7 +185,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">g</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">:</span>
                  <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;local submap indices out of range&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">))</span>
 
 
     <span class="nd">@property</span>
@@ -257,28 +274,251 @@
         <span class="k">return</span> <span class="n">ret</span></div>
 
 
-    <span class="k">def</span> <span class="nf">read_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="nb">buffer</span><span class="o">=</span><span class="mi">5000000</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_comm_nsubmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given some number of desired bytes, compute the number of</span>
+<span class="sd">        submaps to communicate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dbytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="n">nsub</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">bytes</span> <span class="o">/</span> <span class="p">(</span><span class="n">dbytes</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">nsub</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">nsub</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">allsub</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nsub</span> <span class="o">&gt;</span> <span class="n">allsub</span><span class="p">:</span>
+            <span class="n">nsub</span> <span class="o">=</span> <span class="n">allsub</span>
+        <span class="k">return</span> <span class="n">nsub</span>
 
-        <span class="n">elems</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
-        <span class="n">nblock</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elems</span><span class="p">)</span>
-        <span class="n">nnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span><span class="o">*</span><span class="n">nblock</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+<div class="viewcode-block" id="DistPixels.allreduce"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.allreduce">[docs]</a>    <span class="k">def</span> <span class="nf">allreduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform a buffered allreduce of the pixel domain data.</span>
 
-        <span class="c1"># with memmap enabled, we read the underlying file</span>
-        <span class="c1"># in chunks based on the internal FITS blocksize (2880 bytes)</span>
+<span class="sd">        Args:</span>
+<span class="sd">            comm_bytes (int): The approximate message size to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">comm_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span>
+        <span class="n">comm_submap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm_nsubmap</span><span class="p">(</span><span class="n">comm_bytes</span><span class="p">)</span>
+        <span class="n">nsub</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
 
-        <span class="n">nsmbuf</span> <span class="o">=</span> <span class="nb">buffer</span> 
+        <span class="n">sendbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="n">sendview</span> <span class="o">=</span> <span class="n">sendbuf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
 
+        <span class="n">recvbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="n">recvview</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
 
-        <span class="k">return</span>
+        <span class="n">owners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nsub</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">owners</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">:</span>
+            <span class="n">owners</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span>
+        <span class="n">allowners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">owners</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">owners</span><span class="p">,</span> <span class="n">allowners</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MIN</span><span class="p">)</span>
 
+        <span class="n">submap_off</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ncomm</span> <span class="o">=</span> <span class="n">comm_submap</span>
 
-    <span class="k">def</span> <span class="nf">write_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-        <span class="c1"># healpy will be slow, since it must read the whole file NNZ</span>
-        <span class="c1"># times as it grabs each column.  The long term solution is to</span>
-        <span class="c1"># use a better format like HDF5.</span>
+        <span class="k">while</span> <span class="n">submap_off</span> <span class="o">&lt;</span> <span class="n">nsub</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">submap_off</span> <span class="o">+</span> <span class="n">ncomm</span> <span class="o">&gt;</span> <span class="n">nsub</span><span class="p">:</span>
+                <span class="n">ncomm</span> <span class="o">=</span> <span class="n">nsub</span> <span class="o">-</span> <span class="n">submap_off</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">allowners</span><span class="p">[</span><span class="n">submap_off</span><span class="p">:</span><span class="n">submap_off</span><span class="o">+</span><span class="n">ncomm</span><span class="p">])</span> <span class="o">!=</span> <span class="n">ncomm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="c1"># At least one submap has some hits.  Do the allreduce.</span>
+                <span class="c1"># Otherwise we would skip this buffer to avoid reducing a</span>
+                <span class="c1"># bunch of zeros.</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomm</span><span class="p">):</span>
+                    <span class="n">glob</span> <span class="o">=</span> <span class="n">submap_off</span> <span class="o">+</span> <span class="n">c</span>
+                    <span class="k">if</span> <span class="n">glob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">:</span>
+                        <span class="c1"># copy our data in.</span>
+                        <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">glob</span><span class="p">]</span>
+                        <span class="n">sendview</span><span class="p">[</span><span class="n">c</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">loc</span><span class="p">,:,:]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span> <span class="n">recvbuf</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomm</span><span class="p">):</span>
+                    <span class="n">glob</span> <span class="o">=</span> <span class="n">submap_off</span> <span class="o">+</span> <span class="n">c</span>
+                    <span class="k">if</span> <span class="n">glob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">:</span>
+                        <span class="c1"># copy the reduced data</span>
+                        <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">glob</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">loc</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">recvview</span><span class="p">[</span><span class="n">c</span><span class="p">,:,:]</span>
+
+                <span class="n">sendbuf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">recvbuf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">submap_off</span> <span class="o">+=</span> <span class="n">ncomm</span>
 
         <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="DistPixels.read_healpix_fits"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.read_healpix_fits">[docs]</a>    <span class="k">def</span> <span class="nf">read_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read and broadcast a HEALPix FITS table.</span>
+
+<span class="sd">        The root process opens the FITS file in memmap mode and iterates over</span>
+<span class="sd">        chunks of the map in a way to minimize cache misses in the internal</span>
+<span class="sd">        FITS buffer.  Chunks of submaps are broadcast to all processes, and</span>
+<span class="sd">        each process copies data to its local submaps.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): The path to the FITS file.</span>
+<span class="sd">            comm_bytes (int): The approximate message size to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">comm_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span>
+        <span class="n">comm_submap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm_nsubmap</span><span class="p">(</span><span class="n">comm_bytes</span><span class="p">)</span>
+        
+        <span class="c1"># we make the assumption that FITS binary tables are still stored in</span>
+        <span class="c1"># blocks of 2880 bytes just like always...</span>
+        <span class="n">dbytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="n">rowbytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">*</span> <span class="n">dbytes</span>
+        <span class="n">optrows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2880</span> <span class="o">/</span> <span class="n">rowbytes</span><span class="p">)</span>
+
+        <span class="c1"># get a tuple of all columns in the table.  We choose memmap here so</span>
+        <span class="c1"># that we can (hopefully) read through all columns in chunks such that</span>
+        <span class="c1"># we only ever have a couple FITS blocks in memory.</span>
+        <span class="n">fdata</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fdata</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">fdata</span> <span class="o">=</span> <span class="p">(</span><span class="n">fdata</span><span class="p">,</span> <span class="p">)</span>
+
+        <span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="n">view</span> <span class="o">=</span> <span class="n">buf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
+        
+        <span class="n">in_off</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">out_off</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">submap_off</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">optrows</span>
+        <span class="k">while</span> <span class="n">in_off</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">in_off</span> <span class="o">+</span> <span class="n">rows</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">:</span>
+                <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">-</span> <span class="n">in_off</span>
+            <span class="c1"># is this the last block for this communication?</span>
+            <span class="n">islast</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">copyrows</span> <span class="o">=</span> <span class="n">rows</span>
+            <span class="k">if</span> <span class="n">out_off</span> <span class="o">+</span> <span class="n">rows</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">):</span>
+                <span class="n">copyrows</span> <span class="o">=</span> <span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span> <span class="o">-</span> <span class="n">out_off</span>
+                <span class="n">islast</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">):</span>
+                    <span class="n">coloff</span> <span class="o">=</span> <span class="p">(</span><span class="n">out_off</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span> <span class="o">+</span> <span class="n">col</span>
+                    <span class="n">buf</span><span class="p">[</span><span class="n">coloff</span><span class="p">:</span><span class="n">coloff</span><span class="o">+</span><span class="p">(</span><span class="n">copyrows</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">):</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">]</span> <span class="o">=</span> <span class="n">fdata</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">in_off</span><span class="p">:</span><span class="n">in_off</span><span class="o">+</span><span class="n">copyrows</span><span class="p">]</span>
+            
+            <span class="n">out_off</span> <span class="o">+=</span> <span class="n">copyrows</span>
+            <span class="n">in_off</span> <span class="o">+=</span> <span class="n">copyrows</span>
+
+            <span class="k">if</span> <span class="n">islast</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># loop over these submaps, and copy any that we are assigned</span>
+                <span class="k">for</span> <span class="n">sm</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">submap_off</span><span class="p">,</span> <span class="n">submap_off</span><span class="o">+</span><span class="n">comm_submap</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">sm</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">sm</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">loc</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">view</span><span class="p">[</span><span class="n">sm</span><span class="o">-</span><span class="n">submap_off</span><span class="p">,:,:]</span>
+                <span class="n">out_off</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">submap_off</span> <span class="o">+=</span> <span class="n">comm_submap</span>
+                <span class="n">buf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">islast</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c1"># flush the remaining buffer</span>
+
+        <span class="k">if</span> <span class="n">out_off</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">Bcast</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># loop over these submaps, and copy any that we are assigned</span>
+            <span class="k">for</span> <span class="n">sm</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">submap_off</span><span class="p">,</span> <span class="n">submap_off</span><span class="o">+</span><span class="n">comm_submap</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">sm</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">sm</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">loc</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="n">view</span><span class="p">[</span><span class="n">sm</span><span class="o">-</span><span class="n">submap_off</span><span class="p">,:,:]</span>
+
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="DistPixels.write_healpix_fits"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.write_healpix_fits">[docs]</a>    <span class="k">def</span> <span class="nf">write_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write data to a HEALPix format FITS table.</span>
+
+<span class="sd">        The data across all processes is assumed to be synchronized (the</span>
+<span class="sd">        data for a given submap shared between processes is identical).  The</span>
+<span class="sd">        lowest rank process sharing each submap sends their copy to the root</span>
+<span class="sd">        process for writing.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): The path to the FITS file.</span>
+<span class="sd">            comm_bytes (int): The approximate message size to use.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">comm_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span>
+        <span class="c1"># We will reduce some number of whole submaps at a time.</span>
+        <span class="c1"># Find the number of submaps that fit into the requested</span>
+        <span class="c1"># communication size.</span>
+        <span class="n">dbytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span>
+        <span class="n">comm_submap</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">comm_bytes</span> <span class="o">/</span> <span class="p">(</span><span class="n">dbytes</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">comm_submap</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">comm_submap</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">nsubmap</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nsubmap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">:</span>
+            <span class="n">nsubmap</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Determine which processes &quot;own&quot; each submap.</span>
+
+        <span class="n">owners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nsubmap</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">owners</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">:</span>
+            <span class="n">owners</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span>
+        <span class="n">allowners</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">owners</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">Allreduce</span><span class="p">(</span><span class="n">owners</span><span class="p">,</span> <span class="n">allowners</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">MIN</span><span class="p">)</span>
+
+        <span class="c1"># this function requires lots of RAM, since it accumulates the</span>
+        <span class="c1"># full map on one process before writing.</span>
+
+        <span class="c1"># use a cache to store the local map, so that we can be sure to</span>
+        <span class="c1"># free the memory afterwards</span>
+        
+        <span class="n">fdata</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">fdata</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">temp</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">):</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;col{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+                <span class="n">temp</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">,))</span>
+                <span class="n">fdata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="n">sendbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="n">sendview</span> <span class="o">=</span> <span class="n">sendbuf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
+
+        <span class="n">recvbuf</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">recvview</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">recvbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+            <span class="n">recvview</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
+
+        <span class="n">submap_off</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ncomm</span> <span class="o">=</span> <span class="n">comm_submap</span>
+        <span class="k">while</span> <span class="n">submap_off</span> <span class="o">&lt;</span> <span class="n">nsubmap</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">submap_off</span> <span class="o">+</span> <span class="n">ncomm</span> <span class="o">&gt;</span> <span class="n">nsubmap</span><span class="p">:</span>
+                <span class="n">ncomm</span> <span class="o">=</span> <span class="n">nsubmap</span> <span class="o">-</span> <span class="n">submap_off</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">allowners</span><span class="p">[</span><span class="n">submap_off</span><span class="p">:</span><span class="n">submap_off</span><span class="o">+</span><span class="n">ncomm</span><span class="p">])</span> <span class="o">!=</span> <span class="n">ncomm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+                <span class="c1"># at least one submap has some hits.  reduce.</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomm</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">allowners</span><span class="p">[</span><span class="n">submap_off</span> <span class="o">+</span> <span class="n">c</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
+                        <span class="n">sendview</span><span class="p">[</span><span class="n">c</span><span class="p">,:,:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_glob2loc</span><span class="p">[</span><span class="n">submap_off</span> <span class="o">+</span> <span class="n">c</span><span class="p">],:,:]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">Reduce</span><span class="p">(</span><span class="n">sendbuf</span><span class="p">,</span> <span class="n">recvbuf</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># copy into FITS buffers</span>
+                    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ncomm</span><span class="p">):</span>
+                        <span class="n">sampoff</span> <span class="o">=</span> <span class="p">(</span><span class="n">submap_off</span> <span class="o">+</span> <span class="n">c</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span>
+                        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">):</span>
+                            <span class="n">fdata</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">sampoff</span><span class="p">:</span><span class="n">sampoff</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">]</span> <span class="o">=</span> <span class="n">recvview</span><span class="p">[</span><span class="n">c</span><span class="p">,:,</span><span class="n">col</span><span class="p">]</span>
+                <span class="n">sendbuf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">recvbuf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">submap_off</span> <span class="o">+=</span> <span class="n">ncomm</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">hp</span><span class="o">.</span><span class="n">write_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">fdata</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">fits_IDL</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+
+        <span class="k">return</span></div></div>
 </pre></div>
 
       </div>

@@ -56,8 +56,8 @@
 <span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
 <span class="kn">from</span> <span class="nn">.pixels</span> <span class="kn">import</span> <span class="n">DistPixels</span>
 
-<span class="kn">from</span> <span class="nn">._helpers</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_accumulate_inverse_covariance</span><span class="p">,</span>
-    <span class="n">_invert_covariance</span><span class="p">,</span> <span class="n">_cond_covariance</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">._noise</span> <span class="kn">import</span> <span class="p">(</span><span class="n">_accumulate_inverse_covariance</span><span class="p">,</span>
+    <span class="n">_invert_covariance</span><span class="p">,</span> <span class="n">_cond_covariance</span><span class="p">,</span> <span class="n">_multiply_covariance</span><span class="p">)</span>
 
 
 
@@ -131,6 +131,8 @@
                     <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;no detector weights found for {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">))</span>
                     <span class="n">detweight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">detweight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="n">_accumulate_inverse_covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -158,6 +160,25 @@
     <span class="k">return</span></div>
 
 
+<span class="k">def</span> <span class="nf">covariance_multiply</span><span class="p">(</span><span class="n">npp1</span><span class="p">,</span> <span class="n">npp2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multiply two local piece of diagonal noise covariance.</span>
+
+<span class="sd">    This does an in-place multiplication of the covariance.</span>
+<span class="sd">    The results are returned in place of the first argument, npp1.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        npp1 (3D array): The data member of a distributed covariance.</span>
+<span class="sd">        npp2 (3D array): The data member of a distributed covariance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp1</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span> <span class="n">npp1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">npp2</span><span class="o">.</span><span class="n">shape</span> <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dimensions of the distributed matrices must agree but {} != {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">npp1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">npp2</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="n">_multiply_covariance</span><span class="p">(</span><span class="n">npp1</span><span class="p">,</span> <span class="n">npp2</span><span class="p">)</span>
+    <span class="k">return</span>
+
+
 <div class="viewcode-block" id="covariance_rcond"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_rcond">[docs]</a><span class="k">def</span> <span class="nf">covariance_rcond</span><span class="p">(</span><span class="n">npp</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the local piece of the inverse condition number map.</span>
@@ -177,8 +198,6 @@
     <span class="n">rcond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
     <span class="n">_cond_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">rcond</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">rcond</span></div>
-
-    
 </pre></div>
 
       </div>

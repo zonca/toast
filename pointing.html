@@ -57,7 +57,7 @@
 <h2>Generic HEALPix Representation<a class="headerlink" href="#generic-healpix-representation" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.tod.OpPointingHpix">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpPointingHpix</code><span class="sig-paren">(</span><em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>nside=64</em>, <em>nest=False</em>, <em>mode='I'</em>, <em>cal=None</em>, <em>epsilon=None</em>, <em>hwprpm=None</em>, <em>hwpstep=None</em>, <em>hwpsteptime=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/pointing.html#OpPointingHpix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpPointingHpix" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpPointingHpix</code><span class="sig-paren">(</span><em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>nside=64</em>, <em>nest=False</em>, <em>mode='I'</em>, <em>cal=None</em>, <em>epsilon=None</em>, <em>hwprpm=None</em>, <em>hwpstep=None</em>, <em>hwpsteptime=None</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/pointing.html#OpPointingHpix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpPointingHpix" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which generates I/Q/U healpix pointing weights.</p>
 <p>Given the individual detector pointing, this computes the pointing weights
 assuming that the detector is a linear polarizer followed by a total
@@ -93,6 +93,12 @@ it is the rate (in RPM) of constant rotation.</li>
 <li><strong>hwpstep</strong> &#8211; if None, then a stepped HWP is not included.  Otherwise, this
 is the step in degrees.</li>
 <li><strong>hwpsteptime</strong> &#8211; The time in minutes between HWP steps.</li>
+<li><strong>common_flag_name</strong> (<em>str</em>) &#8211; the optional name of a cache object to use for
+the common flags.</li>
+<li><strong>common_flag_mask</strong> (<em>byte</em>) &#8211; the bitmask to use when flagging the pointing
+matrix using the common flags.</li>
+<li><strong>apply_flags</strong> (<em>bool</em>) &#8211; whether to read the TOD common flags, bitwise OR
+with the common_flag_mask, and then flag the pointing matrix.</li>
 </ul>
 </td>
 </tr>

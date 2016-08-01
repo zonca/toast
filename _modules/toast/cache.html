@@ -65,6 +65,7 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pymem</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span> <span class="o">=</span> <span class="n">pymem</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span> <span class="o">=</span> <span class="p">{}</span>
 
 
     <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -73,6 +74,7 @@
             <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">_free</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
 
 <div class="viewcode-block" id="Cache.clear"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pattern</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -90,6 +92,7 @@
                 <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">_free</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">pat</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
             <span class="n">names</span> <span class="o">=</span> <span class="p">[]</span>
@@ -98,27 +101,79 @@
                 <span class="k">if</span> <span class="n">mat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span><span class="p">:</span>
-                    <span class="n">_free</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
-                <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="Cache.create"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create a named data buffer of the give type and shape.</span>
+<span class="sd">        Create a named data buffer of the given type and shape.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): the name to assign to the buffer.</span>
 <span class="sd">            type (numpy.dtype): one of the supported numpy types.</span>
 <span class="sd">            shape (tuple): a tuple containing the shape of the buffer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer or alias {} already exists&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">type</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint64</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_alloc</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">return</span></div>
+            
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Cache.put"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.put">[docs]</a>    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a named data buffer to hold the provided data.</span>
+<span class="sd">        If replace is True, existing buffer of the same name is first</span>
+<span class="sd">        destroyed. If replace is True and the name is an alias, it is</span>
+<span class="sd">        promoted to a new data buffer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): the name to assign to the buffer.</span>
+<span class="sd">            data (numpy.ndarray): Numpy array</span>
+<span class="sd">            replace (bool): Overwrite any existing keys</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="ow">and</span> <span class="n">replace</span><span class="p">:</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="n">ref</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">ref</span>
+            <span class="c1"># Destroy the existing cache object but first make a copy</span>
+            <span class="c1"># of the supplied data in case it is a view of a subset</span>
+            <span class="c1"># of the cache data.</span>
+            <span class="n">mydata</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mydata</span> <span class="o">=</span> <span class="n">data</span>
+
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mydata</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">mydata</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">ref</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">mydata</span>
+        
+        <span class="k">return</span> <span class="n">ref</span></div>
+
+
+<div class="viewcode-block" id="Cache.add_alias"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.add_alias">[docs]</a>    <span class="k">def</span> <span class="nf">add_alias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add an alias to a name that already exists in the cache.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            alias (str): alias to create</span>
+<span class="sd">            name (str): an existing key in the cache</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer {} does not exist for alias {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">alias</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">alias</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Proposed alias {} would shadow existing buffer.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">alias</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span></div>
 
 
 <div class="viewcode-block" id="Cache.destroy"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.destroy">[docs]</a>    <span class="k">def</span> <span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -129,17 +184,33 @@
 <span class="sd">        are out of use.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name (str): the name of the buffer to destroy.</span>
+<span class="sd">            name (str): the name of the buffer or alias to destroy.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># Alias is a soft link. Do not remove the buffer</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer {} does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="c1"># Remove aliases to the buffer</span>
+        <span class="n">aliases_to_remove</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="n">aliases_to_remove</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">key</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">aliases_to_remove</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># Remove actual buffer</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pymem</span><span class="p">:</span>
             <span class="n">_free</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
         <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="Cache.exists"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<div class="viewcode-block" id="Cache.exists"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">return_ref</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Check whether a buffer exists.</span>
 
@@ -147,10 +218,18 @@
 <span class="sd">            name (str): the name of the buffer to search for.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            (bool): True if the buffer exists.</span>
+<span class="sd">            (array): a numpy array wrapping the raw data buffer or None if it does not exist.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">result</span></div>
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="p">[</span><span class="n">name</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">return_ref</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ref</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span></div>
 
 
 <div class="viewcode-block" id="Cache.reference"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.reference">[docs]</a>    <span class="k">def</span> <span class="nf">reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -168,10 +247,54 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            (array): a numpy array wrapping the raw data buffer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer {} does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div></div>
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">return_ref</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Data buffer (nor alias) {} does not exist&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ref</span></div>
 
+    
+<div class="viewcode-block" id="Cache.keys"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a list of all the keys in the cache.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (list): List of key strings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cache.aliases"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.aliases">[docs]</a>    <span class="k">def</span> <span class="nf">aliases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a dictionary of all the aliases to keys in the cache.</span>
+
+<span class="sd">        Args:</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): Dictionary of aliases.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aliases</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cache.report"><a class="viewcode-back" href="../../tod.html#toast.cache.Cache.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Report memory usage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Cache memory usage:&#39;</span><span class="p">)</span>
+        
+        <span class="n">tot</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">sz</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">nbytes</span>
+            <span class="n">tot</span> <span class="o">+=</span> <span class="n">sz</span>
+            <span class="k">print</span><span class="p">(</span><span class="s1">&#39; - {:25} {:5.2f} MB&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">sz</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="mi">20</span><span class="p">))</span>
+                  
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39; {:27} {:5.2f} MB&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;TOTAL&#39;</span><span class="p">,</span><span class="n">tot</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="mi">20</span><span class="p">))</span></div></div>
+            
 </pre></div>
 
       </div>

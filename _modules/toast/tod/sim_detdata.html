@@ -58,13 +58,15 @@
 
 <span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
 
-<span class="kn">import</span> <span class="nn">quaternionarray</span> <span class="kn">as</span> <span class="nn">qa</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
 
 <span class="kn">from</span> <span class="nn">.tod</span> <span class="kn">import</span> <span class="n">TOD</span>
 
 <span class="kn">from</span> <span class="nn">.noise</span> <span class="kn">import</span> <span class="n">Noise</span>
 
 <span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">rng</span> <span class="k">as</span> <span class="n">rng</span>
 
 
 
@@ -82,9 +84,12 @@
 <span class="sd">            all processes within a group, and should be offset between</span>
 <span class="sd">            groups in such a way to ensure different streams between every</span>
 <span class="sd">            detector, in every chunk, of every TOD, across every observation.</span>
+<span class="sd">        realization (int): if simulating multiple realizations, the realization</span>
+<span class="sd">            index.  This is used in combination with the stream when calling</span>
+<span class="sd">            the RNG.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">realization</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
@@ -95,6 +100,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_oversample</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rngstream</span> <span class="o">=</span> <span class="n">stream</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_realization</span> <span class="o">=</span> <span class="n">realization</span>
 
 
     <span class="nd">@property</span>
@@ -206,16 +212,9 @@
 
                     <span class="c1"># gaussian Re/Im randoms</span>
 
-                    <span class="c1"># FIXME: Setting the seed like this does NOT guarantee uncorrelated</span>
-                    <span class="c1"># results from the generator.  This is just a place holder until</span>
-                    <span class="c1"># the streamed rng is implemented.</span>
+                    <span class="n">detstream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rngstream</span> <span class="o">+</span> <span class="n">rngobs</span> <span class="o">+</span> <span class="p">(</span><span class="n">abschunk</span> <span class="o">*</span> <span class="n">ndet</span><span class="p">)</span> <span class="o">+</span> <span class="n">idet</span>
 
-                    <span class="n">seed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rngstream</span> <span class="o">+</span> <span class="n">rngobs</span> <span class="o">+</span> <span class="p">(</span><span class="n">abschunk</span> <span class="o">*</span> <span class="n">ndet</span><span class="p">)</span> <span class="o">+</span> <span class="n">idet</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-
-                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fftlen</span><span class="p">)</span>
-                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">fftlen</span><span class="p">)</span>
-                    <span class="c1">#np.savetxt(&quot;out_simnoise_fdata_uni.txt&quot;, fdata, delimiter=&#39;\n&#39;)</span>
+                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">fftlen</span><span class="p">,</span> <span class="p">(</span><span class="n">detstream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_realization</span><span class="p">),</span> <span class="n">sampler</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">)</span>
 
                     <span class="c1"># scale by PSD</span>
 

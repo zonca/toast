@@ -71,7 +71,11 @@
 <span class="k">try</span><span class="p">:</span>
     <span class="n">libmadam</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="s1">&#39;libmadam.so&#39;</span><span class="p">)</span>
 <span class="k">except</span><span class="p">:</span>
-    <span class="n">libmadam</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">find_library</span><span class="p">(</span><span class="s1">&#39;madam&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">libmadam</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">libmadam</span> <span class="o">=</span> <span class="bp">None</span>
 
 <span class="k">if</span> <span class="n">libmadam</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
     <span class="n">libmadam</span><span class="o">.</span><span class="n">destripe</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="bp">None</span>
@@ -98,6 +102,12 @@
         <span class="n">npc</span><span class="o">.</span><span class="n">ndpointer</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">ndim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="s1">&#39;C_CONTIGUOUS&#39;</span><span class="p">)</span>
     <span class="p">]</span>
 
+<span class="c1"># Some keys may be defined multiple times in the Madam parameter files.</span>
+<span class="c1"># Assume that such entries are aggregated into a list in a parameter</span>
+<span class="c1"># dictionary</span>
+
+<span class="n">repeated_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;detset&#39;</span><span class="p">,</span> <span class="s1">&#39;detset_nopol&#39;</span><span class="p">,</span> <span class="s1">&#39;survey&#39;</span><span class="p">]</span>
+
 
 <div class="viewcode-block" id="OpMadam"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpMadam">[docs]</a><span class="k">class</span> <span class="nc">OpMadam</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -113,21 +123,34 @@
 <span class="sd">            containing the pointing weights to use.</span>
 <span class="sd">        name (str): the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to</span>
 <span class="sd">            use for the detector timestream.  If None, use the TOD.</span>
-<span class="sd">        purge (bool): if True, clear any cached data that is copied intersection</span>
+<span class="sd">        name_out (str): the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to</span>
+<span class="sd">            use to output destriped detector timestream.  No output if None.</span>
+<span class="sd">        timestamps_name (str): the name of the cache object to use for time stamps.</span>
+<span class="sd">        purge (bool): if True, clear any cached data that is copied into the</span>
 <span class="sd">            the Madam buffers.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{},</span> <span class="n">detweights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">purge</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{},</span> <span class="n">timestamps_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">detweights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">name_out</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">flag_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span>
+                 <span class="n">apply_flags</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">purge</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
         <span class="c1"># madam uses time-based distribution</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timestamps_name</span> <span class="o">=</span> <span class="n">timestamps_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name_out</span> <span class="o">=</span> <span class="n">name_out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="o">=</span> <span class="n">flag_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span> <span class="o">=</span> <span class="n">flag_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="o">=</span> <span class="n">common_flag_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span> <span class="o">=</span> <span class="n">common_flag_mask</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detw</span> <span class="o">=</span> <span class="n">detweights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_purge</span> <span class="o">=</span> <span class="n">purge</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span> <span class="o">=</span> <span class="n">apply_flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">params</span>
 
 
@@ -150,7 +173,11 @@
     <span class="k">def</span> <span class="nf">_dict2parstring</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;{} = {};&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">repeated_keys</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">separate_value</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;{} = {};&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">separate_value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;{} = {};&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">s</span>
 
 
@@ -197,7 +224,6 @@
             <span class="n">nse</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="n">todcomm</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">mpicomm</span>
-        <span class="n">todfcomm</span> <span class="o">=</span> <span class="n">todcomm</span><span class="o">.</span><span class="n">py2f</span><span class="p">()</span>
 
         <span class="c1"># to get the number of Non-zero pointing weights per pixel,</span>
         <span class="c1"># we use the fact that for Madam, all processes have all detectors</span>
@@ -213,7 +239,10 @@
         <span class="n">parstring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dict2parstring</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">)</span>
         <span class="n">detstring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dets2detstring</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">)</span>
 
-        <span class="n">timestamps</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_times</span><span class="p">(</span><span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nlocal</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timestamps_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">timestamps</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_timestamps_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">timestamps</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_times</span><span class="p">()</span>
 
         <span class="c1"># create madam-compatible buffers</span>
 
@@ -223,6 +252,35 @@
 
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ndet</span><span class="p">):</span>
 
+            <span class="n">dslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">d</span> <span class="o">*</span> <span class="n">nlocal</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nlocal</span><span class="p">)</span>
+            <span class="n">dwslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">d</span> <span class="o">*</span> <span class="n">nlocal</span> <span class="o">*</span> <span class="n">nnz</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nlocal</span> <span class="o">*</span> <span class="n">nnz</span><span class="p">)</span>
+            
+            <span class="c1"># Get the signal.</span>
+
+            <span class="n">cachename</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+            <span class="n">madam_signal</span><span class="p">[</span><span class="n">dslice</span><span class="p">]</span> <span class="o">=</span> <span class="n">signal</span>
+
+            <span class="c1"># Optionally get the flags, otherwise they are assumed to be have been applied</span>
+            <span class="c1"># to the pixel numbers.</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">cacheflagname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+                    <span class="n">detflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cacheflagname</span><span class="p">)</span>
+                    <span class="n">flags</span> <span class="o">=</span> <span class="p">(</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">commonflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
+                        <span class="n">flags</span><span class="p">[(</span><span class="n">commonflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">detflags</span><span class="p">,</span> <span class="n">commonflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+                    <span class="n">flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">((</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">commonflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+
             <span class="c1"># get the pixels and weights from the cache</span>
 
             <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
@@ -230,25 +288,24 @@
             <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">weightsname</span><span class="p">)</span>
 
-            <span class="n">dslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">d</span> <span class="o">*</span> <span class="n">nlocal</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nlocal</span><span class="p">)</span>
-            <span class="n">dwslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">d</span> <span class="o">*</span> <span class="n">nlocal</span> <span class="o">*</span> <span class="n">nnz</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nlocal</span> <span class="o">*</span> <span class="n">nnz</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">pixels</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1"># Don&#39;t change the cached pixel numbers</span>
+                <span class="n">pixels</span><span class="p">[</span><span class="n">flags</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
             <span class="n">madam_pixels</span><span class="p">[</span><span class="n">dslice</span><span class="p">]</span> <span class="o">=</span> <span class="n">pixels</span>
             <span class="n">madam_pixweights</span><span class="p">[</span><span class="n">dwslice</span><span class="p">]</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-
-            <span class="n">cachename</span> <span class="o">=</span> <span class="bp">None</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
-                <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nlocal</span><span class="p">)</span>
-            <span class="n">madam_signal</span><span class="p">[</span><span class="n">dslice</span><span class="p">]</span> <span class="o">=</span> <span class="n">signal</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_purge</span><span class="p">:</span>
                 <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">pixelsname</span><span class="p">)</span>
                 <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">weightsname</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">cachename</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="n">cacheflagname</span><span class="p">)</span>
+                    
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_purge</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">clear</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
 
         <span class="c1"># The &quot;pointing periods&quot; we pass to madam are simply the intersection</span>
         <span class="c1"># of our local data and the list of valid intervals.</span>
@@ -300,7 +357,18 @@
 
         <span class="c1"># destripe</span>
 
+        <span class="n">todfcomm</span> <span class="o">=</span> <span class="n">todcomm</span><span class="o">.</span><span class="n">py2f</span><span class="p">()</span>
+
         <span class="n">libmadam</span><span class="o">.</span><span class="n">destripe</span><span class="p">(</span><span class="n">todfcomm</span><span class="p">,</span> <span class="n">parstring</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">ndet</span><span class="p">,</span> <span class="n">detstring</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">detweights</span><span class="p">,</span> <span class="n">nlocal</span><span class="p">,</span> <span class="n">nnz</span><span class="p">,</span> <span class="n">timestamps</span><span class="p">,</span> <span class="n">madam_pixels</span><span class="p">,</span> <span class="n">madam_pixweights</span><span class="p">,</span> <span class="n">madam_signal</span><span class="p">,</span> <span class="n">nperiod</span><span class="p">,</span> <span class="n">periods</span><span class="p">,</span> <span class="n">npsd</span><span class="p">,</span> <span class="n">npsdtot</span><span class="p">,</span> <span class="n">psdstarts</span><span class="p">,</span> <span class="n">npsdbin</span><span class="p">,</span> <span class="n">psdfreqs</span><span class="p">,</span> <span class="n">npsdval</span><span class="p">,</span> <span class="n">psdvals</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">det</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span> <span class="p">):</span>
+
+                <span class="n">dslice</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">d</span> <span class="o">*</span> <span class="n">nlocal</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nlocal</span><span class="p">)</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">madam_signal</span><span class="p">[</span><span class="n">dslice</span><span class="p">]</span>
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">put</span><span class="p">(</span> <span class="n">cachename</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="bp">True</span> <span class="p">)</span>
 
         <span class="k">return</span></div></div>
 </pre></div>

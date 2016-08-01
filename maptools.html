@@ -93,7 +93,7 @@ containing the pixel indices to use.</td>
 
 <dl class="class">
 <dt id="toast.map.DistPixels">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">DistPixels</code><span class="sig-paren">(</span><em>comm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>size=0</em>, <em>nnz=1</em>, <em>dtype=&lt;class 'numpy.float64'&gt;</em>, <em>submap=None</em>, <em>local=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">DistPixels</code><span class="sig-paren">(</span><em>comm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>size=0</em>, <em>nnz=1</em>, <em>dtype=&lt;class 'numpy.float64'&gt;</em>, <em>submap=None</em>, <em>local=None</em>, <em>localpix=None</em>, <em>nest=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels" title="Permalink to this definition">¶</a></dt>
 <dd><p>A distributed map with multiple values per pixel.</p>
 <p>Pixel domain data is distributed across an MPI communicator.  each
 process has a local data stored in one or more &#8220;submaps&#8221;.  The size
@@ -114,11 +114,27 @@ processes.</li>
 <li><strong>nnz</strong> (<em>int</em>) &#8211; the number of values per pixel.</li>
 <li><strong>submap</strong> (<em>int</em>) &#8211; the locally stored data is in units of this size.</li>
 <li><strong>local</strong> (<em>array</em>) &#8211; the list of local submaps (integers).</li>
+<li><strong>localpix</strong> (<em>array</em>) &#8211; the list of local pixels (integers).</li>
+<li><strong>nest</strong> (<em>bool</em>) &#8211; nested pixel order flag</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<dl class="method">
+<dt id="toast.map.DistPixels.allreduce">
+<code class="descname">allreduce</code><span class="sig-paren">(</span><em>comm_bytes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels.allreduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels.allreduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a buffered allreduce of the pixel domain data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>comm_bytes</strong> (<em>int</em>) &#8211; The approximate message size to use.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="toast.map.DistPixels.comm">
 <code class="descname">comm</code><a class="headerlink" href="#toast.map.DistPixels.comm" title="Permalink to this definition">¶</a></dt>
@@ -182,6 +198,28 @@ pixel index local to that submap (int).</td>
 <dd><p><em>(int)</em> &#8211; The number of submaps stored on this process.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="toast.map.DistPixels.read_healpix_fits">
+<code class="descname">read_healpix_fits</code><span class="sig-paren">(</span><em>path</em>, <em>comm_bytes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels.read_healpix_fits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels.read_healpix_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and broadcast a HEALPix FITS table.</p>
+<p>The root process opens the FITS file in memmap mode and iterates over
+chunks of the map in a way to minimize cache misses in the internal
+FITS buffer.  Chunks of submaps are broadcast to all processes, and
+each process copies data to its local submaps.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<em>str</em>) &#8211; The path to the FITS file.</li>
+<li><strong>comm_bytes</strong> (<em>int</em>) &#8211; The approximate message size to use.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="toast.map.DistPixels.size">
 <code class="descname">size</code><a class="headerlink" href="#toast.map.DistPixels.size" title="Permalink to this definition">¶</a></dt>
@@ -192,6 +230,28 @@ pixel index local to that submap (int).</td>
 <dt id="toast.map.DistPixels.submap">
 <code class="descname">submap</code><a class="headerlink" href="#toast.map.DistPixels.submap" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>(int)</em> &#8211; The number of pixels in each submap.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="toast.map.DistPixels.write_healpix_fits">
+<code class="descname">write_healpix_fits</code><span class="sig-paren">(</span><em>path</em>, <em>comm_bytes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels.write_healpix_fits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels.write_healpix_fits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write data to a HEALPix format FITS table.</p>
+<p>The data across all processes is assumed to be synchronized (the
+data for a given submap shared between processes is identical).  The
+lowest rank process sharing each submap sends their copy to the root
+process for writing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path</strong> (<em>str</em>) &#8211; The path to the FITS file.</li>
+<li><strong>comm_bytes</strong> (<em>int</em>) &#8211; The approximate message size to use.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -293,7 +353,7 @@ from the supplied covariance matrix data.</p>
 <h2>External Madam Interface<a class="headerlink" href="#external-madam-interface" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.map.OpMadam">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>purge=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>timestamps_name=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>name_out=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=True</em>, <em>purge=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which passes data to libmadam for map-making.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -309,7 +369,10 @@ containing the pixel indices to use.</li>
 containing the pointing weights to use.</li>
 <li><strong>name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
 use for the detector timestream.  If None, use the TOD.</li>
-<li><strong>purge</strong> (<em>bool</em>) &#8211; if True, clear any cached data that is copied intersection
+<li><strong>name_out</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
+use to output destriped detector timestream.  No output if None.</li>
+<li><strong>timestamps_name</strong> (<em>str</em>) &#8211; the name of the cache object to use for time stamps.</li>
+<li><strong>purge</strong> (<em>bool</em>) &#8211; if True, clear any cached data that is copied into the
 the Madam buffers.</li>
 </ul>
 </td>

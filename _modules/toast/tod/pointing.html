@@ -54,7 +54,7 @@
 
 <span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
 
-<span class="kn">import</span> <span class="nn">quaternionarray</span> <span class="kn">as</span> <span class="nn">qa</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
 
 <span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
 <span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
@@ -100,9 +100,15 @@
 <span class="sd">        hwpstep: if None, then a stepped HWP is not included.  Otherwise, this</span>
 <span class="sd">            is the step in degrees.</span>
 <span class="sd">        hwpsteptime: The time in minutes between HWP steps.</span>
+<span class="sd">        common_flag_name (str): the optional name of a cache object to use for</span>
+<span class="sd">            the common flags.</span>
+<span class="sd">        common_flag_mask (byte): the bitmask to use when flagging the pointing</span>
+<span class="sd">            matrix using the common flags.</span>
+<span class="sd">        apply_flags (bool): whether to read the TOD common flags, bitwise OR</span>
+<span class="sd">            with the common_flag_mask, and then flag the pointing matrix.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwprpm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwpstep</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwpsteptime</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwprpm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwpstep</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwpsteptime</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">=</span> <span class="n">nside</span>
@@ -110,6 +116,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cal</span> <span class="o">=</span> <span class="n">cal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span> <span class="o">=</span> <span class="n">common_flag_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span> <span class="o">=</span> <span class="n">apply_flags</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="o">=</span> <span class="n">common_flag_name</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">hwprpm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;choose either continuously rotating or stepped HWP&quot;</span><span class="p">)</span>
@@ -223,6 +232,16 @@
                     <span class="n">curoff</span> <span class="o">+=</span> <span class="n">fill</span>
                     <span class="n">fill</span> <span class="o">=</span> <span class="n">stepsamples</span>
 
+            <span class="c1"># read the common flags and apply bitmask</span>
+
+            <span class="n">common</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_common_flags</span><span class="p">()</span>
+                <span class="n">common</span> <span class="o">=</span> <span class="p">(</span><span class="n">common</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span>
+
             <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
 
                 <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -233,25 +252,24 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="n">cal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cal</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
 
-                <span class="n">oneplus</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
-                <span class="n">oneminus</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span>
+                <span class="n">eta</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">eps</span> <span class="p">)</span>
 
-                <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nsamp</span><span class="p">))</span>
-                <span class="n">flags</span><span class="p">,</span> <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nsamp</span><span class="p">)</span>
-                <span class="n">totflags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span>
-                <span class="n">totflags</span> <span class="o">|=</span> <span class="n">common</span>
+                <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">))</span>
 
-                <span class="n">pdata</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">nullquat</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+                    <span class="n">pdata</span><span class="p">[</span><span class="n">common</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">nullquat</span>
 
                 <span class="nb">dir</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">pdata</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">zaxis</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
 
                 <span class="n">pixels</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">vec2pix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
-                <span class="n">pixels</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+                    <span class="n">pixels</span><span class="p">[</span><span class="n">common</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s1">&#39;I&#39;</span><span class="p">:</span>
                     
                     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">nsamp</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-                    <span class="n">weights</span> <span class="o">*=</span> <span class="p">(</span><span class="n">cal</span> <span class="o">*</span> <span class="n">oneplus</span><span class="p">)</span>
+                    <span class="n">weights</span> <span class="o">*=</span> <span class="n">cal</span>
 
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mode</span> <span class="o">==</span> <span class="s1">&#39;IQU&#39;</span><span class="p">:</span>
 
@@ -261,20 +279,20 @@
                     <span class="n">bx</span> <span class="o">=</span> <span class="n">orient</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="nb">dir</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">orient</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="nb">dir</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="n">orient</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">dir</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">1</span><span class="p">])</span>
                         
                     <span class="n">detang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">by</span><span class="p">,</span> <span class="n">bx</span><span class="p">)</span>
+
                     <span class="k">if</span> <span class="n">hwpang</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                        <span class="n">detang</span> <span class="o">+=</span> <span class="n">hwpang</span>
-                        <span class="n">detang</span> <span class="o">*=</span> <span class="mf">4.0</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">detang</span> <span class="o">*=</span> <span class="mf">2.0</span>
+                        <span class="n">detang</span> <span class="o">+=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">hwpang</span>
+                    <span class="n">detang</span> <span class="o">*=</span> <span class="mf">2.0</span>
+
                     <span class="n">cang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">detang</span><span class="p">)</span>
                     <span class="n">sang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">detang</span><span class="p">)</span>
                      
                     <span class="n">Ival</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">cang</span><span class="p">)</span>
-                    <span class="n">Ival</span> <span class="o">*=</span> <span class="p">(</span><span class="n">cal</span> <span class="o">*</span> <span class="n">oneplus</span><span class="p">)</span>
+                    <span class="n">Ival</span> <span class="o">*=</span> <span class="n">cal</span>
                     <span class="n">Qval</span> <span class="o">=</span> <span class="n">cang</span>
-                    <span class="n">Qval</span> <span class="o">*=</span> <span class="p">(</span><span class="n">cal</span> <span class="o">*</span> <span class="n">oneminus</span><span class="p">)</span>
+                    <span class="n">Qval</span> <span class="o">*=</span> <span class="p">(</span><span class="n">eta</span> <span class="o">*</span> <span class="n">cal</span><span class="p">)</span>
                     <span class="n">Uval</span> <span class="o">=</span> <span class="n">sang</span>
-                    <span class="n">Uval</span> <span class="o">*=</span> <span class="p">(</span><span class="n">cal</span> <span class="o">*</span> <span class="n">oneminus</span><span class="p">)</span>
+                    <span class="n">Uval</span> <span class="o">*=</span> <span class="p">(</span><span class="n">eta</span> <span class="o">*</span> <span class="n">cal</span><span class="p">)</span>
 
                     <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">Ival</span><span class="p">,</span> <span class="n">Qval</span><span class="p">,</span> <span class="n">Uval</span><span class="p">)))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
 

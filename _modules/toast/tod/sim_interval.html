@@ -52,11 +52,13 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">distribute_uniform</span>
+
 <span class="kn">from</span> <span class="nn">.interval</span> <span class="kn">import</span> <span class="n">Interval</span>
 
 
 
-<div class="viewcode-block" id="regular_intervals"><a class="viewcode-back" href="../../../sim.html#toast.tod.regular_intervals">[docs]</a><span class="k">def</span> <span class="nf">regular_intervals</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">gap</span><span class="p">):</span>
+<div class="viewcode-block" id="regular_intervals"><a class="viewcode-back" href="../../../sim.html#toast.tod.regular_intervals">[docs]</a><span class="k">def</span> <span class="nf">regular_intervals</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">chunks</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Function to generate regular intervals.</span>
 
@@ -65,6 +67,9 @@
 <span class="sd">    length of the interval and the gap are rounded to the nearest sample</span>
 <span class="sd">    and all intervals in the list are created using those lengths.</span>
 
+<span class="sd">    Optionally, the valid data span can be subdivided into some number</span>
+<span class="sd">    of contiguous subchunks.</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        n (int): the number of intervals.</span>
 <span class="sd">        start (float): the start time in seconds.</span>
@@ -72,27 +77,44 @@
 <span class="sd">        rate (float): the sample rate in Hz.</span>
 <span class="sd">        duration (float): the length of the interval in seconds.</span>
 <span class="sd">        gap (float): the length of the gap in seconds.</span>
+<span class="sd">        chunks (int): divide the valid data in &quot;duration&quot; into this</span>
+<span class="sd">            number of contiguous chunks.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        (list): a list of Interval objects.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">invrate</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">rate</span>
+
+    <span class="c1"># Compute the whole number of samples that fit completely within the</span>
+    <span class="c1"># requested time span.</span>
+    <span class="n">totsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">duration</span> <span class="o">+</span> <span class="n">gap</span><span class="p">)</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
     <span class="n">dursamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">duration</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="n">gapsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gap</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="n">totsamples</span> <span class="o">=</span> <span class="n">dursamples</span> <span class="o">+</span> <span class="n">gapsamples</span>
-    <span class="n">durtime</span> <span class="o">=</span> <span class="p">(</span><span class="n">dursamples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">rate</span>
-    <span class="n">gaptime</span> <span class="o">=</span> <span class="p">(</span><span class="n">gapsamples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">rate</span>
-    <span class="n">tottime</span> <span class="o">=</span> <span class="n">durtime</span> <span class="o">+</span> <span class="n">gaptime</span>
+    <span class="n">gapsamples</span> <span class="o">=</span> <span class="n">totsamples</span> <span class="o">-</span> <span class="n">dursamples</span>
+
+    <span class="c1"># Compute the actual time span for this number of samples</span>
+    <span class="n">tottime</span> <span class="o">=</span> <span class="p">(</span><span class="n">totsamples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">invrate</span>
+    <span class="n">durtime</span> <span class="o">=</span> <span class="p">(</span><span class="n">dursamples</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">invrate</span>
+    <span class="n">gaptime</span> <span class="o">=</span> <span class="n">tottime</span> <span class="o">-</span> <span class="n">durtime</span>
+
+    <span class="c1"># If we have sub-chunks, compute them now</span>
+    <span class="n">chnks</span> <span class="o">=</span> <span class="n">distribute_uniform</span><span class="p">(</span><span class="n">dursamples</span><span class="p">,</span> <span class="n">chunks</span><span class="p">)</span>
 
     <span class="n">intervals</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
         <span class="n">ifirst</span> <span class="o">=</span> <span class="n">first</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">totsamples</span>
-        <span class="n">ilast</span> <span class="o">=</span> <span class="n">ifirst</span> <span class="o">+</span> <span class="n">dursamples</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="n">istart</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">tottime</span>
-        <span class="n">istop</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="n">durtime</span>
-        <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Interval</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">istart</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">istop</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">ifirst</span><span class="p">,</span> <span class="n">last</span><span class="o">=</span><span class="n">ilast</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chnks</span><span class="p">:</span>
+            <span class="n">cfirst</span> <span class="o">=</span> <span class="n">ifirst</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">clast</span> <span class="o">=</span> <span class="n">cfirst</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">cstart</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">invrate</span><span class="p">)</span>
+            <span class="n">cstop</span> <span class="o">=</span> <span class="n">istart</span> <span class="o">+</span> <span class="p">((</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">invrate</span><span class="p">)</span>
+            <span class="n">intervals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Interval</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">cstart</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">cstop</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">cfirst</span><span class="p">,</span> <span class="n">last</span><span class="o">=</span><span class="n">clast</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">intervals</span></div>
+
+
+
 </pre></div>
 
       </div>
