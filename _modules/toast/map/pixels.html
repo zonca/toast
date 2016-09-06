@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.map.pixels &mdash; TOAST 2.0 documentation</title>
+    <title>toast.map.pixels &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -43,28 +43,28 @@
         
         
   <h1>Source code for toast.map.pixels</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="k">if</span> <span class="s1">&#39;PYTOAST_NOMPI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-    <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">fakempi</span> <span class="k">as</span> <span class="n">MPI</span>
+<span class="k">if</span> <span class="s1">&#39;TOAST_NO_MPI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">fakempi</span> <span class="k">as</span> <span class="n">MPI</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+    <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
 
 <span class="kn">import</span> <span class="nn">unittest</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="k">as</span> <span class="nn">hp</span>
 
-<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
-<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
-<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="k">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="k">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="k">import</span> <span class="n">TOD</span>
 
-<span class="kn">from</span> <span class="nn">..cache</span> <span class="kn">import</span> <span class="n">Cache</span>
+<span class="kn">from</span> <span class="nn">..cache</span> <span class="k">import</span> <span class="n">Cache</span>
 
 
 <div class="viewcode-block" id="OpLocalPixels"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpLocalPixels">[docs]</a><span class="k">class</span> <span class="nc">OpLocalPixels</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
@@ -81,7 +81,7 @@
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
         <span class="c1"># madam uses time-based distribution</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timedist</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
 
 
@@ -152,7 +152,7 @@
 <span class="sd">        localpix (array): the list of local pixels (integers).</span>
 <span class="sd">        nest (bool): nested pixel order flag</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">localpix</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">localpix</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span> <span class="o">=</span> <span class="n">comm</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="n">nnz</span>
@@ -163,8 +163,8 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;submap size must evenly divide into total number of pixels&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">localpix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">local</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Must not set local with localpix&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">localpix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">local</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Must not set local with localpix&quot;</span><span class="p">)</span>
             <span class="n">allsm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor_divide</span><span class="p">(</span><span class="n">localpix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
             <span class="n">sm</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">allsm</span><span class="p">)</span>
             <span class="n">local</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">sm</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
@@ -176,8 +176,8 @@
 
         <span class="c1"># our data is a 3D array of submap, pixel, values</span>
         <span class="c1"># we allocate this as a contiguous block</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_local</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
@@ -269,7 +269,7 @@
 <span class="sd">            (DistPixels): A copy of the object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">ret</span> <span class="o">=</span> <span class="n">DistPixels</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">submap</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_local</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">ret</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ret</span></div>
 
@@ -289,14 +289,14 @@
         <span class="k">return</span> <span class="n">nsub</span>
 
 
-<div class="viewcode-block" id="DistPixels.allreduce"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.allreduce">[docs]</a>    <span class="k">def</span> <span class="nf">allreduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DistPixels.allreduce"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.allreduce">[docs]</a>    <span class="k">def</span> <span class="nf">allreduce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform a buffered allreduce of the pixel domain data.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            comm_bytes (int): The approximate message size to use.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">comm_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span>
         <span class="n">comm_submap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm_nsubmap</span><span class="p">(</span><span class="n">comm_bytes</span><span class="p">)</span>
         <span class="n">nsub</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span>
@@ -348,7 +348,7 @@
         <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="DistPixels.read_healpix_fits"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.read_healpix_fits">[docs]</a>    <span class="k">def</span> <span class="nf">read_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DistPixels.read_healpix_fits"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.read_healpix_fits">[docs]</a>    <span class="k">def</span> <span class="nf">read_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Read and broadcast a HEALPix FITS table.</span>
 
@@ -361,7 +361,7 @@
 <span class="sd">            path (str): The path to the FITS file.</span>
 <span class="sd">            comm_bytes (int): The approximate message size to use.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">comm_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span>
         <span class="n">comm_submap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm_nsubmap</span><span class="p">(</span><span class="n">comm_bytes</span><span class="p">)</span>
         
@@ -374,9 +374,9 @@
         <span class="c1"># get a tuple of all columns in the table.  We choose memmap here so</span>
         <span class="c1"># that we can (hopefully) read through all columns in chunks such that</span>
         <span class="c1"># we only ever have a couple FITS blocks in memory.</span>
-        <span class="n">fdata</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">fdata</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">fdata</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">fdata</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">read_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">field</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">memmap</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">fdata</span> <span class="o">=</span> <span class="p">(</span><span class="n">fdata</span><span class="p">,</span> <span class="p">)</span>
 
@@ -392,11 +392,11 @@
             <span class="k">if</span> <span class="n">in_off</span> <span class="o">+</span> <span class="n">rows</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">:</span>
                 <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">-</span> <span class="n">in_off</span>
             <span class="c1"># is this the last block for this communication?</span>
-            <span class="n">islast</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="n">islast</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">copyrows</span> <span class="o">=</span> <span class="n">rows</span>
             <span class="k">if</span> <span class="n">out_off</span> <span class="o">+</span> <span class="n">rows</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">):</span>
                 <span class="n">copyrows</span> <span class="o">=</span> <span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">)</span> <span class="o">-</span> <span class="n">out_off</span>
-                <span class="n">islast</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="n">islast</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">):</span>
@@ -416,7 +416,7 @@
                 <span class="n">out_off</span> <span class="o">=</span> <span class="mi">0</span>
                 <span class="n">submap_off</span> <span class="o">+=</span> <span class="n">comm_submap</span>
                 <span class="n">buf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-                <span class="n">islast</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">islast</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># flush the remaining buffer</span>
 
@@ -431,7 +431,7 @@
         <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="DistPixels.write_healpix_fits"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.write_healpix_fits">[docs]</a>    <span class="k">def</span> <span class="nf">write_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="DistPixels.write_healpix_fits"><a class="viewcode-back" href="../../../maptools.html#toast.map.DistPixels.write_healpix_fits">[docs]</a>    <span class="k">def</span> <span class="nf">write_healpix_fits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">comm_bytes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write data to a HEALPix format FITS table.</span>
 
@@ -444,7 +444,7 @@
 <span class="sd">            path (str): The path to the FITS file.</span>
 <span class="sd">            comm_bytes (int): The approximate message size to use.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">comm_bytes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">comm_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_commsize</span>
         <span class="c1"># We will reduce some number of whole submaps at a time.</span>
         <span class="c1"># Find the number of submaps that fit into the requested</span>
@@ -473,8 +473,8 @@
         <span class="c1"># use a cache to store the local map, so that we can be sure to</span>
         <span class="c1"># free the memory afterwards</span>
         
-        <span class="n">fdata</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="n">temp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">fdata</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">fdata</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">temp</span> <span class="o">=</span> <span class="n">Cache</span><span class="p">()</span>
@@ -486,8 +486,8 @@
         <span class="n">sendbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
         <span class="n">sendview</span> <span class="o">=</span> <span class="n">sendbuf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
 
-        <span class="n">recvbuf</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="n">recvview</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">recvbuf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">recvview</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">recvbuf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">comm_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
             <span class="n">recvview</span> <span class="o">=</span> <span class="n">recvbuf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">comm_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">)</span>
@@ -516,7 +516,7 @@
             <span class="n">submap_off</span> <span class="o">+=</span> <span class="n">ncomm</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">hp</span><span class="o">.</span><span class="n">write_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">fdata</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">fits_IDL</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+            <span class="n">hp</span><span class="o">.</span><span class="n">write_map</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">fdata</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">fits_IDL</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
 
         <span class="k">return</span></div></div>
 </pre></div>
@@ -531,8 +531,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>

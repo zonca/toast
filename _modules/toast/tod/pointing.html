@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.tod.pointing &mdash; TOAST 2.0 documentation</title>
+    <title>toast.tod.pointing &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -43,22 +43,22 @@
         
         
   <h1>Source code for toast.tod.pointing</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
 
 <span class="kn">import</span> <span class="nn">unittest</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="k">as</span> <span class="nn">hp</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
 
-<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
-<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
-<span class="kn">from</span> <span class="nn">.tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="k">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="k">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">.tod</span> <span class="k">import</span> <span class="n">TOD</span>
 
 
 
@@ -108,7 +108,7 @@
 <span class="sd">            with the common_flag_mask, and then flag the pointing matrix.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwprpm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwpstep</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">hwpsteptime</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">cal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hwprpm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hwpstep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hwpsteptime</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">=</span> <span class="n">nside</span>
@@ -120,25 +120,25 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span> <span class="o">=</span> <span class="n">apply_flags</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="o">=</span> <span class="n">common_flag_name</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="n">hwprpm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hwprpm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;choose either continuously rotating or stepped HWP&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="p">(</span><span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">hwpsteptime</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">hwpsteptime</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;for a stepped HWP, you must specify the time between steps&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">hwprpm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">hwprpm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># convert to radians / second</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_hwprate</span> <span class="o">=</span> <span class="n">hwprpm</span> <span class="o">*</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">60.0</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_hwprate</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hwprate</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># convert to radians and seconds</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_hwpstep</span> <span class="o">=</span> <span class="n">hwpstep</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_hwpsteptime</span> <span class="o">=</span> <span class="n">hwpsteptime</span> <span class="o">*</span> <span class="mf">60.0</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_hwpstep</span> <span class="o">=</span> <span class="bp">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_hwpsteptime</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hwpstep</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hwpsteptime</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
@@ -205,9 +205,9 @@
 
             <span class="n">nsamp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">first</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">hwpang</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">hwpang</span> <span class="o">=</span> <span class="kc">None</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hwprate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hwprate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># continuous HWP</span>
                 <span class="c1"># HWP increment per sample is: </span>
                 <span class="c1"># (hwprate / samplerate)</span>
@@ -215,7 +215,7 @@
                 <span class="n">startang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fmod</span><span class="p">(</span><span class="n">first</span> <span class="o">*</span> <span class="n">hwpincr</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
                 <span class="n">hwpang</span> <span class="o">=</span> <span class="n">hwpincr</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nsamp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
                 <span class="n">hwpang</span> <span class="o">+=</span> <span class="n">startang</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hwpstep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># stepped HWP</span>
                 <span class="n">hwpang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nsamp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
                 <span class="n">stepsamples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_hwpsteptime</span> <span class="o">*</span> <span class="n">rate</span><span class="p">)</span>
@@ -234,9 +234,9 @@
 
             <span class="c1"># read the common flags and apply bitmask</span>
 
-            <span class="n">common</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">common</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_common_flags</span><span class="p">()</span>
@@ -245,11 +245,11 @@
             <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
 
                 <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.0</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">eps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
 
                 <span class="n">cal</span> <span class="o">=</span> <span class="mf">1.0</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cal</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">cal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cal</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
 
                 <span class="n">eta</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">eps</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">eps</span> <span class="p">)</span>
@@ -280,7 +280,7 @@
                         
                     <span class="n">detang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">by</span><span class="p">,</span> <span class="n">bx</span><span class="p">)</span>
 
-                    <span class="k">if</span> <span class="n">hwpang</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">hwpang</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">detang</span> <span class="o">+=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">hwpang</span>
                     <span class="n">detang</span> <span class="o">*=</span> <span class="mf">2.0</span>
 
@@ -324,8 +324,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>

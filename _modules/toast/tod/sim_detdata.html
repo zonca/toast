@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.tod.sim_detdata &mdash; TOAST 2.0 documentation</title>
+    <title>toast.tod.sim_detdata &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -43,30 +43,30 @@
         
         
   <h1>Source code for toast.tod.sim_detdata</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
 
 <span class="kn">import</span> <span class="nn">unittest</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">scipy.fftpack</span> <span class="kn">as</span> <span class="nn">sft</span>
-<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="kn">as</span> <span class="nn">si</span>
-<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="kn">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">scipy.fftpack</span> <span class="k">as</span> <span class="nn">sft</span>
+<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="k">as</span> <span class="nn">si</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sp</span>
 
-<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="k">as</span> <span class="nn">hp</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
 
-<span class="kn">from</span> <span class="nn">.tod</span> <span class="kn">import</span> <span class="n">TOD</span>
+<span class="kn">from</span> <span class="nn">.tod</span> <span class="k">import</span> <span class="n">TOD</span>
 
-<span class="kn">from</span> <span class="nn">.noise</span> <span class="kn">import</span> <span class="n">Noise</span>
+<span class="kn">from</span> <span class="nn">.noise</span> <span class="k">import</span> <span class="n">Noise</span>
 
-<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="k">import</span> <span class="n">Operator</span>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">rng</span> <span class="k">as</span> <span class="n">rng</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">rng</span> <span class="k">as</span> <span class="n">rng</span>
 
 
 
@@ -89,12 +89,12 @@
 <span class="sd">            the RNG.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">realization</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">realization</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
         
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">stream</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the random stream index&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
@@ -130,10 +130,10 @@
         <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
             <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
             <span class="n">nse</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;noise simulation for uniform distributed samples not implemented&#39;</span><span class="p">)</span>
 
-            <span class="c1"># for purposes of incrementing the random seed, find</span>
+            <span class="c1"># for purposes of incrementing the random stream, find</span>
             <span class="c1"># the number of detectors</span>
             <span class="n">alldets</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">detectors</span>
             <span class="n">ndet</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">alldets</span><span class="p">)</span>
@@ -159,10 +159,10 @@
                 <span class="k">while</span> <span class="n">fftlen</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_oversample</span> <span class="o">*</span> <span class="n">chksamp</span><span class="p">):</span>
                     <span class="n">fftlen</span> <span class="o">*=</span> <span class="mi">2</span>
                 <span class="n">half</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fftlen</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-                <span class="n">norm</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="n">half</span><span class="p">;</span>
+                <span class="n">norm</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">half</span><span class="p">)</span>
                 <span class="n">df</span> <span class="o">=</span> <span class="n">rate</span> <span class="o">/</span> <span class="n">fftlen</span>
 
-                <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="o">*</span><span class="n">half</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">half</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="o">*</span><span class="n">half</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">half</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">logfreq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
 
                 <span class="n">tempdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">chksamp</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
@@ -171,9 +171,9 @@
                 <span class="n">fdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fftlen</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
                 <span class="c1"># ignore zero frequency</span>
-                <span class="n">trimzero</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="n">trimzero</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="k">if</span> <span class="n">nse</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">trimzero</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">trimzero</span> <span class="o">=</span> <span class="kc">True</span>
 
                 <span class="k">if</span> <span class="n">trimzero</span><span class="p">:</span>
                     <span class="n">rawfreq</span> <span class="o">=</span> <span class="n">nse</span><span class="o">.</span><span class="n">freq</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
@@ -214,15 +214,15 @@
 
                     <span class="n">detstream</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rngstream</span> <span class="o">+</span> <span class="n">rngobs</span> <span class="o">+</span> <span class="p">(</span><span class="n">abschunk</span> <span class="o">*</span> <span class="n">ndet</span><span class="p">)</span> <span class="o">+</span> <span class="n">idet</span>
 
-                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">fftlen</span><span class="p">,</span> <span class="p">(</span><span class="n">detstream</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_realization</span><span class="p">),</span> <span class="n">sampler</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">)</span>
+                    <span class="n">fdata</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">fftlen</span><span class="p">,</span> <span class="n">sampler</span><span class="o">=</span><span class="s2">&quot;gaussian&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_realization</span><span class="p">,</span> <span class="n">detstream</span><span class="p">),</span> <span class="n">counter</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span>
 
                     <span class="c1"># scale by PSD</span>
 
                     <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">psd</span> <span class="o">*</span> <span class="n">norm</span><span class="p">)</span>
 
-                    <span class="n">fdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">0.0</span>
+                    <span class="n">fdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">fdata</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">half</span><span class="p">]</span> <span class="o">*=</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                    <span class="n">fdata</span><span class="p">[</span><span class="n">half</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">fdata</span><span class="p">[</span><span class="n">half</span><span class="p">]</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">scale</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                     <span class="n">fdata</span><span class="p">[</span><span class="n">half</span><span class="o">+</span><span class="mi">1</span><span class="p">:]</span> <span class="o">*=</span> <span class="n">scale</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
                     <span class="c1">#np.savetxt(&quot;out_simnoise_fdata.txt&quot;, fdata, delimiter=&#39;\n&#39;)</span>
@@ -268,7 +268,7 @@
 <span class="sd">        nest (bool): whether to use NESTED ordering.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mf">100.0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mf">100.0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">=</span> <span class="n">nside</span>
@@ -357,7 +357,7 @@
 <span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
 <span class="sd">            If the named cache objects do not exist, then they are created.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distmap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;scan&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;scan&#39;</span><span class="p">):</span>
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_map</span> <span class="o">=</span> <span class="n">distmap</span>
@@ -426,8 +426,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>

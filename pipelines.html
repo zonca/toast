@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pipelines &mdash; TOAST 2.0 documentation</title>
+    <title>Pipelines &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -60,7 +60,7 @@ and then uses the given focalplane (loaded from a pickle file) to compute
 the detector pointing.  Noise properties of each detector are used to
 simulate noise timestreams.</p>
 <p>In order to create a focalplane file, you can do for example:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pickle</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="n">fake</span> <span class="o">=</span> <span class="p">{}</span>
@@ -79,7 +79,7 @@ simulate noise timestreams.</p>
 </div>
 <p>Note that until the older TOAST mapmaking tools are ported, this script
 requires the use of libmadam (the &#8211;madam option).</p>
-<div class="highlight-console"><div class="highlight"><pre><span></span><span class="go">usage: toast_satellite_sim.py [-h] [--samplerate SAMPLERATE]</span>
+<div class="highlight-console"><div class="highlight"><pre><span class="go">usage: toast_satellite_sim.py [-h] [--samplerate SAMPLERATE]</span>
 <span class="go">                              [--spinperiod SPINPERIOD]</span>
 <span class="go">                              [--spinangle SPINANGLE]</span>
 <span class="go">                              [--precperiod PRECPERIOD]</span>
@@ -137,7 +137,7 @@ requires the use of libmadam (the &#8211;madam option).</p>
 <div class="section" id="example-proposed-core-satellite-boresight">
 <h2>Example:  Proposed CoRE Satellite Boresight<a class="headerlink" href="#example-proposed-core-satellite-boresight" title="Permalink to this headline">¶</a></h2>
 <p>Here is one example using this script to generate one day of scanning with a single boresight detector, and using one proposed scan strategy for a LiteCoRE satellite:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">toast_satellite_sim</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">samplerate</span> <span class="mf">175.86</span> <span class="o">--</span><span class="n">spinperiod</span> <span class="mf">1.0</span> <span class="o">--</span><span class="n">spinangle</span> <span class="mf">45.0</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">toast_satellite_sim</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">samplerate</span> <span class="mf">175.86</span> <span class="o">--</span><span class="n">spinperiod</span> <span class="mf">1.0</span> <span class="o">--</span><span class="n">spinangle</span> <span class="mf">45.0</span>
 <span class="o">--</span><span class="n">precperiod</span> <span class="mf">5760.0</span> <span class="o">--</span><span class="n">precangle</span> <span class="mf">50.0</span> <span class="o">--</span><span class="n">hwprpm</span> <span class="mf">0.0</span> <span class="o">--</span><span class="n">obs</span> <span class="mf">23.0</span> <span class="o">--</span><span class="n">gap</span> <span class="mf">1.0</span>
 <span class="o">--</span><span class="n">obschunks</span> <span class="mi">24</span> <span class="o">--</span><span class="n">numobs</span> <span class="mi">1</span> <span class="o">--</span><span class="n">nside</span> <span class="mi">1024</span> <span class="o">--</span><span class="n">baseline</span> <span class="mf">5.0</span> <span class="o">--</span><span class="n">madam</span> <span class="o">--</span><span class="n">noisefilter</span>
 <span class="o">--</span><span class="n">fp</span> <span class="n">fp_core</span><span class="o">.</span><span class="n">pkl</span> <span class="o">--</span><span class="n">outdir</span> <span class="n">out_core_nohwp_fast</span>
@@ -147,7 +147,7 @@ requires the use of libmadam (the &#8211;madam option).</p>
 <div class="section" id="example-proposed-litebird-satellite-boresight">
 <h2>Example:  Proposed LiteBIRD Satellite Boresight<a class="headerlink" href="#example-proposed-litebird-satellite-boresight" title="Permalink to this headline">¶</a></h2>
 <p>Here is how you could do a similar thing with a boresight detector and one proposed lightbird scanning strategy for a day:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">toast_satellite_sim</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">samplerate</span> <span class="mf">23.0</span> <span class="o">--</span><span class="n">spinperiod</span> <span class="mf">10.0</span> <span class="o">--</span><span class="n">spinangle</span> <span class="mf">30.0</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="n">toast_satellite_sim</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">samplerate</span> <span class="mf">23.0</span> <span class="o">--</span><span class="n">spinperiod</span> <span class="mf">10.0</span> <span class="o">--</span><span class="n">spinangle</span> <span class="mf">30.0</span>
 <span class="o">--</span><span class="n">precperiod</span> <span class="mf">93.0</span> <span class="o">--</span><span class="n">precangle</span> <span class="mf">65.0</span> <span class="o">--</span><span class="n">hwprpm</span> <span class="mf">88.0</span> <span class="o">--</span><span class="n">obs</span> <span class="mf">23.0</span> <span class="o">--</span><span class="n">gap</span> <span class="mf">1.0</span>
 <span class="o">--</span><span class="n">obschunks</span> <span class="mi">24</span> <span class="o">--</span><span class="n">numobs</span> <span class="mi">1</span> <span class="o">--</span><span class="n">nside</span> <span class="mi">1024</span> <span class="o">--</span><span class="n">baseline</span> <span class="mf">60.0</span> <span class="o">--</span><span class="n">madam</span> <span class="o">--</span><span class="n">fp</span> <span class="n">fp_lb</span><span class="o">.</span><span class="n">pkl</span>
 <span class="o">--</span><span class="n">debug</span> <span class="o">--</span><span class="n">outdir</span> <span class="n">out_lb_hwp</span>
@@ -157,7 +157,7 @@ requires the use of libmadam (the &#8211;madam option).</p>
 <div class="section" id="creating-your-own-pipeline">
 <h2>Creating Your Own Pipeline<a class="headerlink" href="#creating-your-own-pipeline" title="Permalink to this headline">¶</a></h2>
 <p>TOAST is designed to give you tools to piece together your own data processing workflow.  Here is a slightly modified version of the pipeline script above.  This takes a boresight detector with 1/f noise properties, simulates a sort-of Planck scanning strategy, generates a noise timestream, and then generates a fake signal timestream and adds it to the noise.  Then it uses madam to make a map.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python3</span>
+<div class="highlight-default"><div class="highlight"><pre><span class="ch">#!/usr/bin/env python3</span>
 
 <span class="kn">import</span> <span class="nn">mpi4py.MPI</span> <span class="k">as</span> <span class="nn">MPI</span>
 
@@ -376,8 +376,8 @@ requires the use of libmadam (the &#8211;madam option).</p>
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>

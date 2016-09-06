@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation &mdash; TOAST 2.0 documentation</title>
+    <title>Installation &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -63,41 +63,74 @@ python 3.</p>
 <li>numpy</li>
 <li>scipy</li>
 <li>healpy</li>
-<li>quaternionarray</li>
 <li>matplotlib</li>
 <li>mpi4py (&gt;= 2.0.0)</li>
 <li>cython (if installed from a git checkout)</li>
 </ul>
 </div></blockquote>
-<p>All of these are available from standard locations (e.g. PyPi, with
-&#8220;pip install &lt;package&gt;&#8221;).  Make sure to install the python3 versions of
-these!</p>
-<p>In order to not mess up your system-installed python tools, I highly
-recommend this procedure:</p>
+<div class="section" id="option-0">
+<h3>Option #0<a class="headerlink" href="#option-0" title="Permalink to this headline">¶</a></h3>
+<p>If you are using NERSC, see <a class="reference internal" href="nersc.html#nersc"><span class="std std-ref">Using at NERSC</span></a>.</p>
+</div>
+<div class="section" id="option-1">
+<h3>Option #1<a class="headerlink" href="#option-1" title="Permalink to this headline">¶</a></h3>
+<p>If you are using a linux distribution which is fairly recent (e.g. the
+latest Ubuntu version), then you can install all the dependencies with
+the system package manager:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">python3</span><span class="o">-</span><span class="n">scipy</span> \
+   <span class="n">python3</span><span class="o">-</span><span class="n">matplotlib</span> <span class="n">python3</span><span class="o">-</span><span class="n">healpy</span> \
+   <span class="n">cython3</span> <span class="n">python3</span><span class="o">-</span><span class="n">mpi4py</span>
+</pre></div>
+</div>
+<p>On OS X, you can also get the dependencies with macports.  However, on some
+systems OpenMPI from macports is broken and MPICH should be installed
+as the dependency for the mpi4py package.</p>
+</div>
+<div class="section" id="option-2">
+<h3>Option #2<a class="headerlink" href="#option-2" title="Permalink to this headline">¶</a></h3>
+<p>If your OS is old, you could use a virtualenv to install updated versions
+of packages into an isolated location.  This is also useful if you want to
+separate your packages from the system installed versions, or if you do not
+have root access to the machine.  Make sure that you have python3 and the
+corresponding python3-virtualenv packages installed on your system.  Also
+make sure that you have some kind of MPI (OpenMPI or MPICH) installed with
+your system package manager.  Then:</p>
 <blockquote>
 <div><ol class="arabic simple">
-<li>install python3 and python3-virtualenv with your standard package
-manager (apt, macports, cygwin, etc).</li>
-<li>create a virtualenv for your work.</li>
-<li>inside the virtualenv, pip install the dependencies above.</li>
+<li>create a virtualenv and activate it.</li>
+<li>once inside the virtualenv, pip install the dependencies</li>
 </ol>
 </div></blockquote>
 </div>
+<div class="section" id="option-3">
+<h3>Option #3<a class="headerlink" href="#option-3" title="Permalink to this headline">¶</a></h3>
+<p>Use Anaconda.  Download and install Miniconda or the full Anaconda distribution.
+Make sure to install the Python3 version.  If you are starting from Miniconda,
+install the dependencies that are available through conda:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">conda</span> <span class="n">install</span> <span class="n">numpy</span> <span class="n">scipy</span> <span class="n">matplotlib</span> <span class="n">cython</span> <span class="n">mpi4py</span>
+</pre></div>
+</div>
+<p>Then install healpy with pip:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">pip</span> <span class="n">install</span> <span class="n">healpy</span>
+</pre></div>
+</div>
+</div>
+</div>
 <div class="section" id="using-setup-py">
 <h2>Using setup.py<a class="headerlink" href="#using-setup-py" title="Permalink to this headline">¶</a></h2>
-<p>You can install a stand-alone version of the package like this:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">some</span><span class="o">/</span><span class="n">path</span>
+<p>You can install a stand-alone version of the toast package like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">some</span><span class="o">/</span><span class="n">path</span>
 </pre></div>
 </div>
-<p>If you don&#8217;t specify the prefix, it will install to your main virtualenv
-location, or to the main python install location on the system.  This
-might not be what you want.  Installing in &#8220;development&#8221; mode is somewhat
-more complex, due to the use of compiled C libraries and extensions.  See
-more details in the <a class="reference internal" href="dev.html#dev"><span class="std std-ref">Developer&#8217;s Guide</span></a>.</p>
-<p>After installation, you can run a set of unit tests with:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">test</span>
-</pre></div>
-</div>
+<p>If you don&#8217;t specify the prefix, it will install to your main python location,
+which will depend on how you installed the dependencies above.</p>
+<p>Please give some thought to your development workflow.  If you are using a system
+installed python, don&#8217;t install toast to that location.  Create a new directory
+somewhere and add that location prefix to PATH and PYTHONPATH before installing.
+If you are using a virtualenv or an Anaconda environment, it might be fine to
+just install to that location.</p>
+<p>Installing in &#8220;development&#8221; mode is somewhat more complex, due to the use of
+compiled C libraries and extensions.  See more details in the <a class="reference internal" href="dev.html#dev"><span class="std std-ref">Developer&#8217;s Guide</span></a>.</p>
 </div>
 </div>
 
@@ -116,8 +149,8 @@ more details in the <a class="reference internal" href="dev.html#dev"><span clas
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>

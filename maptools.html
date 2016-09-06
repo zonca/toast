@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Map-making Tools &mdash; TOAST 2.0 documentation</title>
+    <title>Map-making Tools &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -93,7 +93,7 @@ containing the pixel indices to use.</td>
 
 <dl class="class">
 <dt id="toast.map.DistPixels">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">DistPixels</code><span class="sig-paren">(</span><em>comm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>size=0</em>, <em>nnz=1</em>, <em>dtype=&lt;class 'numpy.float64'&gt;</em>, <em>submap=None</em>, <em>local=None</em>, <em>localpix=None</em>, <em>nest=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">DistPixels</code><span class="sig-paren">(</span><em>comm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>size=0</em>, <em>nnz=1</em>, <em>dtype=&lt;class 'numpy.float64'&gt;</em>, <em>submap=None</em>, <em>local=None</em>, <em>localpix=None</em>, <em>nest=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/pixels.html#DistPixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.DistPixels" title="Permalink to this definition">¶</a></dt>
 <dd><p>A distributed map with multiple values per pixel.</p>
 <p>Pixel domain data is distributed across an MPI communicator.  each
 process has a local data stored in one or more &#8220;submaps&#8221;.  The size
@@ -261,7 +261,7 @@ process for writing.</p>
 <h2>Diagonal Noise Covariance<a class="headerlink" href="#diagonal-noise-covariance" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.map.OpInvCovariance">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpInvCovariance</code><span class="sig-paren">(</span><em>invnpp=None</em>, <em>hits=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpInvCovariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpInvCovariance" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpInvCovariance</code><span class="sig-paren">(</span><em>invnpp=None</em>, <em>hits=None</em>, <em>detweights=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>apply_flags=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpInvCovariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpInvCovariance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which computes the diagonal inverse pixel covariance.</p>
 <p>This operator requires that the local pointing matrix has already been
 computed.  Each process has a local piece of the inverse covariance.</p>
@@ -274,6 +274,16 @@ computed.  Each process has a local piece of the inverse covariance.</p>
 <li><strong>hits</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; (optional) the hits to accumulate.</li>
 <li><strong>detweights</strong> (<em>dictionary</em>) &#8211; individual noise weights to use for each
 detector.</li>
+<li><strong>flag_name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;flag_name&gt;_&lt;detector&gt;) to
+use for the detector flags.  If None, use the TOD.</li>
+<li><strong>flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
+used with the detector flags in a bitwise AND.</li>
+<li><strong>common_flag_name</strong> (<em>str</em>) &#8211; the name of the cache object
+(&lt;common_flag_name&gt;_&lt;detector&gt;) to use for the common flags.
+If None, use the TOD.</li>
+<li><strong>common_flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
+used with the common flags in a bitwise AND.</li>
+<li><strong>apply_flags</strong> (<em>bool</em>) &#8211; whether to apply flags to the pixel numbers.</li>
 <li><strong>pixels</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)
 containing the pixel indices to use.</li>
 <li><strong>weights</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)
@@ -353,7 +363,7 @@ from the supplied covariance matrix data.</p>
 <h2>External Madam Interface<a class="headerlink" href="#external-madam-interface" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.map.OpMadam">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>timestamps_name=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>name_out=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=True</em>, <em>purge=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>timestamps_name=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>name_out=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=True</em>, <em>purge=False</em>, <em>dets=None</em>, <em>mcmode=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which passes data to libmadam for map-making.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -371,9 +381,24 @@ containing the pointing weights to use.</li>
 use for the detector timestream.  If None, use the TOD.</li>
 <li><strong>name_out</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
 use to output destriped detector timestream.  No output if None.</li>
+<li><strong>flag_name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;flag_name&gt;_&lt;detector&gt;) to
+use for the detector flags.  If None, use the TOD.</li>
+<li><strong>flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
+used with the detector flags in a bitwise AND.</li>
+<li><strong>common_flag_name</strong> (<em>str</em>) &#8211; the name of the cache object
+(&lt;common_flag_name&gt;_&lt;detector&gt;) to use for the common flags.
+If None, use the TOD.</li>
+<li><strong>common_flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
+used with the common flags in a bitwise AND.</li>
+<li><strong>apply_flags</strong> (<em>bool</em>) &#8211; whether to apply flags to the pixel numbers.</li>
 <li><strong>timestamps_name</strong> (<em>str</em>) &#8211; the name of the cache object to use for time stamps.</li>
 <li><strong>purge</strong> (<em>bool</em>) &#8211; if True, clear any cached data that is copied into the
 the Madam buffers.</li>
+<li><strong>dets</strong> (<em>iterable</em>) &#8211; List of detectors to map. If left as None, all available
+detectors are mapped.</li>
+<li><strong>mcmode</strong> (<em>bool</em>) &#8211; If true, the operator is constructed in Monte Carlo mode and
+Madam will cache auxiliary information such as pixel matrices and
+noise filter.</li>
 </ul>
 </td>
 </tr>
@@ -425,8 +450,8 @@ the Madam buffers.</li>
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>

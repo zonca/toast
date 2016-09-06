@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.tod.conviqt &mdash; TOAST 2.0 documentation</title>
+    <title>toast.tod.conviqt &#8212; TOAST 2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -43,34 +43,34 @@
         
         
   <h1>Source code for toast.tod.conviqt</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
 
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="k">if</span> <span class="s1">&#39;PYTOAST_NOMPI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-    <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">fakempi</span> <span class="k">as</span> <span class="n">MPI</span>
+<span class="k">if</span> <span class="s1">&#39;TOAST_NO_MPI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">fakempi</span> <span class="k">as</span> <span class="n">MPI</span>
 <span class="k">else</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+    <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
 
-<span class="kn">import</span> <span class="nn">ctypes</span> <span class="kn">as</span> <span class="nn">ct</span>
-<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="kn">import</span> <span class="n">find_library</span>
+<span class="kn">import</span> <span class="nn">ctypes</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">from</span> <span class="nn">ctypes.util</span> <span class="k">import</span> <span class="n">find_library</span>
 
 <span class="kn">import</span> <span class="nn">unittest</span>
 
-<span class="kn">import</span> <span class="nn">healpy</span> <span class="kn">as</span> <span class="nn">hp</span>
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="k">as</span> <span class="nn">hp</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">numpy.ctypeslib</span> <span class="kn">as</span> <span class="nn">npc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.ctypeslib</span> <span class="k">as</span> <span class="nn">npc</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
 
-<span class="kn">from</span> <span class="nn">..dist</span> <span class="kn">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
-<span class="kn">from</span> <span class="nn">..operator</span> <span class="kn">import</span> <span class="n">Operator</span>
-<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">TOD</span>
-<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">Interval</span>
-<span class="kn">from</span> <span class="nn">..tod</span> <span class="kn">import</span> <span class="n">quat2angle</span>
+<span class="kn">from</span> <span class="nn">..dist</span> <span class="k">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
+<span class="kn">from</span> <span class="nn">..operator</span> <span class="k">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="k">import</span> <span class="n">TOD</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="k">import</span> <span class="n">Interval</span>
+<span class="kn">from</span> <span class="nn">..tod</span> <span class="k">import</span> <span class="n">quat2angle</span>
 
 <span class="c1"># Define portably the MPI communicator datatype</span>
 
@@ -82,16 +82,16 @@
 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Failed to set the portable MPI communicator datatype. MPI4py is probably too old. You need to have at least version 2.0. ({})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
 
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">libconviqt</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="s1">&#39;libconviqt.so&#39;</span><span class="p">)</span>
-<span class="k">except</span><span class="p">:</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="n">find_library</span><span class="p">(</span><span class="s1">&#39;conviqt&#39;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">libconviqt</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">libconviqt</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">libconviqt</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="k">if</span> <span class="s1">&#39;TOAST_NO_MPI&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">libconviqt</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="s1">&#39;libconviqt.so&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">find_library</span><span class="p">(</span><span class="s1">&#39;conviqt&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">libconviqt</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">CDLL</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 
-<span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+<span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
     <span class="c1"># Beam functions</span>
 
     <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_beam_new</span><span class="o">.</span><span class="n">restype</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">c_void_p</span>
@@ -233,7 +233,7 @@
 <span class="sd">            use for output of the detector timestream.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lmax</span><span class="p">,</span> <span class="n">beamlmax</span><span class="p">,</span> <span class="n">beammmax</span><span class="p">,</span> <span class="n">detectordata</span><span class="p">,</span> <span class="n">pol</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">nbetafac</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">mcsamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lmaxout</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">calibrate</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">dxx</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;conviqt&#39;</span><span class="p">,</span> <span class="n">quat_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flag_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lmax</span><span class="p">,</span> <span class="n">beamlmax</span><span class="p">,</span> <span class="n">beammmax</span><span class="p">,</span> <span class="n">detectordata</span><span class="p">,</span> <span class="n">pol</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fwhm</span><span class="o">=</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">nbetafac</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">mcsamples</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">lmaxout</span><span class="o">=</span><span class="mi">6000</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">calibrate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dxx</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;conviqt&#39;</span><span class="p">,</span> <span class="n">quat_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
@@ -267,7 +267,7 @@
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        (bool): True if libconviqt is found in the library search path.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">libconviqt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="OpSimConviqt.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimConviqt.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
@@ -280,7 +280,7 @@
 <span class="sd">        Args:</span>
 <span class="sd">            data (toast.Data): The distributed data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">libconviqt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The conviqt library was not found&quot;</span><span class="p">)</span>
 
         <span class="c1"># the two-level pytoast communicator</span>
@@ -322,23 +322,23 @@
                 <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_detector_set_epsilon</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">)</span>
                 
                 <span class="c1"># We need the three pointing angles to describe the pointing. read_pntg returns the attitude quaternions.</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quat_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quat_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">cachename</span> <span class="o">=</span> <span class="s1">&#39;{}_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quat_name</span><span class="p">,</span> <span class="n">det</span> <span class="p">)</span>
                     <span class="n">pdata</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">pdata</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
-                    <span class="n">common</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">common</span><span class="p">,</span> <span class="n">flags</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">cachename</span> <span class="o">=</span> <span class="s1">&#39;{}_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span><span class="p">,</span> <span class="n">det</span> <span class="p">)</span>
                         <span class="n">flags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">flags</span><span class="p">,</span> <span class="n">common_temp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">common</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">common</span> <span class="o">=</span> <span class="n">common_temp</span>
-                    <span class="k">if</span> <span class="n">common</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">common</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">common</span> <span class="o">=</span> <span class="n">common_temp</span>
+                    <span class="k">if</span> <span class="n">common</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_common_flags</span><span class="p">()</span>
                     <span class="n">common</span> <span class="o">=</span> <span class="p">(</span><span class="n">common</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span>
                     <span class="n">flags</span> <span class="o">=</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span>
@@ -369,7 +369,7 @@
 
                 <span class="n">convolver</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_new</span><span class="p">(</span><span class="n">sky</span><span class="p">,</span> <span class="n">beam</span><span class="p">,</span> <span class="n">detector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_beammmax</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nbetafac</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mcsamples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lmaxout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_order</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">convolver</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Failed to instantiate convolver&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">convolver</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Failed to instantiate convolver&quot;</span><span class="p">)</span>
 
                 <span class="n">err</span> <span class="o">=</span> <span class="n">libconviqt</span><span class="o">.</span><span class="n">conviqt_convolver_convolve</span><span class="p">(</span><span class="n">convolver</span><span class="p">,</span> <span class="n">pnt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calibrate</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Convolution FAILED!&#39;</span><span class="p">)</span>
@@ -409,8 +409,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &copy; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.1.
+        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
     </div>
   </body>
 </html>
