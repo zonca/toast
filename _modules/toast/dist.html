@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.dist &#8212; TOAST 2.0 documentation</title>
+    <title>toast.dist &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,12 +26,16 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="../../index.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>toast.dist</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -43,19 +49,13 @@
         
         
   <h1>Source code for toast.dist</h1><div class="highlight"><pre>
-<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span></span><span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
+<span class="kn">from</span> <span class="nn">.mpi</span> <span class="k">import</span> <span class="n">MPI</span>
 
 <span class="kn">import</span> <span class="nn">os</span>
-
-<span class="k">if</span> <span class="s1">&#39;TOAST_NO_MPI&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-    <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">fakempi</span> <span class="k">as</span> <span class="n">MPI</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">mpi4py</span> <span class="k">import</span> <span class="n">MPI</span>
-
-<span class="kn">import</span> <span class="nn">unittest</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -87,7 +87,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_gsize</span> <span class="o">=</span> <span class="n">groupsize</span>
 
         <span class="k">if</span><span class="p">(</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gsize</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_gsize</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wsize</span><span class="p">)</span> <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid groupsize ({}).  Should be between {} and {}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupsize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wsize</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid groupsize (</span><span class="si">{}</span><span class="s2">).  Should be between </span><span class="si">{}</span><span class="s2"> and </span><span class="si">{}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupsize</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wsize</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gsize</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_gsize</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wsize</span>
@@ -192,7 +192,8 @@
             <span class="n">low</span> <span class="o">=</span> <span class="n">mid</span> <span class="o">+</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">low</span>
 
-<span class="k">def</span> <span class="nf">distribute_discrete</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="nb">pow</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+
+<span class="k">def</span> <span class="nf">distribute_discrete</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="nb">pow</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Distribute indivisible blocks of items between groups.</span>
 
@@ -207,6 +208,7 @@
 <span class="sd">        sizes (list): The sizes of the indivisible blocks.</span>
 <span class="sd">        groups (int): The number of groups.</span>
 <span class="sd">        pow (float): The power to use for weighting</span>
+<span class="sd">        breaks (list): List of hard breaks in the data distribution.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A list of tuples.  There is one tuple per group.  </span>
@@ -224,16 +226,32 @@
 
     <span class="n">off</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">curweight</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="n">proc</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">all_breaks</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">breaks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Check that the problem makes sense</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">breaks</span><span class="p">)</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">all_breaks</span><span class="p">[</span><span class="n">all_breaks</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">all_breaks</span><span class="p">[</span><span class="n">all_breaks</span> <span class="o">&lt;</span> <span class="n">chunks</span><span class="o">.</span><span class="n">size</span><span class="p">]</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">all_breaks</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">all_breaks</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;</span> <span class="n">groups</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;Cannot divide </span><span class="si">{}</span><span class="s1"> chunks to </span><span class="si">{}</span><span class="s1"> groups with </span><span class="si">{}</span><span class="s1"> breaks.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">chunks</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">all_breaks</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+    <span class="n">at_break</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">for</span> <span class="n">cur</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-        <span class="k">if</span> <span class="n">curweight</span> <span class="o">+</span> <span class="n">weights</span><span class="p">[</span><span class="n">cur</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_per_proc</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">curweight</span> <span class="o">+</span> <span class="n">weights</span><span class="p">[</span><span class="n">cur</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_per_proc</span> <span class="ow">or</span> <span class="n">at_break</span><span class="p">:</span>
             <span class="n">dist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">off</span><span class="p">,</span> <span class="n">cur</span><span class="o">-</span><span class="n">off</span><span class="p">)</span> <span class="p">)</span>
             <span class="n">over</span> <span class="o">=</span> <span class="n">curweight</span> <span class="o">-</span> <span class="n">target</span>
             <span class="n">curweight</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">cur</span><span class="p">]</span> <span class="o">+</span> <span class="n">over</span>
             <span class="n">off</span> <span class="o">=</span> <span class="n">cur</span>
-            <span class="n">proc</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">curweight</span> <span class="o">+=</span> <span class="n">weights</span><span class="p">[</span><span class="n">cur</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">all_breaks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">at_break</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">cur</span><span class="o">+</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">all_breaks</span><span class="p">:</span>
+                <span class="n">at_break</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="n">dist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">off</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">off</span><span class="p">)</span> <span class="p">)</span>
 
@@ -243,7 +261,7 @@
     <span class="k">return</span> <span class="n">dist</span>
 
 
-<span class="k">def</span> <span class="nf">distribute_uniform</span><span class="p">(</span><span class="n">totalsize</span><span class="p">,</span> <span class="n">groups</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">distribute_uniform</span><span class="p">(</span><span class="n">totalsize</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Uniformly distribute items between groups.</span>
 
@@ -254,6 +272,7 @@
 <span class="sd">    Args:</span>
 <span class="sd">        totalsize (int): The total number of items.</span>
 <span class="sd">        groups (int): The number of groups.</span>
+<span class="sd">        breaks (list): List of hard breaks in the data distribution.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        list of tuples: there is one tuple per group.  The </span>
@@ -261,40 +280,118 @@
 <span class="sd">        assigned to the group, and the second element is </span>
 <span class="sd">        the number of items assigned to the group. </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ret</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">groups</span><span class="p">):</span>
-        <span class="n">myn</span> <span class="o">=</span> <span class="n">totalsize</span> <span class="o">//</span> <span class="n">groups</span>
-        <span class="n">off</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">leftover</span> <span class="o">=</span> <span class="n">totalsize</span> <span class="o">%</span> <span class="n">groups</span>
-        <span class="k">if</span> <span class="p">(</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">leftover</span> <span class="p">):</span>
-            <span class="n">myn</span> <span class="o">=</span> <span class="n">myn</span> <span class="o">+</span> <span class="mi">1</span>
-            <span class="n">off</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">myn</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">off</span> <span class="o">=</span> <span class="p">((</span><span class="n">myn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">leftover</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">myn</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">leftover</span><span class="p">))</span>
-        <span class="n">ret</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">off</span><span class="p">,</span> <span class="n">myn</span><span class="p">)</span> <span class="p">)</span>
-    <span class="k">return</span> <span class="n">ret</span>
-
-
-<span class="k">def</span> <span class="nf">distribute_samples</span><span class="p">(</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">timedist</span><span class="p">,</span> <span class="n">detectors</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">sizes</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-    <span class="n">dist_dets</span> <span class="o">=</span> <span class="n">detectors</span>
-    <span class="n">dist_samples</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">dist_sizes</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="k">if</span> <span class="n">timedist</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">dist_sizes</span> <span class="o">=</span> <span class="n">distribute_discrete</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
-            <span class="n">dist_samples</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">off</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dist_sizes</span><span class="p">:</span>
-                <span class="n">cursamp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sizes</span><span class="p">[</span><span class="n">ds</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">ds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">ds</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-                <span class="n">dist_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">off</span><span class="p">,</span> <span class="n">cursamp</span><span class="p">)</span> <span class="p">)</span>
-                <span class="n">off</span> <span class="o">+=</span> <span class="n">cursamp</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">dist_samples</span> <span class="o">=</span> <span class="n">distribute_uniform</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">breaks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">breaks</span><span class="p">)</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">all_breaks</span><span class="p">[</span><span class="n">all_breaks</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">all_breaks</span><span class="p">[</span><span class="n">all_breaks</span> <span class="o">&lt;</span> <span class="n">totalsize</span><span class="p">]</span>
+        <span class="n">all_breaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">all_breaks</span><span class="p">)</span>
+        <span class="n">groupcounts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">groupsizes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">brk</span> <span class="ow">in</span> <span class="n">all_breaks</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">brk</span> <span class="o">-</span> <span class="n">offset</span>
+            <span class="n">groupcounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">groups</span><span class="o">*</span><span class="n">length</span><span class="o">/</span><span class="n">totalsize</span><span class="p">)))</span>
+            <span class="n">groupsizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">brk</span>
+        <span class="n">groupcounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">groups</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">groupcounts</span><span class="p">))</span>
+        <span class="n">groupsizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">totalsize</span> <span class="o">-</span> <span class="n">offset</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">dist_detsindx</span> <span class="o">=</span> <span class="n">distribute_uniform</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">detectors</span><span class="p">),</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span><span class="p">)[</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">rank</span><span class="p">]</span>
-        <span class="n">dist_dets</span> <span class="o">=</span> <span class="n">detectors</span><span class="p">[</span><span class="n">dist_detsindx</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">dist_detsindx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">dist_detsindx</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-        <span class="n">dist_samples</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="p">]</span>
+        <span class="n">groupcounts</span> <span class="o">=</span> <span class="p">[</span><span class="n">groups</span><span class="p">]</span>
+        <span class="n">groupsizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">totalsize</span><span class="p">]</span>
+
+    <span class="n">dist</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">groupsize</span><span class="p">,</span> <span class="n">groupcount</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">groupsizes</span><span class="p">,</span> <span class="n">groupcounts</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">groupcount</span><span class="p">):</span>
+            <span class="n">myn</span> <span class="o">=</span> <span class="n">groupsize</span> <span class="o">//</span> <span class="n">groupcount</span>
+            <span class="n">off</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">leftover</span> <span class="o">=</span> <span class="n">groupsize</span> <span class="o">%</span> <span class="n">groupcount</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">leftover</span> <span class="p">):</span>
+                <span class="n">myn</span> <span class="o">=</span> <span class="n">myn</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">off</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">myn</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">off</span> <span class="o">=</span> <span class="p">((</span><span class="n">myn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">leftover</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">myn</span> <span class="o">*</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">leftover</span><span class="p">))</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">offset</span><span class="o">+</span><span class="n">off</span><span class="p">,</span> <span class="n">myn</span><span class="p">))</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="n">groupsize</span>
+
+    <span class="k">return</span> <span class="n">dist</span>
+
+
+<span class="k">def</span> <span class="nf">distribute_samples</span><span class="p">(</span><span class="n">mpicomm</span><span class="p">,</span> <span class="n">detectors</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">detranks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">detbreaks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sampsizes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sampbreaks</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Distribute data by detector and sample.</span>
+
+<span class="sd">    Given a list of detectors and some number of samples, distribute</span>
+<span class="sd">    the data in a load balanced way.  Optionally account for constraints</span>
+<span class="sd">    on this distribution.  The samples may be grouped by indivisible</span>
+<span class="sd">    chunks, and there may be forced breaks in the distribution in both</span>
+<span class="sd">    the detector and chunk directions.</span>
+
+<span class="sd">                            samples --&gt;</span>
+<span class="sd">                      +--------------+--------------</span>
+<span class="sd">                    / | sampsize[0]  | sampsize[1] ... </span>
+<span class="sd">        detrank = 0   +--------------+--------------</span>
+<span class="sd">                    \ | sampsize[0]  | sampsize[1] ...</span>
+<span class="sd">                      +--------------+--------------</span>
+<span class="sd">                    / | sampsize[0]  | sampsize[1] ... </span>
+<span class="sd">        detrank = 1   +--------------+--------------</span>
+<span class="sd">                    \ | sampsize[0]  | sampsize[1] ...</span>
+<span class="sd">                      +--------------+--------------</span>
+<span class="sd">                      | ...</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mpicomm (mpi4py.MPI.Comm):  the MPI communicator over which the </span>
+<span class="sd">            data is distributed.</span>
+<span class="sd">        detectors (list):  The list of detector names.</span>
+<span class="sd">        samples (int):  The total number of samples.</span>
+<span class="sd">        detranks (int):  The dimension of the process grid in the detector</span>
+<span class="sd">            direction.  The MPI communicator size must be evenly divisible</span>
+<span class="sd">            by this number.</span>
+<span class="sd">        detbreaks (list):  Optional list of hard breaks in the detector</span>
+<span class="sd">            distribution.</span>
+<span class="sd">        sampsizes (list):  Optional list of sample chunk sizes which </span>
+<span class="sd">            cannot be split.    </span>
+<span class="sd">        sampbreaks (list):  Optional list of hard breaks in the sample </span>
+<span class="sd">            distribution.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple of lists: the 3 lists returned contain information about </span>
+<span class="sd">        the detector distribution, the sample distribution, and the chunk </span>
+<span class="sd">        distribution.  The first list has one entry for each detrank and</span>
+<span class="sd">        contains the list of detectors for that row of the process grid.</span>
+<span class="sd">        The second list contains tuples of (first sample, N samples) for </span>
+<span class="sd">        each column of the process grid.  The third list contains tuples</span>
+<span class="sd">        of (first chunk, N chunks) for each column of the process grid.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span> <span class="o">%</span> <span class="n">detranks</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The number of detranks (</span><span class="si">{}</span><span class="s2">) does not divide evenly into the communicator size (</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">detranks</span><span class="p">,</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+
+    <span class="c1"># Compute the other dimension of the process grid.</span>
+
+    <span class="n">sampranks</span> <span class="o">=</span> <span class="n">mpicomm</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="n">detranks</span>
+
+    <span class="c1"># Distribute detectors uniformly, but respecting forced breaks in the</span>
+    <span class="c1"># grouping specified by the calling code.</span>
+
+    <span class="n">dist_detsindx</span> <span class="o">=</span> <span class="n">distribute_uniform</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">detectors</span><span class="p">),</span> <span class="n">detranks</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="n">detbreaks</span><span class="p">)</span>
+    <span class="n">dist_dets</span> <span class="o">=</span> <span class="p">[</span> <span class="n">detectors</span><span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dist_detsindx</span> <span class="p">]</span>
+
+    <span class="c1"># Distribute samples using both the chunking and the forced breaks</span>
+
+    <span class="k">if</span> <span class="n">sampsizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dist_sizes</span> <span class="o">=</span> <span class="n">distribute_discrete</span><span class="p">(</span>
+            <span class="n">sampsizes</span><span class="p">,</span> <span class="n">sampranks</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="n">sampbreaks</span><span class="p">)</span>
+        <span class="n">dist_samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">off</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">dist_sizes</span><span class="p">:</span>
+            <span class="n">cursamp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sampsizes</span><span class="p">[</span><span class="n">ds</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">ds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">ds</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">dist_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">off</span><span class="p">,</span> <span class="n">cursamp</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">off</span> <span class="o">+=</span> <span class="n">cursamp</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dist_samples</span> <span class="o">=</span> <span class="n">distribute_uniform</span><span class="p">(</span>
+            <span class="n">samples</span><span class="p">,</span> <span class="n">sampranks</span><span class="p">,</span> <span class="n">breaks</span><span class="o">=</span><span class="n">sampbreaks</span><span class="p">)</span>
+        <span class="n">dist_sizes</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">sampranks</span><span class="p">)</span> <span class="p">]</span>
 
     <span class="k">return</span> <span class="p">(</span><span class="n">dist_dets</span><span class="p">,</span> <span class="n">dist_samples</span><span class="p">,</span> <span class="n">dist_sizes</span><span class="p">)</span>
 
@@ -336,7 +433,7 @@
         <span class="k">return</span></div>
 
 
-<div class="viewcode-block" id="Data.info"><a class="viewcode-back" href="../../dist.html#toast.Data.info">[docs]</a>    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">):</span>
+<div class="viewcode-block" id="Data.info"><a class="viewcode-back" href="../../dist.html#toast.Data.info">[docs]</a>    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Print information about the distributed data to the</span>
 <span class="sd">        specified file handle.  Only the rank 0 process writes.</span>
@@ -352,7 +449,7 @@
         <span class="n">rcomm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">comm_rank</span>
 
         <span class="k">if</span> <span class="n">wcomm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Data distributed over {} processes in {} groups</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">world_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">ngroups</span><span class="p">))</span>
+            <span class="n">handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Data distributed over </span><span class="si">{}</span><span class="s2"> processes in </span><span class="si">{}</span><span class="s2"> groups</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">world_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comm</span><span class="o">.</span><span class="n">ngroups</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">ob</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
             <span class="nb">id</span> <span class="o">=</span> <span class="n">ob</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
@@ -362,12 +459,12 @@
             <span class="n">intrvl</span> <span class="o">=</span> <span class="n">ob</span><span class="p">[</span><span class="s1">&#39;intervals&#39;</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">gcomm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;observation {}:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-                <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;{}  {} total samples, {} detectors</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">total_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">))</span>
+                <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;observation </span><span class="si">{}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+                <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">  </span><span class="si">{}</span><span class="s2"> total samples, </span><span class="si">{}</span><span class="s2"> detectors</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">total_samples</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">detectors</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">intrvl</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;{}  {} intervals:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">intrvl</span><span class="p">))</span>
+                    <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">  </span><span class="si">{}</span><span class="s2"> intervals:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">intrvl</span><span class="p">))</span>
                     <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="n">intrvl</span><span class="p">:</span>
-                        <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;{}    {} --&gt; {} ({} --&gt; {})</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">first</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">last</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+                        <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">    </span><span class="si">{}</span><span class="s2"> --&gt; </span><span class="si">{}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2"> --&gt; </span><span class="si">{}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">first</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">last</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">it</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
 
             <span class="c1"># rank zero of the group will print general information,</span>
             <span class="c1"># and each process will get its statistics.</span>
@@ -375,11 +472,11 @@
             <span class="n">nsamp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">dets</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span>
 
-            <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;  proc {}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gcomm</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
+            <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;  proc </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gcomm</span><span class="o">.</span><span class="n">rank</span><span class="p">)</span>
             <span class="n">my_chunks</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">my_chunks</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-            <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}    sample range {} --&gt; {} in {} chunks:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">nsamp</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">my_chunks</span><span class="p">)</span>
+            <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">    sample range </span><span class="si">{}</span><span class="s2"> --&gt; </span><span class="si">{}</span><span class="s2"> in </span><span class="si">{}</span><span class="s2"> chunks:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">nsamp</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">my_chunks</span><span class="p">)</span>
             
             <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">chkoff</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -387,49 +484,49 @@
                     <span class="n">abschk</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">chk</span>
                     <span class="n">chkstart</span> <span class="o">=</span> <span class="n">chkoff</span>
                     <span class="n">chkstop</span> <span class="o">=</span> <span class="n">chkstart</span> <span class="o">+</span> <span class="n">tod</span><span class="o">.</span><span class="n">total_chunks</span><span class="p">[</span><span class="n">abschk</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}      {} --&gt; {}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">chkstart</span><span class="p">,</span> <span class="n">chkstop</span><span class="p">)</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">      </span><span class="si">{}</span><span class="s2"> --&gt; </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">chkstart</span><span class="p">,</span> <span class="n">chkstop</span><span class="p">)</span>
                     <span class="n">chkoff</span> <span class="o">+=</span> <span class="n">tod</span><span class="o">.</span><span class="n">total_chunks</span><span class="p">[</span><span class="n">abschk</span><span class="p">]</span>
 
             <span class="k">if</span> <span class="n">nsamp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
     
                 <span class="n">stamps</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_times</span><span class="p">(</span><span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nsamp</span><span class="p">)</span>
 
-                <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}    timestamps {} --&gt; {}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">stamps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">    timestamps </span><span class="si">{}</span><span class="s2"> --&gt; </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">stamps</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">stamps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
                 <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">dets</span><span class="p">:</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}    det {}:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">    det </span><span class="si">{}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
 
                     <span class="n">pdata</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nsamp</span><span class="p">)</span>
 
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}      pntg [{:.3e} {:.3e} {:.3e} {:.3e}] --&gt; [{:.3e} {:.3e} {:.3e} {:.3e}]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">      pntg [</span><span class="si">{:.3e}</span><span class="s2"> </span><span class="si">{:.3e}</span><span class="s2"> </span><span class="si">{:.3e}</span><span class="s2"> </span><span class="si">{:.3e}</span><span class="s2">] --&gt; [</span><span class="si">{:.3e}</span><span class="s2"> </span><span class="si">{:.3e}</span><span class="s2"> </span><span class="si">{:.3e}</span><span class="s2"> </span><span class="si">{:.3e}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="n">pdata</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">])</span>
 
                     <span class="n">data</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nsamp</span><span class="p">)</span>
                     <span class="n">flags</span><span class="p">,</span> <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nsamp</span><span class="p">)</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}      {:.3e} ({}) --&gt; {:.3e} ({})</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">flags</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">flags</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-                    <span class="n">good</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">flags</span> <span class="o">|</span> <span class="n">common</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}        {} good samples</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">good</span><span class="p">))</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">      </span><span class="si">{:.3e}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">) --&gt; </span><span class="si">{:.3e}</span><span class="s2"> (</span><span class="si">{}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">flags</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">flags</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">good</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(((</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">flag_mask</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">common</span> <span class="o">&amp;</span> <span class="n">common_flag_mask</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">        </span><span class="si">{}</span><span class="s2"> good samples</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">good</span><span class="p">))</span>
                     <span class="nb">min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">good</span><span class="p">])</span>
                     <span class="nb">max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">good</span><span class="p">])</span>
                     <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">good</span><span class="p">])</span>
                     <span class="n">rms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">good</span><span class="p">])</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}        min = {:.4e}, max = {:.4e}, mean = {:.4e}, rms = {:.4e}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">rms</span><span class="p">)</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">        min = </span><span class="si">{:.4e}</span><span class="s2">, max = </span><span class="si">{:.4e}</span><span class="s2">, mean = </span><span class="si">{:.4e}</span><span class="s2">, rms = </span><span class="si">{:.4e}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">rms</span><span class="p">)</span>
 
                 <span class="k">for</span> <span class="n">cname</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}    cache {}:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">cname</span><span class="p">)</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">    cache </span><span class="si">{}</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">cname</span><span class="p">)</span>
                     <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cname</span><span class="p">)</span>
                     <span class="nb">min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
                     <span class="nb">max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
                     <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
                     <span class="n">rms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
-                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;{}        min = {:.4e}, max = {:.4e}, mean = {:.4e}, rms = {:.4e}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">rms</span><span class="p">)</span>
+                    <span class="n">procstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">        min = </span><span class="si">{:.4e}</span><span class="s2">, max = </span><span class="si">{:.4e}</span><span class="s2">, mean = </span><span class="si">{:.4e}</span><span class="s2">, rms = </span><span class="si">{:.4e}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">rms</span><span class="p">)</span>
 
             <span class="n">recvstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
             <span class="k">if</span> <span class="n">gcomm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">procstr</span><span class="p">)</span>
+                <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">procstr</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">gcomm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">gcomm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">recvstr</span> <span class="o">=</span> <span class="n">gcomm</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">p</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
-                    <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">recvstr</span><span class="p">)</span>
+                    <span class="n">groupstr</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">groupstr</span><span class="p">,</span> <span class="n">recvstr</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="n">gcomm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
                     <span class="n">gcomm</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">procstr</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
                 <span class="n">gcomm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
@@ -463,8 +560,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

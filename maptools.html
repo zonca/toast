@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Map-making Tools &#8212; TOAST 2.0 documentation</title>
+    <title>Map-making Tools &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,13 +26,17 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="index.html" />
     <link rel="next" title="Using at NERSC" href="nersc.html" />
     <link rel="prev" title="Simulations" href="sim.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>Map-making Tools</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -81,12 +87,6 @@ containing the pixel indices to use.</td>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="toast.map.OpLocalPixels.timedist">
-<code class="descname">timedist</code><a class="headerlink" href="#toast.map.OpLocalPixels.timedist" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>(bool)</em> &#8211; Whether this operator requires data that time-distributed.</p>
 </dd></dl>
 
 </dd></dl>
@@ -187,6 +187,12 @@ pixel index local to that submap (int).</td>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="toast.map.DistPixels.nested">
+<code class="descname">nested</code><a class="headerlink" href="#toast.map.DistPixels.nested" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>(bool)</em> &#8211; If True, data is HEALPix NESTED ordering.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="toast.map.DistPixels.nnz">
 <code class="descname">nnz</code><a class="headerlink" href="#toast.map.DistPixels.nnz" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>(int)</em> &#8211; The number of non-zero values per pixel.</p>
@@ -260,20 +266,31 @@ process for writing.</p>
 <div class="section" id="diagonal-noise-covariance">
 <h2>Diagonal Noise Covariance<a class="headerlink" href="#diagonal-noise-covariance" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="toast.map.OpInvCovariance">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpInvCovariance</code><span class="sig-paren">(</span><em>invnpp=None</em>, <em>hits=None</em>, <em>detweights=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>apply_flags=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpInvCovariance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpInvCovariance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Operator which computes the diagonal inverse pixel covariance.</p>
+<dt id="toast.map.OpAccumDiag">
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpAccumDiag</code><span class="sig-paren">(</span><em>zmap=None</em>, <em>hits=None</em>, <em>invnpp=None</em>, <em>detweights=None</em>, <em>name=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>apply_flags=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpAccumDiag"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpAccumDiag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator which accumulates the diagonal covariance and noise weighted map.</p>
 <p>This operator requires that the local pointing matrix has already been
-computed.  Each process has a local piece of the inverse covariance.</p>
+computed.  Each process has local pieces of the map products.  This
+operator can optionally accumulate any combination of the hit map,
+the white noise weighted map, and the diagonal inverse pixel covariance.</p>
+<p>NOTE:  The input DistPixels objects (noise weighted map, hit map, and
+inverse covariance) are purposefully NOT set to zero at the start.  This
+allows accumulating multiple instances of the distributed data.  This might
+be needed (for example) if all desired timestream data does not fit into
+memory.  You should manually clear the pixel domain objects before
+accumulation if desired.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>invnpp</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; The matrix to accumulate.</li>
+<li><strong>zmap</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; (optional) the noise weighted map to accumulate.</li>
 <li><strong>hits</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; (optional) the hits to accumulate.</li>
+<li><strong>invnpp</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; (optional) the diagonal covariance matrix.</li>
 <li><strong>detweights</strong> (<em>dictionary</em>) &#8211; individual noise weights to use for each
 detector.</li>
+<li><strong>name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
+use for the detector timestream.  If None, use the TOD.</li>
 <li><strong>flag_name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;flag_name&gt;_&lt;detector&gt;) to
 use for the detector flags.  If None, use the TOD.</li>
 <li><strong>flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
@@ -294,8 +311,8 @@ containing the pointing weights to use.</li>
 </tbody>
 </table>
 <dl class="method">
-<dt id="toast.map.OpInvCovariance.exec">
-<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpInvCovariance.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpInvCovariance.exec" title="Permalink to this definition">¶</a></dt>
+<dt id="toast.map.OpAccumDiag.exec">
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#OpAccumDiag.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpAccumDiag.exec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterate over all observations and detectors and accumulate.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -311,9 +328,9 @@ containing the pointing weights to use.</li>
 
 <dl class="function">
 <dt id="toast.map.covariance_invert">
-<code class="descclassname">toast.map.</code><code class="descname">covariance_invert</code><span class="sig-paren">(</span><em>npp</em>, <em>threshold</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_invert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_invert" title="Permalink to this definition">¶</a></dt>
-<dd><p>Invert the local piece of a diagonal noise covariance.</p>
-<p>This does an in-place inversion of the covariance.  The threshold is
+<code class="descclassname">toast.map.</code><code class="descname">covariance_invert</code><span class="sig-paren">(</span><em>npp</em>, <em>threshold</em>, <em>rcond=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_invert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_invert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Invert a diagonal noise covariance.</p>
+<p>This does an inversion of the covariance.  The threshold is
 applied to the condition number of each block of the matrix.  Pixels
 failing the cut are set to zero.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -321,8 +338,9 @@ failing the cut are set to zero.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>npp</strong> (<em>3D array</em>) &#8211; The data member of a distributed covariance.</li>
+<li><strong>npp</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; The distributed covariance.</li>
 <li><strong>threshold</strong> (<em>float</em>) &#8211; The condition number threshold to apply.</li>
+<li><strong>rcond</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; (Optional) The distributed inverse condition number map to fill.</li>
 </ul>
 </td>
 </tr>
@@ -333,22 +351,59 @@ failing the cut are set to zero.</p>
 <dl class="function">
 <dt id="toast.map.covariance_rcond">
 <code class="descclassname">toast.map.</code><code class="descname">covariance_rcond</code><span class="sig-paren">(</span><em>npp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_rcond"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_rcond" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the local piece of the inverse condition number map.</p>
-<p>This computes the local piece of the inverse condition number map
-from the supplied covariance matrix data.</p>
+<dd><p>Compute the inverse condition number map.</p>
+<p>This computes the inverse condition number map of the supplied
+covariance matrix.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>npp</strong> (<em>3D array</em>) &#8211; The data member of a distributed covariance.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>npp</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; The distributed covariance.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rcond</strong> &#8211;<dl class="docutils">
-<dt>The local data piece of the distributed</dt>
-<dd>inverse condition number map.</dd>
-</dl>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>rcond</strong> &#8211; The distributed inverse condition number map.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels">DistPixels</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="toast.map.covariance_multiply">
+<code class="descclassname">toast.map.</code><code class="descname">covariance_multiply</code><span class="sig-paren">(</span><em>npp1</em>, <em>npp2</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_multiply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_multiply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiply two diagonal noise covariances.</p>
+<p>This does an in-place multiplication of the covariance.
+The data values of the first covariance (npp1) are replaced with
+the result.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>npp1</strong> (<em>3D array</em>) &#8211; The first distributed covariance.</li>
+<li><strong>npp2</strong> (<em>3D array</em>) &#8211; The second distributed covariance.</li>
+</ul>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">3D array</td>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="toast.map.covariance_apply">
+<code class="descclassname">toast.map.</code><code class="descname">covariance_apply</code><span class="sig-paren">(</span><em>npp</em>, <em>m</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/noise.html#covariance_apply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.covariance_apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiply a map by a diagonal noise covariance.</p>
+<p>This does an in-place multiplication of the covariance and a
+map.  The results are returned in place of the input map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>npp</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; The distributed covariance.</li>
+<li><strong>m</strong> (<a class="reference internal" href="#toast.map.DistPixels" title="toast.map.DistPixels"><em>DistPixels</em></a>) &#8211; The distributed map.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>
@@ -357,13 +412,17 @@ from the supplied covariance matrix data.</p>
 </div>
 <div class="section" id="native-mapmaking">
 <h2>Native Mapmaking<a class="headerlink" href="#native-mapmaking" title="Permalink to this headline">¶</a></h2>
-<p>Still to-do.  See <a class="reference external" href="https://github.com/tskisner/pytoast/milestones/Native%20Mapmaking%20Tools">git milestone here</a></p>
+<p>Using the distributed diagonal noise covariance tools, one can make a simple
+binned map.  Porting the old TOAST map-maker to this version of TOAST is still
+on the to-do list.</p>
 </div>
 <div class="section" id="external-madam-interface">
 <h2>External Madam Interface<a class="headerlink" href="#external-madam-interface" title="Permalink to this headline">¶</a></h2>
+<p>If the MADAM library is installed and in your shared library search path, then
+you can use it to make maps.</p>
 <dl class="class">
 <dt id="toast.map.OpMadam">
-<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>timestamps_name=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>name_out=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=True</em>, <em>purge=False</em>, <em>dets=None</em>, <em>mcmode=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.map.</code><code class="descname">OpMadam</code><span class="sig-paren">(</span><em>params={}</em>, <em>timestamps_name=None</em>, <em>detweights=None</em>, <em>pixels='pixels'</em>, <em>pixels_nested=True</em>, <em>weights='weights'</em>, <em>name=None</em>, <em>name_out=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=True</em>, <em>purge=False</em>, <em>dets=None</em>, <em>mcmode=False</em>, <em>purge_tod=False</em>, <em>purge_pixels=False</em>, <em>purge_weights=False</em>, <em>purge_flags=False</em>, <em>noise='noise'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which passes data to libmadam for map-making.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -375,30 +434,44 @@ from the supplied covariance matrix data.</p>
 detector.</li>
 <li><strong>pixels</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)
 containing the pixel indices to use.</li>
+<li><strong>pixels_nested</strong> (<em>bool</em>) &#8211; Set to False if the pixel numbers are in
+ring ordering. Default is True.</li>
 <li><strong>weights</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)
 containing the pointing weights to use.</li>
 <li><strong>name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
 use for the detector timestream.  If None, use the TOD.</li>
-<li><strong>name_out</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to
-use to output destriped detector timestream.  No output if None.</li>
-<li><strong>flag_name</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;flag_name&gt;_&lt;detector&gt;) to
-use for the detector flags.  If None, use the TOD.</li>
+<li><strong>name_out</strong> (<em>str</em>) &#8211; the name of the cache object (&lt;name&gt;_&lt;detector&gt;)
+to use to output destriped detector timestream.
+No output if None.</li>
+<li><strong>flag_name</strong> (<em>str</em>) &#8211; the name of the cache object
+(&lt;flag_name&gt;_&lt;detector&gt;) to use for the detector flags.
+If None, use the TOD.</li>
 <li><strong>flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
 used with the detector flags in a bitwise AND.</li>
 <li><strong>common_flag_name</strong> (<em>str</em>) &#8211; the name of the cache object
-(&lt;common_flag_name&gt;_&lt;detector&gt;) to use for the common flags.
-If None, use the TOD.</li>
-<li><strong>common_flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should be
-used with the common flags in a bitwise AND.</li>
+to use for the common flags.  If None, use the TOD.</li>
+<li><strong>common_flag_mask</strong> (<em>int</em>) &#8211; the integer bit mask (0-255) that should
+be used with the common flags in a bitwise AND.</li>
 <li><strong>apply_flags</strong> (<em>bool</em>) &#8211; whether to apply flags to the pixel numbers.</li>
-<li><strong>timestamps_name</strong> (<em>str</em>) &#8211; the name of the cache object to use for time stamps.</li>
-<li><strong>purge</strong> (<em>bool</em>) &#8211; if True, clear any cached data that is copied into the
+<li><strong>timestamps_name</strong> (<em>str</em>) &#8211; the name of the cache object to use for
+time stamps.</li>
+<li><strong>purge</strong> (<em>bool</em>) &#8211; if True, clear any cached data that is copied into
 the Madam buffers.</li>
-<li><strong>dets</strong> (<em>iterable</em>) &#8211; List of detectors to map. If left as None, all available
-detectors are mapped.</li>
-<li><strong>mcmode</strong> (<em>bool</em>) &#8211; If true, the operator is constructed in Monte Carlo mode and
-Madam will cache auxiliary information such as pixel matrices and
-noise filter.</li>
+<li><strong>purge_tod</strong> (<em>bool</em>) &#8211; if True, clear any cached signal that is
+copied into the Madam buffers.</li>
+<li><strong>purge_pixels</strong> (<em>bool</em>) &#8211; if True, clear any cached pixels that are
+copied into the Madam buffers.</li>
+<li><strong>purge_weights</strong> (<em>bool</em>) &#8211; if True, clear any cached weights that are
+copied into the Madam buffers.</li>
+<li><strong>purge_flags</strong> (<em>bool</em>) &#8211; if True, clear any cached flags that are
+copied into the Madam buffers.</li>
+<li><strong>dets</strong> (<em>iterable</em>) &#8211; List of detectors to map. If left as None, all
+available detectors are mapped.</li>
+<li><strong>mcmode</strong> (<em>bool</em>) &#8211; If true, the operator is constructed in
+Monte Carlo mode and Madam will cache auxiliary information
+such as pixel matrices and noise filter.</li>
+<li><strong>noise</strong> (<em>str</em>) &#8211; Keyword to use when retrieving the noise object
+from the observation.</li>
 </ul>
 </td>
 </tr>
@@ -412,7 +485,7 @@ noise filter.</li>
 
 <dl class="method">
 <dt id="toast.map.OpMadam.exec">
-<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam.exec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em>, <em>comm=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/map/madam.html#OpMadam.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.map.OpMadam.exec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Copy data to Madam-compatible buffers and make a map.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -422,12 +495,6 @@ noise filter.</li>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="toast.map.OpMadam.timedist">
-<code class="descname">timedist</code><a class="headerlink" href="#toast.map.OpMadam.timedist" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>(bool)</em> &#8211; Whether this operator requires data that time-distributed.</p>
 </dd></dl>
 
 </dd></dl>
@@ -450,8 +517,8 @@ noise filter.</li>
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

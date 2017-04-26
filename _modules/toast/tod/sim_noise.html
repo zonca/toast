@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.tod.sim_noise &#8212; TOAST 2.0 documentation</title>
+    <title>toast.tod.sim_noise &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,12 +26,16 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>toast.tod.sim_noise</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -43,29 +49,18 @@
         
         
   <h1>Source code for toast.tod.sim_noise</h1><div class="highlight"><pre>
-<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span></span><span class="c1"># Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
 
-<span class="kn">import</span> <span class="nn">unittest</span>
-
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="kn">import</span> <span class="nn">scipy.fftpack</span> <span class="k">as</span> <span class="nn">sft</span>
-<span class="kn">import</span> <span class="nn">scipy.interpolate</span> <span class="k">as</span> <span class="nn">si</span>
-<span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sp</span>
-
-<span class="kn">import</span> <span class="nn">healpy</span> <span class="k">as</span> <span class="nn">hp</span>
-
-<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
 
 <span class="kn">from</span> <span class="nn">.tod</span> <span class="k">import</span> <span class="n">TOD</span>
 
 <span class="kn">from</span> <span class="nn">.noise</span> <span class="k">import</span> <span class="n">Noise</span>
 
-<span class="kn">from</span> <span class="nn">..operator</span> <span class="k">import</span> <span class="n">Operator</span>
-
+<span class="kn">from</span> <span class="nn">..op</span> <span class="k">import</span> <span class="n">Operator</span>
 
 
 <div class="viewcode-block" id="AnalyticNoise"><a class="viewcode-back" href="../../../sim.html#toast.tod.AnalyticNoise">[docs]</a><span class="k">class</span> <span class="nc">AnalyticNoise</span><span class="p">(</span><span class="n">Noise</span><span class="p">):</span>
@@ -77,21 +72,21 @@
 <span class="sd">    minimum frequency, etc.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        rate (float): sample rate in Hertz.</span>
-<span class="sd">        fmin (float): minimum frequency for high pass</span>
 <span class="sd">        detectors (list): list of detectors.</span>
+<span class="sd">        rate (dict): dictionary of sample rates in Hertz.</span>
+<span class="sd">        fmin (dict): dictionary of minimum frequencies for high pass</span>
 <span class="sd">        fknee (dict): dictionary of knee frequencies.</span>
 <span class="sd">        alpha (dict): dictionary of alpha exponents (positive, not negative!).</span>
 <span class="sd">        NET (dict): dictionary of detector NETs.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fknee</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">NET</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the sample rate&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">fmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the frequency for high pass&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detectors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fmin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fknee</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">NET</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">detectors</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the detector list&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the sample rates&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fmin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the frequencies for high pass&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">fknee</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the knee frequencies&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -99,10 +94,9 @@
         <span class="k">if</span> <span class="n">NET</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the NET&quot;</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_detectors</span> <span class="o">=</span> <span class="n">detectors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="o">=</span> <span class="n">rate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fmin</span> <span class="o">=</span> <span class="n">fmin</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_detectors</span> <span class="o">=</span> <span class="n">detectors</span>
-        
         <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span> <span class="o">=</span> <span class="n">fknee</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span> <span class="o">=</span> <span class="n">alpha</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_NET</span> <span class="o">=</span> <span class="n">NET</span>
@@ -111,41 +105,47 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;alpha exponents should be positive in this formalism&quot;</span><span class="p">)</span>
 
-        <span class="c1"># for purposes of determining the common frequency sampling</span>
-        <span class="c1"># points, use the lowest knee frequency.</span>
-        <span class="n">lowknee</span> <span class="o">=</span> <span class="n">rate</span>
-        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">detectors</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">lowknee</span><span class="p">:</span>
-                <span class="n">lowknee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">]</span>
-
-        <span class="n">tempfreq</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">cur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmin</span>
-        <span class="k">while</span> <span class="n">cur</span> <span class="o">&lt;</span> <span class="mf">10.0</span> <span class="o">*</span> <span class="n">lowknee</span><span class="p">:</span>
-            <span class="n">tempfreq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur</span><span class="p">)</span>
-            <span class="n">cur</span> <span class="o">*=</span> <span class="mf">2.0</span>
-        <span class="n">nyquist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="o">/</span> <span class="mf">2.0</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="p">(</span><span class="n">nyquist</span> <span class="o">-</span> <span class="n">cur</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
-        <span class="n">tempfreq</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span> <span class="p">(</span><span class="n">cur</span><span class="o">+</span><span class="n">x</span><span class="o">*</span><span class="n">df</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="p">])</span>
-        <span class="n">freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tempfreq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-
+        <span class="n">freqs</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">psds</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detectors</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fmin</span><span class="p">[</span><span class="n">d</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;If knee frequency is non-zero, it must be greater than f_min&quot;</span><span class="p">)</span>
+
+            <span class="n">nyquist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+            <span class="n">tempfreq</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># this starting point corresponds to a high-pass of</span>
+            <span class="c1"># 30 years, so should be low enough for any interpolation!</span>
+            <span class="n">cur</span> <span class="o">=</span> <span class="mf">1.0e-9</span>
+
+            <span class="c1"># this value seems to provide a good density of points</span>
+            <span class="c1"># in log space.</span>
+            <span class="k">while</span> <span class="n">cur</span> <span class="o">&lt;</span> <span class="n">nyquist</span><span class="p">:</span>
+                <span class="n">tempfreq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur</span><span class="p">)</span>
+                <span class="n">cur</span> <span class="o">*=</span> <span class="mf">1.4</span>
+
+            <span class="c1"># put a final point at Nyquist</span>
+            <span class="n">tempfreq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">nyquist</span><span class="p">)</span>
+
+            <span class="n">freqs</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tempfreq</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
                 <span class="n">ktemp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fknee</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
-                <span class="n">mtemp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fmin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
-                <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">freq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+                <span class="n">mtemp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fmin</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">d</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_alpha</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
                 <span class="n">psds</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="n">ktemp</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">temp</span> <span class="o">+</span> <span class="n">mtemp</span><span class="p">)</span>
                 <span class="n">psds</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NET</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NET</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">psds</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+                <span class="n">psds</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
                 <span class="n">psds</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">*=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_NET</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_NET</span><span class="p">[</span><span class="n">d</span><span class="p">])</span>
 
         <span class="c1"># call the parent class constructor to store the psds</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">detectors</span><span class="o">=</span><span class="n">detectors</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">detectors</span><span class="o">=</span><span class="n">detectors</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span> <span class="n">psds</span><span class="o">=</span><span class="n">psds</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">fmin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">fmin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">det</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        (float): the minimum frequency in Hz, used as a high pass.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -181,8 +181,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

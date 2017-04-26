@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.sim_det_noise &#8212; TOAST 2.2.0
+ documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.2.0
+',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.sim_det_noise</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.sim_det_noise</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.tod</span> <span class="k">import</span> <span class="n">TOD</span>
+
+<span class="kn">from</span> <span class="nn">.noise</span> <span class="k">import</span> <span class="n">Noise</span>
+
+<span class="kn">from</span> <span class="nn">..op</span> <span class="k">import</span> <span class="n">Operator</span>
+
+<span class="kn">from</span> <span class="nn">.tod_math</span> <span class="k">import</span> <span class="n">sim_noise_timestream</span>
+
+
+<div class="viewcode-block" id="OpSimNoise"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimNoise">[docs]</a><span class="k">class</span> <span class="nc">OpSimNoise</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which generates noise timestreams.</span>
+
+<span class="sd">    This passes through each observation and every process generates data</span>
+<span class="sd">    for its assigned samples.  The dictionary for each observation should</span>
+<span class="sd">    include a unique &#39;ID&#39; used in the random number generation.  The</span>
+<span class="sd">    observation dictionary can optionally include a &#39;global_offset&#39; member</span>
+<span class="sd">    that might be useful if you are splitting observations and want to</span>
+<span class="sd">    enforce reproducibility of a given sample, even when using </span>
+<span class="sd">    different-sized observations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
+<span class="sd">            If the named cache objects do not exist, then they are created.</span>
+<span class="sd">        realization (int): if simulating multiple realizations, the realization</span>
+<span class="sd">            index.</span>
+<span class="sd">        component (int): the component index to use for this noise simulation.</span>
+<span class="sd">        noise (str): PSD key in the observation dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span> <span class="n">realization</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise</span><span class="o">=</span><span class="s1">&#39;noise&#39;</span><span class="p">,</span>
+                 <span class="n">rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">altFFT</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_oversample</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_realization</span> <span class="o">=</span> <span class="n">realization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_component</span> <span class="o">=</span> <span class="n">component</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noisekey</span> <span class="o">=</span> <span class="n">noise</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_altfft</span> <span class="o">=</span> <span class="n">altFFT</span>
+
+<div class="viewcode-block" id="OpSimNoise.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimNoise.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate noise timestreams.</span>
+
+<span class="sd">        This iterates over all observations and detectors and generates</span>
+<span class="sd">        the noise timestreams based on the noise object for the current</span>
+<span class="sd">        observation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">obsindx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="s1">&#39;id&#39;</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+                <span class="n">obsindx</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: observation ID is not set, using zero!&quot;</span><span class="p">)</span>
+
+            <span class="n">telescope</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="s1">&#39;telescope&#39;</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+                <span class="n">telescope</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;telescope&#39;</span><span class="p">]</span>
+
+            <span class="n">global_offset</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="s1">&#39;global_offset&#39;</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+                <span class="n">global_offset</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;global_offset&#39;</span><span class="p">]</span>
+
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noisekey</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+                <span class="n">nse</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_noisekey</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Observation does not contain noise under &#39;</span>
+                                   <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noisekey</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;noise simulation for uniform distributed &#39;</span>
+                                   <span class="s1">&#39;samples not implemented&#39;</span><span class="p">)</span>
+
+            <span class="c1"># eventually we&#39;ll redistribute, to allow long correlations...</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">times</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_times</span><span class="p">(</span><span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="c1"># Iterate over each chunk.</span>
+
+            <span class="n">tod_first</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">chunk_first</span> <span class="o">=</span> <span class="n">tod_first</span>
+
+            <span class="k">for</span> <span class="n">curchunk</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">abschunk</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_chunks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">curchunk</span>
+                <span class="n">chunk_samp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">total_chunks</span><span class="p">[</span><span class="n">abschunk</span><span class="p">]</span>
+                <span class="n">local_offset</span> <span class="o">=</span> <span class="n">chunk_first</span> <span class="o">-</span> <span class="n">tod_first</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># compute effective sample rate</span>
+                    <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span>
+                            <span class="n">times</span><span class="p">[</span><span class="n">local_offset</span><span class="p">:</span><span class="n">local_offset</span><span class="o">+</span><span class="n">chunk_samp</span><span class="p">]))</span>
+                    <span class="n">rate</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">dt</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rate</span>
+
+                <span class="n">idet</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+
+                    <span class="n">detindx</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">detindx</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
+
+                    <span class="p">(</span><span class="n">nsedata</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">psd</span><span class="p">)</span> <span class="o">=</span> <span class="n">sim_noise_timestream</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_realization</span><span class="p">,</span> <span class="n">telescope</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_component</span><span class="p">,</span> <span class="n">obsindx</span><span class="p">,</span>
+                        <span class="n">detindx</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">chunk_first</span> <span class="o">+</span> <span class="n">global_offset</span><span class="p">,</span> <span class="n">chunk_samp</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_oversample</span><span class="p">,</span> <span class="n">nse</span><span class="o">.</span><span class="n">freq</span><span class="p">(</span><span class="n">det</span><span class="p">),</span> <span class="n">nse</span><span class="o">.</span><span class="n">psd</span><span class="p">(</span><span class="n">det</span><span class="p">),</span> 
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_altfft</span><span class="p">)</span>
+
+                    <span class="c1"># write to cache</span>
+
+                    <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+
+                    <span class="n">ref</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                        <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                                    <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+
+                    <span class="n">ref</span><span class="p">[</span><span class="n">local_offset</span><span class="p">:</span><span class="n">local_offset</span><span class="o">+</span><span class="n">chunk_samp</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nsedata</span>
+                    <span class="k">del</span> <span class="n">ref</span>
+
+                    <span class="n">idet</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">chunk_first</span> <span class="o">+=</span> <span class="n">chunk_samp</span>
+
+        <span class="k">return</span></div></div>
+
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+    </div>
+  </body>
+</html>

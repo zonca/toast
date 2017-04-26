@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Using at NERSC &#8212; TOAST 2.0 documentation</title>
+    <title>Using at NERSC &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,13 +26,17 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="index.html" />
     <link rel="next" title="Developer’s Guide" href="dev.html" />
     <link rel="prev" title="Map-making Tools" href="maptools.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>Using at NERSC</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -53,7 +59,7 @@
 <div class="section" id="module-files">
 <h2>Module Files<a class="headerlink" href="#module-files" title="Permalink to this headline">¶</a></h2>
 <p>To get access to the needed module files, add the machine-specific module file location to your search path:</p>
-<div class="highlight-default"><div class="highlight"><pre>%&gt; module use /global/common/${NERSC_HOST}/contrib/hpcosmo/modulefiles
+<div class="highlight-default"><div class="highlight"><pre><span></span>%&gt; module use /global/common/${NERSC_HOST}/contrib/hpcosmo/modulefiles
 </pre></div>
 </div>
 <p>You can safely put the above line in your ~/.bashrc.ext inside the sections for edison and cori.</p>
@@ -61,13 +67,20 @@
 <div class="section" id="load-dependencies">
 <h2>Load Dependencies<a class="headerlink" href="#load-dependencies" title="Permalink to this headline">¶</a></h2>
 <p>In order to load a full python-3.5 stack, and also all dependencies needed by toast, do:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">toast</span><span class="o">-</span><span class="n">deps</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">load</span> <span class="n">toast</span><span class="o">-</span><span class="n">deps</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="install-toast">
 <h2>Install TOAST<a class="headerlink" href="#install-toast" title="Permalink to this headline">¶</a></h2>
-<p>When installing <em>any</em> software at NERSC, we need to keep several things in mind:</p>
+<p>If you are using a stable release of TOAST, there may already be an installation
+you can use.  Do:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">module</span> <span class="n">avail</span> <span class="n">toast</span>
+</pre></div>
+</div>
+<p>to see if something is already built meets your needs.  If not, then you will have
+to install TOAST yourself.  When installing <em>any</em> software at NERSC, we need to
+keep several things in mind:</p>
 <blockquote>
 <div><ul class="simple">
 <li>The home directories are small.</li>
@@ -84,16 +97,15 @@ and assume that we will be using the software frequently enough that it will nev
 be purged.  If you have not used the tools for a month or so, you should probably
 reinstall just to be sure that everything is in place.</p>
 <p>First, we pick a location to install our software.  For this example, we will
-be installing to a &#8220;software&#8221; directory in our scratch space.  First create
-these directories:</p>
-<div class="highlight-default"><div class="highlight"><pre>%&gt; mkdir -p ${SCRATCH}/software/toast/bin
-%&gt; mkdir -p ${SCRATCH}/software/toast/lib/python3.5/site-packages
+be installing to a &#8220;software&#8221; directory in our scratch space.  First make sure
+that exists:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>%&gt; mkdir -p ${SCRATCH}/software
 </pre></div>
 </div>
 <p>Now we will create a small shell function that loads this location into our search
 paths for executables and python packages.  Add this function to ~/.bashrc.ext and
 you can rename it to whatever you like:</p>
-<div class="highlight-default"><div class="highlight"><pre>toast () {
+<div class="highlight-default"><div class="highlight"><pre><span></span>toast () {
     pref=${SCRATCH}/software/toast
     export PATH=${pref}/bin:${PATH}
     export PYTHONPATH=${pref}/lib/python3.5/site-packages:${PYTHONPATH}
@@ -102,29 +114,48 @@ you can rename it to whatever you like:</p>
 </div>
 <p>Log out and back in to make this function visible to your shell environment.
 Now checkout the toast source in your home directory somewhere:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">cd</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">cd</span>
 <span class="o">%&gt;</span> <span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">hpc4cmb</span><span class="o">/</span><span class="n">toast</span><span class="o">.</span><span class="n">git</span>
 </pre></div>
 </div>
-<p>Now we can run our function:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="n">toast</span>
+<p>Then configure and build the software.  Unless you know what you are doing, you
+should probably use the platform config example for the machine you are building
+for:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>%&gt; cd toast
+%&gt; ./autogen.sh
+%&gt; ./platforms/edison_gnu_mkl.sh --prefix=${SCRATCH}/software/toast
 </pre></div>
 </div>
-<p>And now we can install toast.  On NERSC systems, MPI is not allowed to be run on
-the login nodes.  Since toast uses MPI, we have to set a special environment
-variable when running setup.py.  This will disable MPI inside toast during installation:</p>
-<div class="highlight-default"><div class="highlight"><pre>%&gt; TOAST_NO_MPI=1 python3 setup.py install --prefix=${SCRATCH}/software/toast
+<p>Now we can run our function to load this installation into our environment:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">toast</span>
 </pre></div>
 </div>
-<p>Whenever you update your git checkout of toast (or if you have not used toast for
-a month or so), just re-run the above command to update your installation.</p>
+<p>On NERSC systems, MPI is not allowed to be run on the login nodes.  In order to
+run our unittests, we first get an interactive compute node:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">salloc</span>
+</pre></div>
+</div>
+<p>and then run the tests:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">srun</span> <span class="n">python</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;import toast; toast.test()&quot;</span>
+</pre></div>
+</div>
+<p>You should read through the many good NERSC webpages that describe how to use the
+different machines.  There are <a class="reference external" href="http://www.nersc.gov/users/computational-systems/edison/running-jobs/">pages for edison</a>
+and <a class="reference external" href="http://www.nersc.gov/users/computational-systems/cori/running-jobs/">pages for cori</a>.</p>
 </div>
 <div class="section" id="install-experiment-packages">
 <h2>Install Experiment Packages<a class="headerlink" href="#install-experiment-packages" title="Permalink to this headline">¶</a></h2>
 <p>If you are a member of Planck, Core, or LiteBIRD, you can get access to separate
 git repos with experiment-specific scripts and tools.  You can install these to
-the same location as toast using the same command above.  Re-run the install
-command when you update your git checkout.</p>
+the same location as toast.  All of those packages currently use distutils, and
+you will need to do the installation from a compute node (since importing the
+toast python module will load MPI):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>%&gt; cd toast-&lt;experiment&gt;
+%&gt; salloc
+%&gt; srun python setup.py clean
+%&gt; srun python setup.py install --prefix=${SCRATCH}/software/toast
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -143,8 +174,8 @@ command when you update your git checkout.</p>
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Noise Model &#8212; TOAST 2.0 documentation</title>
+    <title>Noise Model &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,13 +26,17 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="index.html" />
     <link rel="next" title="Pointing Matrices" href="pointing.html" />
     <link rel="prev" title="Data Intervals" href="intervals.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>Noise Model</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -52,7 +58,7 @@
 <p>The Noise base class represents the time domain noise covariance for all detectors for an entire TOD length.</p>
 <dl class="class">
 <dt id="toast.tod.Noise">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Noise</code><span class="sig-paren">(</span><em>detectors=None</em>, <em>freq=array([ 0.])</em>, <em>psds=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/noise.html#Noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Noise" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">Noise</code><span class="sig-paren">(</span><em>detectors=None</em>, <em>freqs=None</em>, <em>psds=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/noise.html#Noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Noise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Base class for an object that describes the noise properties of all
 detectors for a single observation.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -61,7 +67,7 @@ detectors for a single observation.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>detectors</strong> (<em>list</em>) &#8211; names of detectors we have</li>
-<li><strong>freq</strong> (<em>ndarray</em>) &#8211; array of frequencies for our PSDs</li>
+<li><strong>freqs</strong> (<em>dict</em>) &#8211; dictionary of array of frequencies for our PSDs</li>
 <li><strong>psds</strong> (<em>dict</em>) &#8211; dictionary of arrays which contains the PSD values
 for each detector.</li>
 </ul>
@@ -75,10 +81,22 @@ for each detector.</li>
 <dd><p><em>(list)</em> &#8211; list of strings containing the detector names.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="toast.tod.Noise.freq">
-<code class="descname">freq</code><a class="headerlink" href="#toast.tod.Noise.freq" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>(array)</em> &#8211; the frequency bins that are used for all PSDs.</p>
+<code class="descname">freq</code><span class="sig-paren">(</span><em>detector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/noise.html#Noise.freq"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Noise.freq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the frequencies for a detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>detector</strong> (<em>str</em>) &#8211; the detector name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the frequency bins that are used for the PSD.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(array)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
@@ -99,10 +117,22 @@ for each detector.</li>
 </table>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="toast.tod.Noise.rate">
-<code class="descname">rate</code><a class="headerlink" href="#toast.tod.Noise.rate" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>(float)</em> &#8211; the sample rate in Hz.</p>
+<code class="descname">rate</code><span class="sig-paren">(</span><em>detector</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/noise.html#Noise.rate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.Noise.rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the sample rate for a detector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>detector</strong> (<em>str</em>) &#8211; the detector name.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">the sample rate in Hz.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">(float)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -124,8 +154,8 @@ for each detector.</li>
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

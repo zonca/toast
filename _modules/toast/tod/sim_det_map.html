@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>toast.tod.sim_det_map &#8212; TOAST 2.2.0
+ documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '2.2.0
+',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
+        <h2 class="heading"><span>toast.tod.sim_det_map</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for toast.tod.sim_det_map</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.</span>
+<span class="c1"># All rights reserved.  Use of this source code is governed by </span>
+<span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">healpy</span> <span class="k">as</span> <span class="nn">hp</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">qarray</span> <span class="k">as</span> <span class="n">qa</span>
+
+<span class="kn">from</span> <span class="nn">.tod</span> <span class="k">import</span> <span class="n">TOD</span>
+
+<span class="kn">from</span> <span class="nn">..op</span> <span class="k">import</span> <span class="n">Operator</span>
+
+
+<div class="viewcode-block" id="OpSimGradient"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient">[docs]</a><span class="k">class</span> <span class="nc">OpSimGradient</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a fake sky signal as a gradient between the poles.</span>
+
+<span class="sd">    This passes through each observation and creates a fake signal timestream</span>
+<span class="sd">    based on the cartesian Z coordinate of the HEALPix pixel containing the</span>
+<span class="sd">    detector pointing.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
+<span class="sd">            If the named cache objects do not exist, then they are created.</span>
+<span class="sd">        nside (int): the HEALPix NSIDE value to use.</span>
+<span class="sd">        min (float): the minimum value to use at the South Pole.</span>
+<span class="sd">        max (float): the maximum value to use at the North Pole.</span>
+<span class="sd">        nest (bool): whether to use NESTED ordering.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="s1">&#39;grad&#39;</span><span class="p">,</span> <span class="n">nside</span><span class="o">=</span><span class="mi">512</span><span class="p">,</span> <span class="nb">min</span><span class="o">=-</span><span class="mf">100.0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">):</span>
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nside</span> <span class="o">=</span> <span class="n">nside</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min</span> <span class="o">=</span> <span class="nb">min</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">=</span> <span class="nb">max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nest</span> <span class="o">=</span> <span class="n">nest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span> <span class="o">=</span> <span class="n">flag_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span> <span class="o">=</span> <span class="n">common_flag_mask</span>
+
+<div class="viewcode-block" id="OpSimGradient.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the gradient timestreams.</span>
+
+<span class="sd">        This pixelizes each detector&#39;s pointing and then assigns a </span>
+<span class="sd">        timestream value based on the cartesian Z coordinate of the pixel</span>
+<span class="sd">        center.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+
+        <span class="n">zaxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">nullquat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="nb">range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+            <span class="n">base</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;baselines&#39;</span><span class="p">]</span>
+            <span class="n">nse</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;noise&#39;</span><span class="p">]</span>
+            <span class="n">intrvl</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;intervals&#39;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+                <span class="n">pdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">read_pntg</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                              <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">flags</span><span class="p">,</span> <span class="n">common</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">,</span> <span class="n">local_start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                               <span class="n">n</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">totflags</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span>
+                <span class="n">totflags</span> <span class="o">|=</span> <span class="p">(</span><span class="n">common</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span>
+
+                <span class="k">del</span> <span class="n">flags</span>
+                <span class="k">del</span> <span class="n">common</span>
+
+                <span class="n">pdata</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">nullquat</span>
+
+                <span class="nb">dir</span> <span class="o">=</span> <span class="n">qa</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">pdata</span><span class="p">,</span> <span class="n">zaxis</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">vec2pix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="nb">dir</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span>
+                                    <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">pix2vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">pixels</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+                <span class="n">z</span> <span class="o">+=</span> <span class="mf">1.0</span>
+                <span class="n">z</span> <span class="o">*=</span> <span class="mf">0.5</span>
+                <span class="n">z</span> <span class="o">*=</span> <span class="nb">range</span>
+                <span class="n">z</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+                <span class="n">z</span><span class="p">[</span><span class="n">totflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                    <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                                     <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+                <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">z</span>
+                <span class="k">del</span> <span class="n">ref</span>
+                <span class="c1">#print(&#39;Grad timestream:&#39;, ref, np.sum(ref!=0),&#39; non-zeros&#39;, flush=True) # DEBUG</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="OpSimGradient.sigmap"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimGradient.sigmap">[docs]</a>    <span class="k">def</span> <span class="nf">sigmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (array): Return the underlying signal map (full map on all processes).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+        <span class="n">pix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">pix2vec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nside</span><span class="p">,</span> <span class="n">pix</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_nest</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">+=</span> <span class="mf">1.0</span>
+        <span class="n">z</span> <span class="o">*=</span> <span class="mf">0.5</span>
+        <span class="n">z</span> <span class="o">*=</span> <span class="nb">range</span>
+        <span class="n">z</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min</span>
+        <span class="k">return</span> <span class="n">z</span></div></div>
+
+
+<div class="viewcode-block" id="OpSimScan"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimScan">[docs]</a><span class="k">class</span> <span class="nc">OpSimScan</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator which generates sky signal by scanning from a map.</span>
+
+<span class="sd">    The signal to use should already be in a distributed pixel structure,</span>
+<span class="sd">    and local pointing should already exist.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        distmap (DistPixels): the distributed map domain data.</span>
+<span class="sd">        pixels (str): the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pixel indices to use.</span>
+<span class="sd">        weights (str): the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)</span>
+<span class="sd">            containing the pointing weights to use.</span>
+<span class="sd">        out (str): accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.</span>
+<span class="sd">            If the named cache objects do not exist, then they are created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">distmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span>
+                 <span class="n">out</span><span class="o">=</span><span class="s1">&#39;scan&#39;</span><span class="p">):</span>
+        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_map</span> <span class="o">=</span> <span class="n">distmap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="OpSimScan.exec"><a class="viewcode-back" href="../../../sim.html#toast.tod.OpSimScan.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create the timestreams by scanning from the map.</span>
+
+<span class="sd">        This loops over all observations and detectors and uses the pointing</span>
+<span class="sd">        matrix to project the distributed map into a timestream.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data (toast.Data): The distributed data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
+        <span class="c1"># the global communicator</span>
+        <span class="n">cworld</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_world</span>
+        <span class="c1"># the communicator within the group</span>
+        <span class="n">cgroup</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_group</span>
+        <span class="c1"># the communicator with all processes with</span>
+        <span class="c1"># the same rank within their group</span>
+        <span class="n">crank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_rank</span>
+
+        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
+            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
+
+                <span class="c1"># get the pixels and weights from the cache</span>
+
+                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">weightsname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">weightsname</span><span class="p">)</span>
+
+                <span class="n">nnz</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map</span><span class="o">.</span><span class="n">global_to_local</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+
+                <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">sm</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">lpix</span><span class="p">[</span><span class="n">x</span><span class="p">]])</span>
+                     <span class="k">if</span> <span class="p">(</span><span class="n">lpix</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+                     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">maptod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromiter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+                <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">cachename</span><span class="p">):</span>
+                    <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">cachename</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                                     <span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">],))</span>
+                <span class="n">ref</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                <span class="n">ref</span><span class="p">[:]</span> <span class="o">+=</span> <span class="n">maptod</span>
+                
+                <span class="k">del</span> <span class="n">ref</span>
+                <span class="k">del</span> <span class="n">pixels</span>
+                <span class="k">del</span> <span class="n">weights</span>
+
+        <span class="k">return</span></div></div>
+
+</pre></div>
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../../../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
+    </div>
+  </body>
+</html>

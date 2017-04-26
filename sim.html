@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Simulations &#8212; TOAST 2.0 documentation</title>
+    <title>Simulations &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,13 +26,17 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="index.html" />
     <link rel="next" title="Map-making Tools" href="maptools.html" />
     <link rel="prev" title="Pointing Matrices" href="pointing.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>Simulations</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -54,7 +60,7 @@
 <h2>Simulated Telescope<a class="headerlink" href="#simulated-telescope" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.tod.TODHpixSpiral">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">TODHpixSpiral</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>detectors=None</em>, <em>samples=0</em>, <em>firsttime=0.0</em>, <em>rate=100.0</em>, <em>nside=512</em>, <em>sizes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_tod.html#TODHpixSpiral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TODHpixSpiral" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">TODHpixSpiral</code><span class="sig-paren">(</span><em>mpicomm</em>, <em>detectors</em>, <em>samples</em>, <em>firsttime=0.0</em>, <em>rate=100.0</em>, <em>nside=512</em>, <em>detindx=None</em>, <em>detranks=1</em>, <em>detbreaks=None</em>, <em>sampsizes=None</em>, <em>sampbreaks=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_tod.html#TODHpixSpiral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TODHpixSpiral" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a simple generator of fake detector pointing.</p>
 <p>Detector focalplane offsets are specified as a dictionary of 4-element
 ndarrays.  The boresight pointing is a simple looping over HealPix
@@ -67,10 +73,21 @@ ring ordered pixel centers.</p>
 <li><strong>mpicomm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; the MPI communicator over which the data is distributed.</li>
 <li><strong>detectors</strong> (<em>dictionary</em>) &#8211; each key is the detector name, and each value
 is a quaternion tuple.</li>
-<li><strong>samples</strong> (<em>int</em>) &#8211; maximum allowed samples.</li>
+<li><strong>samples</strong> (<em>int</em>) &#8211; The total number of samples.</li>
 <li><strong>firsttime</strong> (<em>float</em>) &#8211; starting time of data.</li>
 <li><strong>rate</strong> (<em>float</em>) &#8211; sample rate in Hz.</li>
-<li><strong>sizes</strong> (<em>list</em>) &#8211; specify the indivisible chunks in which to split the samples.</li>
+<li><strong>nside</strong> (<em>int</em>) &#8211; sky NSIDE to use.</li>
+<li><strong>detindx</strong> (<em>dict</em>) &#8211; the detector indices for use in simulations.  Default is
+{ x[0] : x[1] for x in zip(detectors, range(len(detectors))) }.</li>
+<li><strong>detranks</strong> (<em>int</em>) &#8211; The dimension of the process grid in the detector
+direction.  The MPI communicator size must be evenly divisible
+by this number.</li>
+<li><strong>detbreaks</strong> (<em>list</em>) &#8211; Optional list of hard breaks in the detector
+distribution.</li>
+<li><strong>sampsizes</strong> (<em>list</em>) &#8211; Optional list of sample chunk sizes which
+cannot be split.</li>
+<li><strong>sampbreaks</strong> (<em>list</em>) &#8211; Optional list of hard breaks in the sample
+distribution.</li>
 </ul>
 </td>
 </tr>
@@ -151,7 +168,7 @@ shape (nsim, 4).</p>
 
 <dl class="class">
 <dt id="toast.tod.TODSatellite">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">TODSatellite</code><span class="sig-paren">(</span><em>mpicomm=&lt;mpi4py.MPI.Intracomm object&gt;</em>, <em>detectors=None</em>, <em>samples=0</em>, <em>firsttime=0.0</em>, <em>rate=100.0</em>, <em>spinperiod=1.0</em>, <em>spinangle=85.0</em>, <em>precperiod=0.0</em>, <em>precangle=0.0</em>, <em>sizes=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_tod.html#TODSatellite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TODSatellite" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">TODSatellite</code><span class="sig-paren">(</span><em>mpicomm</em>, <em>detectors</em>, <em>samples</em>, <em>firsttime=0.0</em>, <em>rate=100.0</em>, <em>spinperiod=1.0</em>, <em>spinangle=85.0</em>, <em>precperiod=0.0</em>, <em>precangle=0.0</em>, <em>detindx=None</em>, <em>detranks=1</em>, <em>detbreaks=None</em>, <em>sampsizes=None</em>, <em>sampbreaks=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_tod.html#TODSatellite"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.TODSatellite" title="Permalink to this definition">¶</a></dt>
 <dd><p>Provide a simple generator of satellite detector pointing.</p>
 <p>Detector focalplane offsets are specified as a dictionary of 4-element
 ndarrays.  The boresight pointing is a generic 2-angle model.</p>
@@ -163,7 +180,7 @@ ndarrays.  The boresight pointing is a generic 2-angle model.</p>
 <li><strong>mpicomm</strong> (<em>mpi4py.MPI.Comm</em>) &#8211; the MPI communicator over which the data is distributed.</li>
 <li><strong>detectors</strong> (<em>dictionary</em>) &#8211; each key is the detector name, and each value
 is a quaternion tuple.</li>
-<li><strong>samples</strong> (<em>int</em>) &#8211; maximum allowed samples.</li>
+<li><strong>samples</strong> (<em>int</em>) &#8211; The total number of samples.</li>
 <li><strong>firsttime</strong> (<em>float</em>) &#8211; starting time of data.</li>
 <li><strong>rate</strong> (<em>float</em>) &#8211; sample rate in Hz.</li>
 <li><strong>spinperiod</strong> (<em>float</em>) &#8211; The period (in minutes) of the
@@ -174,7 +191,17 @@ of the boresight from the spin axis.</li>
 rotation about the precession axis.</li>
 <li><strong>precangle</strong> (<em>float</em>) &#8211; The opening angle (in degrees)
 of the spin axis from the precession axis.</li>
-<li><strong>sizes</strong> (<em>list</em>) &#8211; specify the indivisible chunks in which to split the samples.</li>
+<li><strong>detindx</strong> (<em>dict</em>) &#8211; the detector indices for use in simulations.  Default is
+{ x[0] : x[1] for x in zip(detectors, range(len(detectors))) }.</li>
+<li><strong>detranks</strong> (<em>int</em>) &#8211; The dimension of the process grid in the detector
+direction.  The MPI communicator size must be evenly divisible
+by this number.</li>
+<li><strong>detbreaks</strong> (<em>list</em>) &#8211; Optional list of hard breaks in the detector
+distribution.</li>
+<li><strong>sampsizes</strong> (<em>list</em>) &#8211; Optional list of sample chunk sizes which
+cannot be split.</li>
+<li><strong>sampbreaks</strong> (<em>list</em>) &#8211; Optional list of hard breaks in the sample
+distribution.</li>
 </ul>
 </td>
 </tr>
@@ -210,7 +237,7 @@ rotation of the Z axis to the precession axis.</td>
 <h2>Simulated Noise Model<a class="headerlink" href="#simulated-noise-model" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.tod.AnalyticNoise">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">AnalyticNoise</code><span class="sig-paren">(</span><em>rate=None</em>, <em>fmin=None</em>, <em>detectors=None</em>, <em>fknee=None</em>, <em>alpha=None</em>, <em>NET=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_noise.html#AnalyticNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.AnalyticNoise" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">AnalyticNoise</code><span class="sig-paren">(</span><em>detectors=None</em>, <em>rate=None</em>, <em>fmin=None</em>, <em>fknee=None</em>, <em>alpha=None</em>, <em>NET=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_noise.html#AnalyticNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.AnalyticNoise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class representing an analytic noise model.</p>
 <p>This generates an analytic PSD for a set of detectors, given
 input values for the knee frequency, NET, exponent, sample rate,
@@ -220,9 +247,9 @@ minimum frequency, etc.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>rate</strong> (<em>float</em>) &#8211; sample rate in Hertz.</li>
-<li><strong>fmin</strong> (<em>float</em>) &#8211; minimum frequency for high pass</li>
 <li><strong>detectors</strong> (<em>list</em>) &#8211; list of detectors.</li>
+<li><strong>rate</strong> (<em>dict</em>) &#8211; dictionary of sample rates in Hertz.</li>
+<li><strong>fmin</strong> (<em>dict</em>) &#8211; dictionary of minimum frequencies for high pass</li>
 <li><strong>fknee</strong> (<em>dict</em>) &#8211; dictionary of knee frequencies.</li>
 <li><strong>alpha</strong> (<em>dict</em>) &#8211; dictionary of alpha exponents (positive, not negative!).</li>
 <li><strong>NET</strong> (<em>dict</em>) &#8211; dictionary of detector NETs.</li>
@@ -262,13 +289,13 @@ minimum frequency, etc.</p>
 <h2>Simulated Intervals<a class="headerlink" href="#simulated-intervals" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="toast.tod.regular_intervals">
-<code class="descclassname">toast.tod.</code><code class="descname">regular_intervals</code><span class="sig-paren">(</span><em>n</em>, <em>start</em>, <em>first</em>, <em>rate</em>, <em>duration</em>, <em>gap</em>, <em>chunks=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_interval.html#regular_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.regular_intervals" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">toast.tod.</code><code class="descname">regular_intervals</code><span class="sig-paren">(</span><em>n</em>, <em>start</em>, <em>first</em>, <em>rate</em>, <em>duration</em>, <em>gap</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_interval.html#regular_intervals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.regular_intervals" title="Permalink to this definition">¶</a></dt>
 <dd><p>Function to generate regular intervals.</p>
 <p>This creates a list of intervals, given a start time/sample and time
 span for the interval and the gap in time between intervals.  The
 length of the interval and the gap are rounded to the nearest sample
 and all intervals in the list are created using those lengths.</p>
-<p>Optionally, the valid data span can be subdivided into some number
+<p>Optionally, the full data span can be subdivided into some number
 of contiguous subchunks.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -281,8 +308,6 @@ of contiguous subchunks.</p>
 <li><strong>rate</strong> (<em>float</em>) &#8211; the sample rate in Hz.</li>
 <li><strong>duration</strong> (<em>float</em>) &#8211; the length of the interval in seconds.</li>
 <li><strong>gap</strong> (<em>float</em>) &#8211; the length of the gap in seconds.</li>
-<li><strong>chunks</strong> (<em>int</em>) &#8211; divide the valid data in &#8220;duration&#8221; into this
-number of contiguous chunks.</li>
 </ul>
 </td>
 </tr>
@@ -301,10 +326,15 @@ number of contiguous chunks.</li>
 <h2>Simulated Detector Data<a class="headerlink" href="#simulated-detector-data" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="toast.tod.OpSimNoise">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimNoise</code><span class="sig-paren">(</span><em>out='noise'</em>, <em>stream=None</em>, <em>realization=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimNoise</code><span class="sig-paren">(</span><em>out='noise'</em>, <em>realization=0</em>, <em>component=0</em>, <em>noise='noise'</em>, <em>rate=None</em>, <em>altFFT=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_noise.html#OpSimNoise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which generates noise timestreams.</p>
 <p>This passes through each observation and every process generates data
-for its assigned samples.</p>
+for its assigned samples.  The dictionary for each observation should
+include a unique &#8216;ID&#8217; used in the random number generation.  The
+observation dictionary can optionally include a &#8216;global_offset&#8217; member
+that might be useful if you are splitting observations and want to
+enforce reproducibility of a given sample, even when using
+different-sized observations.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -312,13 +342,10 @@ for its assigned samples.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>out</strong> (<em>str</em>) &#8211; accumulate data to the cache with name &lt;out&gt;_&lt;detector&gt;.
 If the named cache objects do not exist, then they are created.</li>
-<li><strong>stream</strong> (<em>int</em>) &#8211; random stream offset.  This should be the same for
-all processes within a group, and should be offset between
-groups in such a way to ensure different streams between every
-detector, in every chunk, of every TOD, across every observation.</li>
 <li><strong>realization</strong> (<em>int</em>) &#8211; if simulating multiple realizations, the realization
-index.  This is used in combination with the stream when calling
-the RNG.</li>
+index.</li>
+<li><strong>component</strong> (<em>int</em>) &#8211; the component index to use for this noise simulation.</li>
+<li><strong>noise</strong> (<em>str</em>) &#8211; PSD key in the observation dictionary.</li>
 </ul>
 </td>
 </tr>
@@ -326,16 +353,11 @@ the RNG.</li>
 </table>
 <dl class="method">
 <dt id="toast.tod.OpSimNoise.exec">
-<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimNoise.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise.exec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_noise.html#OpSimNoise.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimNoise.exec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate noise timestreams.</p>
-<p>This iterates over all observations and detectors.  For each
-locally stored piece of the data, we query which chunks of the
-original data distribution we have.  A &#8220;stream&#8221; index is
-computed using the observation number, the detector number, and
-the absolute chunk index.  For each chunk assigned to this process,
-generate a noise realization.  The PSD that is valid for the
-current chunk (obtained from the Noise object for each observation)
-is used when generating the timestream.</p>
+<p>This iterates over all observations and detectors and generates
+the noise timestreams based on the noise object for the current
+observation.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -350,7 +372,7 @@ is used when generating the timestream.</p>
 
 <dl class="class">
 <dt id="toast.tod.OpSimGradient">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimGradient</code><span class="sig-paren">(</span><em>out='grad'</em>, <em>nside=512</em>, <em>min=-100.0</em>, <em>max=100.0</em>, <em>nest=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimGradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimGradient</code><span class="sig-paren">(</span><em>out='grad'</em>, <em>nside=512</em>, <em>min=-100.0</em>, <em>max=100.0</em>, <em>nest=False</em>, <em>flag_mask=255</em>, <em>common_flag_mask=255</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_map.html#OpSimGradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate a fake sky signal as a gradient between the poles.</p>
 <p>This passes through each observation and creates a fake signal timestream
 based on the cartesian Z coordinate of the HEALPix pixel containing the
@@ -373,7 +395,7 @@ If the named cache objects do not exist, then they are created.</li>
 </table>
 <dl class="method">
 <dt id="toast.tod.OpSimGradient.exec">
-<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimGradient.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient.exec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_map.html#OpSimGradient.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient.exec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the gradient timestreams.</p>
 <p>This pixelizes each detector&#8217;s pointing and then assigns a
 timestream value based on the cartesian Z coordinate of the pixel
@@ -390,7 +412,7 @@ center.</p>
 
 <dl class="method">
 <dt id="toast.tod.OpSimGradient.sigmap">
-<code class="descname">sigmap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimGradient.sigmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient.sigmap" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sigmap</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_map.html#OpSimGradient.sigmap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimGradient.sigmap" title="Permalink to this definition">¶</a></dt>
 <dd><p>(array): Return the underlying signal map (full map on all processes).</p>
 </dd></dl>
 
@@ -398,7 +420,7 @@ center.</p>
 
 <dl class="class">
 <dt id="toast.tod.OpSimScan">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimScan</code><span class="sig-paren">(</span><em>distmap=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>out='scan'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimScan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimScan" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimScan</code><span class="sig-paren">(</span><em>distmap=None</em>, <em>pixels='pixels'</em>, <em>weights='weights'</em>, <em>out='scan'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_map.html#OpSimScan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimScan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which generates sky signal by scanning from a map.</p>
 <p>The signal to use should already be in a distributed pixel structure,
 and local pointing should already exist.</p>
@@ -421,7 +443,7 @@ If the named cache objects do not exist, then they are created.</li>
 </table>
 <dl class="method">
 <dt id="toast.tod.OpSimScan.exec">
-<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_detdata.html#OpSimScan.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimScan.exec" title="Permalink to this definition">¶</a></dt>
+<code class="descname">exec</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/sim_det_map.html#OpSimScan.exec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimScan.exec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the timestreams by scanning from the map.</p>
 <p>This loops over all observations and detectors and uses the pointing
 matrix to project the distributed map into a timestream.</p>
@@ -440,7 +462,7 @@ matrix to project the distributed map into a timestream.</p>
 <p>This operator uses an externally installed libconviqt.</p>
 <dl class="class">
 <dt id="toast.tod.OpSimConviqt">
-<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimConviqt</code><span class="sig-paren">(</span><em>lmax</em>, <em>beamlmax</em>, <em>beammmax</em>, <em>detectordata</em>, <em>pol=True</em>, <em>fwhm=4.0</em>, <em>nbetafac=6000</em>, <em>mcsamples=0</em>, <em>lmaxout=6000</em>, <em>order=13</em>, <em>calibrate=True</em>, <em>dxx=True</em>, <em>out='conviqt'</em>, <em>quat_name=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/conviqt.html#OpSimConviqt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimConviqt" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">toast.tod.</code><code class="descname">OpSimConviqt</code><span class="sig-paren">(</span><em>lmax</em>, <em>beammmax</em>, <em>detectordata</em>, <em>pol=True</em>, <em>fwhm=4.0</em>, <em>order=13</em>, <em>calibrate=True</em>, <em>dxx=True</em>, <em>out='conviqt'</em>, <em>quat_name=None</em>, <em>flag_name=None</em>, <em>flag_mask=255</em>, <em>common_flag_name=None</em>, <em>common_flag_mask=255</em>, <em>apply_flags=False</em>, <em>remove_monopole=False</em>, <em>remove_dipole=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/toast/tod/conviqt.html#OpSimConviqt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#toast.tod.OpSimConviqt" title="Permalink to this definition">¶</a></dt>
 <dd><p>Operator which uses libconviqt to generate beam-convolved timestreams.</p>
 <p>This passes through each observation and loops over each detector.
 For each detector, it produces the beam-convolved timestream.</p>
@@ -449,9 +471,7 @@ For each detector, it produces the beam-convolved timestream.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>lmax</strong> (<em>int</em>) &#8211; sky maximum ell (and m). Actual resolution in the Healpix FITS
-file may differ.</li>
-<li><strong>beamlmax</strong> (<em>int</em>) &#8211; beam maximum ell. Actual resolution in the Healpix FITS
+<li><strong>lmax</strong> (<em>int</em>) &#8211; Maximum ell (and m). Actual resolution in the Healpix FITS
 file may differ.</li>
 <li><strong>beammmax</strong> (<em>int</em>) &#8211; beam maximum m. Actual resolution in the Healpix FITS file
 may differ.</li>
@@ -460,9 +480,6 @@ detector_beam_file, epsilon, psipol[radian]) tuples</li>
 <li><strong>pol</strong> (<em>bool</em>) &#8211; boolean to determine if polarized simulation is needed</li>
 <li><strong>fwhm</strong> (<em>float</em>) &#8211; width of a symmetric gaussian beam [in arcmin] already
 present in the skyfile (will be deconvolved away).</li>
-<li><strong>nbetafac</strong> (<em>int</em>) &#8211; conviqt resolution parameter (expert mode)</li>
-<li><strong>mcsamples</strong> (<em>0</em>) &#8211; reserved input for future Monte Carlo mode</li>
-<li><strong>lmaxout</strong> (<em>int</em>) &#8211; Convolution resolution</li>
 <li><strong>order</strong> (<em>int</em>) &#8211; conviqt order parameter (expert mode)</li>
 <li><strong>calibrate</strong> (<em>bool</em>) &#8211; Calibrate intensity to 1.0, rather than (1+epsilon)/2</li>
 <li><strong>dxx</strong> (<em>bool</em>) &#8211; The beam frame is either Dxx or Pxx. Pxx includes the
@@ -518,8 +535,8 @@ products are read from disk.</p>
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

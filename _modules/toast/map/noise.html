@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>toast.map.noise &#8212; TOAST 2.0 documentation</title>
+    <title>toast.map.noise &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,12 +26,16 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="../../../index.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>toast.map.noise</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -43,152 +49,41 @@
         
         
   <h1>Source code for toast.map.noise</h1><div class="highlight"><pre>
-<span class="c1"># Copyright (c) 2015 by the parties listed in the AUTHORS file.</span>
+<span></span><span class="c1"># Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.</span>
 <span class="c1"># All rights reserved.  Use of this source code is governed by </span>
 <span class="c1"># a BSD-style license that can be found in the LICENSE file.</span>
 
-
-<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">..mpi</span> <span class="k">import</span> <span class="n">MPI</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">..dist</span> <span class="k">import</span> <span class="n">Comm</span><span class="p">,</span> <span class="n">Data</span>
-<span class="kn">from</span> <span class="nn">..operator</span> <span class="k">import</span> <span class="n">Operator</span>
+<span class="kn">from</span> <span class="nn">..op</span> <span class="k">import</span> <span class="n">Operator</span>
 <span class="kn">from</span> <span class="nn">.pixels</span> <span class="k">import</span> <span class="n">DistPixels</span>
 
-<span class="kn">from</span> <span class="nn">._noise</span> <span class="k">import</span> <span class="p">(</span><span class="n">_accumulate_inverse_covariance</span><span class="p">,</span>
-    <span class="n">_invert_covariance</span><span class="p">,</span> <span class="n">_cond_covariance</span><span class="p">,</span> <span class="n">_multiply_covariance</span><span class="p">,</span>
-    <span class="n">_accumulate_noiseweighted</span><span class="p">,</span> <span class="n">_apply_covariance</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">ctoast</span> <span class="k">as</span> <span class="n">ctoast</span>
 
 
-<div class="viewcode-block" id="OpInvCovariance"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpInvCovariance">[docs]</a><span class="k">class</span> <span class="nc">OpInvCovariance</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
+<div class="viewcode-block" id="OpAccumDiag"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpAccumDiag">[docs]</a><span class="k">class</span> <span class="nc">OpAccumDiag</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Operator which computes the diagonal inverse pixel covariance.</span>
+<span class="sd">    Operator which accumulates the diagonal covariance and noise weighted map.</span>
 
 <span class="sd">    This operator requires that the local pointing matrix has already been</span>
-<span class="sd">    computed.  Each process has a local piece of the inverse covariance.</span>
+<span class="sd">    computed.  Each process has local pieces of the map products.  This</span>
+<span class="sd">    operator can optionally accumulate any combination of the hit map,</span>
+<span class="sd">    the white noise weighted map, and the diagonal inverse pixel covariance.</span>
+
+<span class="sd">    NOTE:  The input DistPixels objects (noise weighted map, hit map, and</span>
+<span class="sd">    inverse covariance) are purposefully NOT set to zero at the start.  This</span>
+<span class="sd">    allows accumulating multiple instances of the distributed data.  This might</span>
+<span class="sd">    be needed (for example) if all desired timestream data does not fit into</span>
+<span class="sd">    memory.  You should manually clear the pixel domain objects before</span>
+<span class="sd">    accumulation if desired.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        invnpp (DistPixels):  The matrix to accumulate.</span>
+<span class="sd">        zmap (DistPixels):  (optional) the noise weighted map to accumulate.</span>
 <span class="sd">        hits (DistPixels):  (optional) the hits to accumulate.</span>
-<span class="sd">        detweights (dictionary): individual noise weights to use for each</span>
-<span class="sd">            detector.</span>
-<span class="sd">        flag_name (str): the name of the cache object (&lt;flag_name&gt;_&lt;detector&gt;) to</span>
-<span class="sd">            use for the detector flags.  If None, use the TOD.</span>
-<span class="sd">        flag_mask (int): the integer bit mask (0-255) that should be </span>
-<span class="sd">            used with the detector flags in a bitwise AND.</span>
-<span class="sd">        common_flag_name (str): the name of the cache object </span>
-<span class="sd">            (&lt;common_flag_name&gt;_&lt;detector&gt;) to use for the common flags.  </span>
-<span class="sd">            If None, use the TOD.</span>
-<span class="sd">        common_flag_mask (int): the integer bit mask (0-255) that should be </span>
-<span class="sd">            used with the common flags in a bitwise AND.</span>
-<span class="sd">        apply_flags (bool): whether to apply flags to the pixel numbers.</span>
-<span class="sd">        pixels (str): the name of the cache object (&lt;pixels&gt;_&lt;detector&gt;)</span>
-<span class="sd">            containing the pixel indices to use.</span>
-<span class="sd">        weights (str): the name of the cache object (&lt;weights&gt;_&lt;detector&gt;)</span>
-<span class="sd">            containing the pointing weights to use.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">invnpp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detweights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
-                <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> 
-                <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="o">=</span> <span class="n">flag_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span> <span class="o">=</span> <span class="n">flag_mask</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="o">=</span> <span class="n">common_flag_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span> <span class="o">=</span> <span class="n">common_flag_mask</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span> <span class="o">=</span> <span class="n">apply_flags</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span> <span class="o">=</span> <span class="n">pixels</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span> <span class="o">=</span> <span class="n">detweights</span>
-
-        <span class="k">if</span> <span class="n">invnpp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the invnpp to accumulate&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span> <span class="o">=</span> <span class="n">invnpp</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="o">=</span> <span class="n">hits</span>
-
-        <span class="c1"># We call the parent class constructor, which currently does nothing</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
-
-
-<div class="viewcode-block" id="OpInvCovariance.exec"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpInvCovariance.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Iterate over all observations and detectors and accumulate.</span>
-<span class="sd">        </span>
-<span class="sd">        Args:</span>
-<span class="sd">            data (toast.Data): The distributed data.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># the two-level pytoast communicator</span>
-        <span class="n">comm</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">comm</span>
-        <span class="c1"># the global communicator</span>
-        <span class="n">cworld</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_world</span>
-        <span class="c1"># the communicator within the group</span>
-        <span class="n">cgroup</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_group</span>
-        <span class="c1"># the communicator with all processes with</span>
-        <span class="c1"># the same rank within their group</span>
-        <span class="n">crank</span> <span class="o">=</span> <span class="n">comm</span><span class="o">.</span><span class="n">comm_rank</span>
-
-        <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
-            <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
-
-                <span class="c1"># get the pixels and weights from the cache</span>
-
-                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
-                <span class="n">weightsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
-                <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
-                <span class="n">weights</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">weightsname</span><span class="p">)</span>
-
-                <span class="c1"># get flags</span>
-
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">cacheflagname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
-                        <span class="n">detflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cacheflagname</span><span class="p">)</span>
-                        <span class="n">flags</span> <span class="o">=</span> <span class="p">(</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
-                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">commonflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
-                            <span class="n">flags</span><span class="p">[(</span><span class="n">commonflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">detflags</span><span class="p">,</span> <span class="n">commonflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span>
-                        <span class="n">flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">((</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">commonflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
-
-                    <span class="n">pixels</span> <span class="o">=</span> <span class="n">pixels</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1"># Don&#39;t change the cached pixel numbers</span>
-                    <span class="n">pixels</span><span class="p">[</span><span class="n">flags</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-
-                <span class="c1"># local pointing</span>
-
-                <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">global_to_local</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
-                
-                <span class="n">detweight</span> <span class="o">=</span> <span class="mf">1.0</span>
-                
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;no detector weights found for {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">))</span>
-                    <span class="n">detweight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="n">detweight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="k">continue</span>
-
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">_accumulate_inverse_covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">fakehits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-                    <span class="n">_accumulate_inverse_covariance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="n">fakehits</span><span class="p">)</span>
-        <span class="k">return</span></div></div>
-
-
-<span class="k">class</span> <span class="nc">OpNoiseWeighted</span><span class="p">(</span><span class="n">Operator</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Operator which computes the noise-weighted map.</span>
-
-<span class="sd">    This operator requires that the local pointing matrix has already been</span>
-<span class="sd">    computed.  Each process has a local piece of the noise weighted map.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        zmap (DistPixels):  The map to accumulate.</span>
-<span class="sd">        hits (DistPixels):  (optional) the hits to accumulate.</span>
+<span class="sd">        invnpp (DistPixels):  (optional) the diagonal covariance matrix.</span>
 <span class="sd">        detweights (dictionary): individual noise weights to use for each</span>
 <span class="sd">            detector.</span>
 <span class="sd">        name (str): the name of the cache object (&lt;name&gt;_&lt;detector&gt;) to</span>
@@ -209,7 +104,7 @@
 <span class="sd">            containing the pointing weights to use.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detweights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zmap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hits</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">invnpp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">detweights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
                 <span class="n">flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">common_flag_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">common_flag_mask</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span> <span class="n">pixels</span><span class="o">=</span><span class="s1">&#39;pixels&#39;</span><span class="p">,</span> 
                 <span class="n">weights</span><span class="o">=</span><span class="s1">&#39;weights&#39;</span><span class="p">,</span> <span class="n">apply_flags</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         
@@ -224,17 +119,81 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span> <span class="o">=</span> <span class="n">detweights</span>
 
-        <span class="k">if</span> <span class="n">zmap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;you must specify the map to accumulate&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span> <span class="o">=</span> <span class="n">zmap</span>
+        <span class="c1"># Ensure that the 3 different DistPixel objects have the same number</span>
+        <span class="c1"># of pixels.</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_z</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_hits</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_do_invn</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span> <span class="o">=</span> <span class="n">zmap</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="o">=</span> <span class="n">hits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span> <span class="o">=</span> <span class="n">invnpp</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">zmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_do_z</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="n">zmap</span><span class="o">.</span><span class="n">nsubmap</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span> <span class="o">=</span> <span class="n">zmap</span><span class="o">.</span><span class="n">submap</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="n">zmap</span><span class="o">.</span><span class="n">nnz</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span>
+
+        <span class="k">if</span> <span class="n">hits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_do_hits</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">hits</span><span class="o">.</span><span class="n">nnz</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Hit map should always have NNZ == 1&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="n">hits</span><span class="o">.</span><span class="n">nsubmap</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span> <span class="o">=</span> <span class="n">hits</span><span class="o">.</span><span class="n">submap</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">!=</span> <span class="n">hits</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;All pixel domain objects must have the same submap size.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span> <span class="o">!=</span> <span class="n">hits</span><span class="o">.</span><span class="n">submap</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;All pixel domain objects must have the same submap size.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span>
+
+        <span class="k">if</span> <span class="n">invnpp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_do_invn</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="n">invnpp</span><span class="o">.</span><span class="n">nnz</span>
+            <span class="n">blocknnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">block</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">=</span> <span class="n">invnpp</span><span class="o">.</span><span class="n">nsubmap</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span> <span class="o">=</span> <span class="n">invnpp</span><span class="o">.</span><span class="n">submap</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="n">blocknnz</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span> <span class="o">!=</span> <span class="n">invnpp</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;All pixel domain objects must have the same submap size.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span> <span class="o">!=</span> <span class="n">invnpp</span><span class="o">.</span><span class="n">submap</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;All pixel domain objects must have the same submap size.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="n">blocknnz</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">!=</span> <span class="n">blocknnz</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;All pixel domain objects must have the same submap size.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># this means we only have a hit map</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_invn</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_hits</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;When accumulating the diagonal pixel covariance, you must also accumulate the hit map&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_z</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_do_hits</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_invn</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;When accumulating the noise weighted map, you must accumulate either both the hits and covariance or neither.&quot;</span><span class="p">)</span>
 
         <span class="c1"># We call the parent class constructor, which currently does nothing</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
 
 
-    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="OpAccumDiag.exec"><a class="viewcode-back" href="../../../maptools.html#toast.map.OpAccumDiag.exec">[docs]</a>    <span class="k">def</span> <span class="nf">exec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Iterate over all observations and detectors and accumulate.</span>
 <span class="sd">        </span>
@@ -253,133 +212,214 @@
 
         <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">obs</span><span class="p">:</span>
             <span class="n">tod</span> <span class="o">=</span> <span class="n">obs</span><span class="p">[</span><span class="s1">&#39;tod&#39;</span><span class="p">]</span>
+
+            <span class="n">nsamp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_samples</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">commonflags</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">commonflags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">commonflags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">tod</span><span class="o">.</span><span class="n">read_common_flags</span><span class="p">())</span>
+                <span class="n">commonflags</span> <span class="o">&amp;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span>
+
             <span class="k">for</span> <span class="n">det</span> <span class="ow">in</span> <span class="n">tod</span><span class="o">.</span><span class="n">local_dets</span><span class="p">:</span>
 
                 <span class="c1"># get the pixels and weights from the cache</span>
 
-                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
-                <span class="n">weightsname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">pixelsname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixels</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                <span class="n">weightsname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
                 <span class="n">pixels</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">pixelsname</span><span class="p">)</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">weightsname</span><span class="p">)</span>
 
                 <span class="n">cachename</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
-                    <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="kc">None</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_z</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">cachename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                        <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cachename</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">signal</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span>
 
                 <span class="c1"># get flags</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_flags</span><span class="p">:</span>
+                    <span class="n">detflags</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">cacheflagname</span> <span class="o">=</span> <span class="s2">&quot;{}_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
+                        <span class="n">cacheflagname</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">_</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flag_name</span><span class="p">,</span> <span class="n">det</span><span class="p">)</span>
                         <span class="n">detflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="n">cacheflagname</span><span class="p">)</span>
-                        <span class="n">flags</span> <span class="o">=</span> <span class="p">(</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
-                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">commonflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">reference</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_name</span><span class="p">)</span>
-                            <span class="n">flags</span><span class="p">[(</span><span class="n">commonflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">detflags</span><span class="p">,</span> <span class="n">commonflags</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span>
-                        <span class="n">flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">((</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">commonflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">detflags</span><span class="p">,</span> <span class="n">ctemp</span> <span class="o">=</span> <span class="n">tod</span><span class="o">.</span><span class="n">read_flags</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="n">det</span><span class="p">)</span>
+                        <span class="k">del</span> <span class="n">ctemp</span>
+                        
+                    <span class="n">flags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">((</span><span class="n">detflags</span> <span class="o">&amp;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flag_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">commonflags</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+
+                    <span class="k">del</span> <span class="n">detflags</span>
 
                     <span class="n">pixels</span> <span class="o">=</span> <span class="n">pixels</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="c1"># Don&#39;t change the cached pixel numbers</span>
                     <span class="n">pixels</span><span class="p">[</span><span class="n">flags</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
                 <span class="c1"># local pointing</span>
 
-                <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span><span class="o">.</span><span class="n">global_to_local</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+                <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_globloc</span><span class="o">.</span><span class="n">global_to_local</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
                 
                 <span class="n">detweight</span> <span class="o">=</span> <span class="mf">1.0</span>
                 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">det</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;no detector weights found for {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">))</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;no detector weights found for </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">det</span><span class="p">))</span>
                     <span class="n">detweight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_detweights</span><span class="p">[</span><span class="n">det</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">detweight</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="k">continue</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">_accumulate_noiseweighted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">fakehits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-                    <span class="n">_accumulate_noiseweighted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="n">fakehits</span><span class="p">)</span>
-        <span class="k">return</span>
+                <span class="c1"># Now call the correct accumulation operator depending</span>
+                <span class="c1"># on which input pixel objects were given.</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_invn</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_z</span><span class="p">:</span>
+                    
+                    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_accumulate_diagonal</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> 
+                        <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> 
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_invn</span><span class="p">:</span>
+                    
+                    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_accumulate_diagonal_invnpp</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> 
+                        <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invnpp</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_z</span><span class="p">:</span>
+
+                    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_accumulate_zmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span><span class="p">,</span> 
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">detweight</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> 
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_zmap</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_do_hits</span><span class="p">:</span>
+
+                    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_accumulate_diagonal_hits</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nsub</span><span class="p">,</span> 
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_subsize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nnz</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">lpix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hits</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="c1"># print(&quot;det {}:&quot;.format(det))</span>
+                <span class="c1"># if self._zmap is not None:</span>
+                <span class="c1">#     print(self._zmap.data)</span>
+                <span class="c1"># if self._hits is not None:</span>
+                <span class="c1">#     print(self._hits.data)</span>
+                <span class="c1"># if self._invnpp is not None:</span>
+                <span class="c1">#     print(self._invnpp.data)</span>
+
+        <span class="k">return</span></div></div>
 
 
-<div class="viewcode-block" id="covariance_invert"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_invert">[docs]</a><span class="k">def</span> <span class="nf">covariance_invert</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+<div class="viewcode-block" id="covariance_invert"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_invert">[docs]</a><span class="k">def</span> <span class="nf">covariance_invert</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Invert the local piece of a diagonal noise covariance.</span>
+<span class="sd">    Invert a diagonal noise covariance.</span>
 
-<span class="sd">    This does an in-place inversion of the covariance.  The threshold is</span>
+<span class="sd">    This does an inversion of the covariance.  The threshold is</span>
 <span class="sd">    applied to the condition number of each block of the matrix.  Pixels</span>
 <span class="sd">    failing the cut are set to zero.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        npp (3D array): The data member of a distributed covariance.</span>
+<span class="sd">        npp (DistPixels): The distributed covariance.</span>
 <span class="sd">        threshold (float): The condition number threshold to apply.</span>
+<span class="sd">        rcond (DistPixels): (Optional) The distributed inverse condition number map to fill.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
-    <span class="n">_invert_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="n">mapnnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">npp</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rcond</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rcond</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">npp</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrix and condition number map must have same number of pixels&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rcond</span><span class="o">.</span><span class="n">submap</span> <span class="o">!=</span> <span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrix and condition number map must have same submap size&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rcond</span><span class="o">.</span><span class="n">nnz</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;condition number map should have NNZ = 1&quot;</span><span class="p">)</span>
+        <span class="n">do_rcond</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_eigendecompose_diagonal</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">,</span> <span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">,</span> <span class="n">mapnnz</span><span class="p">,</span> 
+            <span class="n">npp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">rcond</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_eigendecompose_diagonal</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">,</span> <span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">,</span> <span class="n">mapnnz</span><span class="p">,</span> 
+            <span class="n">npp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
     <span class="k">return</span></div>
 
 
-<span class="k">def</span> <span class="nf">covariance_multiply</span><span class="p">(</span><span class="n">npp1</span><span class="p">,</span> <span class="n">npp2</span><span class="p">):</span>
+<div class="viewcode-block" id="covariance_multiply"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_multiply">[docs]</a><span class="k">def</span> <span class="nf">covariance_multiply</span><span class="p">(</span><span class="n">npp1</span><span class="p">,</span> <span class="n">npp2</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Multiply two local piece of diagonal noise covariance.</span>
+<span class="sd">    Multiply two diagonal noise covariances.</span>
 
 <span class="sd">    This does an in-place multiplication of the covariance.</span>
-<span class="sd">    The results are returned in place of the first argument, npp1.</span>
+<span class="sd">    The data values of the first covariance (npp1) are replaced with</span>
+<span class="sd">    the result.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        npp1 (3D array): The data member of a distributed covariance.</span>
-<span class="sd">        npp2 (3D array): The data member of a distributed covariance.</span>
+<span class="sd">        npp1 (3D array): The first distributed covariance.</span>
+<span class="sd">        npp2 (3D array): The second distributed covariance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp1</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp2</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span> <span class="n">npp1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">npp2</span><span class="o">.</span><span class="n">shape</span> <span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dimensions of the distributed matrices must agree but {} != {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">npp1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">npp2</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
-    <span class="n">_multiply_covariance</span><span class="p">(</span><span class="n">npp1</span><span class="p">,</span> <span class="n">npp2</span><span class="p">)</span>
-    <span class="k">return</span>
+    <span class="n">mapnnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">npp1</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">npp1</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">npp2</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrices must have same number of pixels&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">npp1</span><span class="o">.</span><span class="n">submap</span> <span class="o">!=</span> <span class="n">npp2</span><span class="o">.</span><span class="n">submap</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrices must have same submap size&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">npp1</span><span class="o">.</span><span class="n">nnz</span> <span class="o">!=</span> <span class="n">npp2</span><span class="o">.</span><span class="n">nnz</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrices must have same NNZ values&quot;</span><span class="p">)</span>
+
+    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_multiply_diagonal</span><span class="p">(</span><span class="n">npp1</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">,</span> <span class="n">npp1</span><span class="o">.</span><span class="n">submap</span><span class="p">,</span> <span class="n">mapnnz</span><span class="p">,</span> 
+        <span class="n">npp1</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">npp2</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span></div>
 
 
-<span class="k">def</span> <span class="nf">covariance_apply</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
+<div class="viewcode-block" id="covariance_apply"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_apply">[docs]</a><span class="k">def</span> <span class="nf">covariance_apply</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Multiply two local piece of diagonal noise covariance.</span>
+<span class="sd">    Multiply a map by a diagonal noise covariance.</span>
 
-<span class="sd">    This does an in-place multiplication of the covariance.</span>
-<span class="sd">    The results are returned in place of the first argument, npp1.</span>
+<span class="sd">    This does an in-place multiplication of the covariance and a</span>
+<span class="sd">    map.  The results are returned in place of the input map.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        npp (3D array): The data member of a distributed covariance.</span>
-<span class="sd">        m (3D array): The data member of a distributed map.</span>
+<span class="sd">        npp (DistPixels): The distributed covariance.</span>
+<span class="sd">        m (DistPixels): The distributed map.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
-    <span class="n">_apply_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span>
-    <span class="k">return</span>
+    <span class="n">mapnnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">npp</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">npp</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrix and map must have same number of pixels&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">submap</span> <span class="o">!=</span> <span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrix and map must have same submap size&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">nnz</span> <span class="o">!=</span> <span class="n">mapnnz</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;covariance matrix and map have incompatible NNZ values&quot;</span><span class="p">)</span>
+
+    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_apply_diagonal</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">,</span> <span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">,</span> <span class="n">mapnnz</span><span class="p">,</span> <span class="n">npp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="covariance_rcond"><a class="viewcode-back" href="../../../maptools.html#toast.map.covariance_rcond">[docs]</a><span class="k">def</span> <span class="nf">covariance_rcond</span><span class="p">(</span><span class="n">npp</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return the local piece of the inverse condition number map.</span>
+<span class="sd">    Compute the inverse condition number map.</span>
 
-<span class="sd">    This computes the local piece of the inverse condition number map</span>
-<span class="sd">    from the supplied covariance matrix data.</span>
+<span class="sd">    This computes the inverse condition number map of the supplied </span>
+<span class="sd">    covariance matrix.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        npp (3D array): The data member of a distributed covariance.</span>
+<span class="sd">        npp (DistPixels): The distributed covariance.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        rcond (3D array): The local data piece of the distributed</span>
-<span class="sd">            inverse condition number map.</span>
+<span class="sd">        rcond (DistPixels): The distributed inverse condition number map.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;distributed covariance matrix must have dimensions (number of submaps, pixels per submap, nnz*(nnz+1)/2)&quot;</span><span class="p">)</span>
-    <span class="n">rcond</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">npp</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
-    <span class="n">_cond_covariance</span><span class="p">(</span><span class="n">npp</span><span class="p">,</span> <span class="n">rcond</span><span class="p">)</span>
+    <span class="n">mapnnz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">npp</span><span class="o">.</span><span class="n">nnz</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+
+    <span class="n">rcond</span> <span class="o">=</span> <span class="n">DistPixels</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">nnz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> 
+        <span class="n">submap</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">local</span><span class="p">,</span> <span class="n">nest</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">nested</span><span class="p">)</span>
+
+    <span class="n">threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span>
+    
+    <span class="n">ctoast</span><span class="o">.</span><span class="n">cov_eigendecompose_diagonal</span><span class="p">(</span><span class="n">npp</span><span class="o">.</span><span class="n">nsubmap</span><span class="p">,</span> <span class="n">npp</span><span class="o">.</span><span class="n">submap</span><span class="p">,</span> <span class="n">mapnnz</span><span class="p">,</span> 
+        <span class="n">npp</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">rcond</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    
     <span class="k">return</span> <span class="n">rcond</span></div>
+
 </pre></div>
 
       </div>
@@ -392,8 +432,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>

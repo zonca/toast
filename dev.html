@@ -6,7 +6,8 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Developer’s Guide &#8212; TOAST 2.0 documentation</title>
+    <title>Developer’s Guide &#8212; TOAST 2.2.0
+ documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +15,8 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0',
+        VERSION:     '2.2.0
+',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,12 +26,16 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="TOAST 2.0 documentation" href="index.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="TOAST 2.2.0
+ documentation" href="index.html" />
     <link rel="prev" title="Using at NERSC" href="nersc.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="index.html">
-          <span>TOAST 2.0 documentation</span></a></h1>
+          <span>TOAST 2.2.0
+ documentation</span></a></h1>
         <h2 class="heading"><span>Developer’s Guide</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -46,32 +52,11 @@
         
   <div class="section" id="developer-s-guide">
 <span id="dev"></span><h1>Developer&#8217;s Guide<a class="headerlink" href="#developer-s-guide" title="Permalink to this headline">¶</a></h1>
-<p>TOAST aims to follow Python best practices whenever reasonably possible.  If you are submitting a pull request to contribute some code, please ensure that you are using indents consisting of 4 spaces (no tabs).  Also look at <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP-8</a>.  Contributions correcting existing code are also welcome!</p>
-<p>When documenting classes and methods, we use <a class="reference external" href="http://google.github.io/styleguide/pyguide.html?showone=Comments#Comments">google-style docstrings</a>.</p>
-<div class="section" id="running-from-the-source-tree">
-<h2>Running from the Source Tree<a class="headerlink" href="#running-from-the-source-tree" title="Permalink to this headline">¶</a></h2>
-<p>For rapid development, it is sometimes useful to work directly in the source tree.  The standard setup.py &#8220;develop&#8221; target does not work well for pytoast, since it contains a compiled C library as well as compiled extensions.  Here are the recommended steps.  Instead, you can use the enclosed top-level script called &#8220;develop&#8221;.  To clean all build products, do:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">clean</span>
+<p>TOAST aims to follow best practices whenever reasonably possible.  If you submit a pull request to contribute C++ code, try to match the existing coding style (indents are 4 spaces, not tabs, curly brace placement, spacing, etc).  If you are contributing python code follow <a class="reference external" href="https://www.python.org/dev/peps/pep-0008/">PEP-8</a>.  When documenting python classes and methods, we use <a class="reference external" href="http://google.github.io/styleguide/pyguide.html?showone=Comments#Comments">google-style docstrings</a>.  The C++ code in TOAST uses the google test framework for unit tests.  Python code uses the standard built in unittest classes.  When contributing new code, please add unit tests as well.  Even if we don&#8217;t have perfect test coverage, that should be our goal.  When actively developing the codebase, you can run the C++ unit tests without installation by doing:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">%&gt;</span> <span class="n">make</span> <span class="n">check</span>
 </pre></div>
 </div>
-<p>To build everything inside the source tree, do:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">build</span>
-</pre></div>
-</div>
-<p>To run a single file in the unittest directory, you can do:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">test</span> <span class="o">&lt;</span><span class="n">test_file</span><span class="o">.</span><span class="n">py</span><span class="o">&gt;</span>
-</pre></div>
-</div>
-<p>Or, if you leave out the name of the test file then all tests are run.  If you want to prepend your source tree to your PATH and PYTHONPATH, you can use this command to get the necessary shell modifiers:</p>
-<div class="highlight-default"><div class="highlight"><pre><span class="o">%&gt;</span> <span class="o">./</span><span class="n">develop</span> <span class="n">env</span>
-</pre></div>
-</div>
-<p>To actually run those commands, do this:</p>
-<div class="highlight-default"><div class="highlight"><pre>%&gt; eval `./develop env`
-</pre></div>
-</div>
-<p>Now your source tree is in your search paths, and you can go to other directories and import the toast module and run the pipeline scripts.</p>
-</div>
+<p>In order to run the python unit tests, you must first do a &#8220;make install&#8221;.</p>
 </div>
 
 
@@ -87,8 +72,8 @@
       </div>
 
     <div class="footer" role="contentinfo">
-        &#169; Copyright 2015-2016, Theodore Kisner, Reijo Keskitalo.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.6.
+        &#169; Copyright 2015-2017, Theodore Kisner, Reijo Keskitalo.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.8.
     </div>
   </body>
 </html>
