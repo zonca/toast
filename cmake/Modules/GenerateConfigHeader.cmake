@@ -29,8 +29,8 @@ function(write_toast_config_file)
     get_directory_property(_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
 
     if(CONF_TEMPLATE)
-        configure_file(${CONF_TEMPLATE} ${CONF_WRITE_PATH}/.${CONF_FILE_NAME}.tmp @ONLY)
-        file(READ ${CONF_WRITE_PATH}/.${CONF_FILE_NAME}.tmp _orig)
+        configure_file(${CONF_TEMPLATE} ${CMAKE_BINARY_DIR}/.${CONF_FILE_NAME}.tmp @ONLY)
+        file(READ ${CMAKE_BINARY_DIR}/.${CONF_FILE_NAME}.tmp _orig)
     endif()
 
     STRING(TOLOWER ${PROJECT_NAME} _project)
