@@ -1,0 +1,12 @@
+
+include(MacroLibraryTargets)
+
+GLOBAL_OBJECT_TARGET(NAME Common
+                         COMPONENTS
+                            sources.cmake
+                        )
+
+GLOBAL_OBJECT_TARGET(NAME svn_version
+                         COMPONENTS
+                            svn_version.cmake
+                        )
