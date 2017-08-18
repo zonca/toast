@@ -8,6 +8,8 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
     cmake_policy(SET CMP0054 NEW)
 endif()
 
+find_program(GIT_COMMAND git)
+
 ################################################################################
 #
 #   Write a config file for installation (writes preprocessor definitions)
@@ -17,11 +19,12 @@ endif()
 function(write_toast_config_file)
 
     cmake_parse_arguments(CONF
-                          ""
-                          "TEMPLATE;FILE_NAME;WRITE_PATH;INSTALL_PATH"
-                          "DEFINE_VARS;UNDEFINE_VARS"
-                          ${ARGN}
-                         )
+        ""
+        "TEMPLATE;FILE_NAME;WRITE_PATH;INSTALL_PATH"
+        "DEFINE_VARS;UNDEFINE_VARS;SKIP_VARS"
+        ${ARGN}
+    )
+
 
     get_directory_property(_defs DIRECTORY ${CMAKE_SOURCE_DIR} COMPILE_DEFINITIONS)
 
@@ -29,7 +32,7 @@ function(write_toast_config_file)
         configure_file(${CONF_TEMPLATE} ${CONF_WRITE_PATH}/.${CONF_FILE_NAME}.tmp @ONLY)
         file(READ ${CONF_WRITE_PATH}/.${CONF_FILE_NAME}.tmp _orig)
     endif()
-    
+
     STRING(TOLOWER ${PROJECT_NAME} _project)
     STRING(TOLOWER ${CONF_FILE_NAME} _file)
     set(_name "${_project}_${_file}")
@@ -42,6 +45,7 @@ function(write_toast_config_file)
 
     set(_output "${_orig}//\n//\n//\n//\n//\n\n${header1}\n${header2}\n")
 
+    # write the version fields
     if(DEFINED ${PROJECT_NAME}_VERSION)
         define_version_00(${PROJECT_NAME} MAJOR)
         define_version_00(${PROJECT_NAME} MINOR)
@@ -49,9 +53,11 @@ function(write_toast_config_file)
 
         set(_prefix ${PROJECT_NAME})
         if("${${_prefix}_PATCH}" GREATER 0)
-          set(VERSION_STRING "${${_prefix}_MAJOR_VERSION}_${${_prefix}_MINOR_VERSION}_${${_prefix}_PATCH_VERSION}")
+            set(VERSION_STRING "${${_prefix}_MAJOR_VERSION}")
+            set(VERSION_STRING "${VERSION_STRING}_${${_prefix}_MINOR_VERSION}")
+            set(VERSION_STRING "${VERSION_STRING}_${${_prefix}_PATCH_VERSION}")
         else()
-          set(VERSION_STRING "${${_prefix}_MAJOR_VERSION}_${${_prefix}_MINOR_VERSION}")
+            set(VERSION_STRING "${${_prefix}_MAJOR_VERSION}_${${_prefix}_MINOR_VERSION}")
         endif()
 
         set(s1 "//")
@@ -66,7 +72,9 @@ function(write_toast_config_file)
 
         set(_output "${_output}\n${s1}\n${s2}\n${s3}\n${s4}\n${s5}\n${s6}\n${s7}\n${s8}\n${s9}\n")
         set(_output "${_output}\n#define ${PROJECT_NAME}_VERSION")
-        set(_output "${_output} ${${_prefix}_MAJOR_VERSION_00}${${_prefix}_MINOR_VERSION_00}${${_prefix}_PATCH_VERSION_00}\n")
+        set(_output "${_output} ${${_prefix}_MAJOR_VERSION_00}")
+        set(_output "${_output}${${_prefix}_MINOR_VERSION_00}")
+        set(_output "${_output}${${_prefix}_PATCH_VERSION_00}\n")
 
         set(s1 "//")
         set(s2 "//  ${PROJECT_NAME}_LIB_VERSION must be defined to be the same as")
@@ -78,11 +86,11 @@ function(write_toast_config_file)
         set(_output "${_output}\n#define ${PROJECT_NAME}_LIB_VERSION \"${VERSION_STRING}\"\n")
     endif()
 
-    set(_output "${_output}\n\n//\n// TOAST CONFIG\n//\n")
+    set(_output "${_output}\n//\n// TOAST CONFIG\n//\n")
 
     foreach(_def ${CONF_DEFINE_VARS})
         set(_str0 "/* Define ${${_def}_LABEL} ${${_def}_MSG} */")
-        set(_str1 "#define ${${_def}_NAME} ${${_def}_ENTRY}")
+        set(_str1 "#define ${${_def}_MACRO} ${${_def}_ENTRY}")
         set(_output "${_output}\n${_str0}\n${_str1}\n")
     endforeach()
 
@@ -92,19 +100,24 @@ function(write_toast_config_file)
         set(_output "${_output}\n${_str0}\n${_str1}\n")
     endforeach()
 
-    set(_output "${_output}\n\n//\n// DEFINES\n//\n")
-    
+    set(_output "${_output}\n//\n// DEFINES\n//\n")
+
+    set(_FUTURE_REMOVE DEBUG NDEBUG ${CONF_SKIP_VARS})
     # if DEBUG, add ${PROJECT_NAME}_DEBUG and same for NDEBUG
     foreach(_def ${_defs})
         if("${_def}" STREQUAL "DEBUG")
             list(APPEND _defs ${PROJECT_NAME}_DEBUG)
         elseif("${_def}" STREQUAL "NDEBUG")
             list(APPEND _defs ${PROJECT_NAME}_NDEBUG)
+        elseif("${_def}" MATCHES "=")
+            list(APPEND _FUTURE_REMOVE ${_def})
         endif()
     endforeach()
 
-    list(REMOVE_ITEM _defs DEBUG)
-    list(REMOVE_ITEM _defs NDEBUG)
+    foreach(_def ${_FUTURE_REMOVE})
+        list(REMOVE_ITEM _defs ${_def})
+    endforeach()
+    unset(_FUTURE_REMOVE)
 
     foreach(_def ${_defs})
         set(_str1 "#if !defined(${_def})")
@@ -117,7 +130,7 @@ function(write_toast_config_file)
     list(APPEND _defs ${CMAKE_PROJECT_NAME}_NDEBUG)
     list(REMOVE_DUPLICATES _defs)
 
-    set(_output "${_output}\n\n//\n// To avoid any of the definitions, define DONT_{definition}\n//\n")
+    set(_output "${_output}\n//\n// To avoid any of the definitions, define DONT_{definition}\n//\n")
     foreach(_def ${_defs})
         set(_str1 "#if defined(DONT_${_def})")
         set(_str2 "#   if defined(${_def})")
@@ -149,377 +162,441 @@ function(write_toast_config_file)
 endfunction()
 
 #==============================================================================#
+#   Function to convert a boolean ON/OFF into DEFINE/UNDEFINE
+#       flag for SET_MACRO_FIELDS (below)
+#
+function(GET_DEFINED_FLAG VAR QUERY)
 
-#function(FIND_HEADER_FILE VAR FILE_PATH)
-
-#    find_file(
-
-#endfunction(FIND_HEADER_FILE VAR FILE_PATH)
-
-#==============================================================================#
-
-function(GET_TYPE VAR QUERY)
-    
     if(${QUERY})
         SET(${VAR} DEFINE PARENT_SCOPE)
     else()
         SET(${VAR} UNDEFINE PARENT_SCOPE)
     endif(${QUERY})
-    
-endfunction(GET_TYPE VAR QUERY)
+
+endfunction(GET_DEFINED_FLAG VAR QUERY)
 
 #==============================================================================#
-
-function(SET_VAR)
+#   function to assign the corresponding macro fields for LABEL "X"
+#   - e.g. label "HAVE_XML" needs to define:
+#       HAVE_XML_LABEL  - the name of the macro
+#       HAVE_XML_MACRO   - the signature of macro (only different from
+#                         LABEL if macro is function i.e., F77_FUNC(xxx)
+#       HAVE_XML_ENTRY  - what to set define statement to
+#       HAVE_XML_MSG    - the comment
+#
+function(SET_MACRO_FIELDS)
     cmake_parse_arguments(
         VAR
         "DEFINE;UNDEFINE"
-        "NAME;ENTRY;LABEL;MSG"
+        "MACRO;ENTRY;LABEL;MSG"
         ""
         ${ARGN})
 
-    set(${VAR_LABEL}_NAME   "${VAR_NAME}"   PARENT_SCOPE)
+    # LABEL and MACRO are *typically* the same
+    if("${VAR_MACRO}" STREQUAL "" AND NOT "${VAR_LABEL}" STREQUAL "")
+        set(VAR_MACRO "${VAR_LABEL}")
+    elseif(NOT "${VAR_MACRO}" STREQUAL "" AND "${VAR_LABEL}" STREQUAL "")
+        set(VAR_LABEL "${VAR_MACRO}")
+    endif()
+
+    set(${VAR_LABEL}_MACRO  "${VAR_MACRO}"  PARENT_SCOPE)
     set(${VAR_LABEL}_ENTRY  "${VAR_ENTRY}"  PARENT_SCOPE)
     set(${VAR_LABEL}_LABEL  "${VAR_LABEL}"  PARENT_SCOPE)
     set(${VAR_LABEL}_MSG    "${VAR_MSG}"    PARENT_SCOPE)
-    
+
     if(VAR_DEFINE)
         set(DEFINE_VARIABLES ${DEFINE_VARIABLES} ${VAR_LABEL} PARENT_SCOPE)
     elseif(VAR_UNDEFINE)
-        set(UNDEFINE_VARIABLES ${UNDEFINE_VARIABLES} ${VAR_LABEL} PARENT_SCOPE)    
+        set(UNDEFINE_VARIABLES ${UNDEFINE_VARIABLES} ${VAR_LABEL} PARENT_SCOPE)
     endif()
-    
-endfunction(SET_VAR)
+
+endfunction(SET_MACRO_FIELDS)
 
 #==============================================================================#
+#   function to see if header exists
+#   - it creates an empty main that includes the header and checks that
+#     it compiles
+#
+function(CHECK_FOR_HEADER VAR HEADER)
 
-function(FIND_HEADER VAR HEADER)
-
-    get_property(dirs DIRECTORY 
+    get_property(dirs DIRECTORY
         ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-    
-    set(HEADER_FILE ${HEADER}) 
+
+    set(HEADER_FILE ${HEADER})
     configure_file(${CMAKE_SOURCE_DIR}/cmake/Templates/header-test.cc.in
         ${CMAKE_BINARY_DIR}/header-test.cc @ONLY)
-    
+
     try_compile(RET
-        ${CMAKE_BINARY_DIR} 
+        ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}/header-test.cc
         CMAKE_FLAGS ${CMAKE_CXX_FLAGS}
         INCLUDE_DIRECTORIES ${dirs}
         OUTPUT_VARIABLE RET_OUT)
-                
+
     IF(RET)
         set(${VAR} ON PARENT_SCOPE)
     ELSE()
-        set(${VAR} OFF PARENT_SCOPE)        
+        set(${VAR} OFF PARENT_SCOPE)
     ENDIF()
-    
-endfunction()
+
+endfunction(CHECK_FOR_HEADER VAR HEADER)
 
 #==============================================================================#
 
-find_program(GIT_COMMAND git)
-
-#==============================================================================#
-
-SET_VAR(DEFINE
-    NAME    "F77_FUNC(name)"
-    ENTRY   "name ## _"
+SET_MACRO_FIELDS(DEFINE
     LABEL   "F77_FUNC"
+    MACRO   "F77_FUNC(name)"
+    ENTRY   "name ## _"
     MSG     "to a macro mangling the given Fortran function name")
 
 #==============================================================================#
 
-GET_TYPE(HAS USE_BLAS)
-SET_VAR(${HAS}
-    NAME    "HAVE_BLAS"
-    ENTRY   "1"
+GET_DEFINED_FLAG(HAS USE_BLAS)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_BLAS"
+    ENTRY   "1"
     MSG     "if you have a BLAS library")
 
 #==============================================================================#
 
-GET_TYPE(HAS USE_LAPACK)
-SET_VAR(${HAS}
-    NAME    "HAVE_LAPACK"
-    ENTRY   "1"
+GET_DEFINED_FLAG(HAS USE_LAPACK)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_LAPACK"
+    ENTRY   "1"
     MSG     "if you have a LAPACK library")
-    
+
 #==============================================================================#
 
-GET_TYPE(HAS USE_OPENBLAS)
-SET_VAR(${HAS}
-    NAME    "HAVE_OPENBLAS"
-    ENTRY   "1"
+GET_DEFINED_FLAG(HAS USE_OPENBLAS)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_OPENBLAS"
+    ENTRY   "1"
     MSG     "if you have a OpenBLAS library")
 
 #==============================================================================#
 
-FIND_HEADER(CMATH_FILE "cmath")
-GET_TYPE(HAS CMATH_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "cmath")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_MATH"
-    NAME    "HAVE_MATH"
     ENTRY   "1"
     MSG     "if you have the C math library")
 
-SET_VAR(${HAS}
-    LABEL   "HAVE_MATH"
-    NAME    "HAVE_MATH"
-    ENTRY   "1"
-    MSG     "to 1 if you have the ANSI C header files.")
-
 #==============================================================================#
 
-FIND_HEADER(MATH_H_FILE "math.h")
-GET_TYPE(HAS MATH_H_FILE)
-SET_VAR(${HAS}
-    LABEL   "STDC_HEADERS"
-    NAME    "STDC_HEADERS"
+CHECK_FOR_HEADER(HEADER_FILE "math.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_MATH_H"
     ENTRY   "1"
     MSG     "if you have the <math.h> library")
 
 #==============================================================================#
 
-FIND_HEADER(MEMORY_FILE "memory.h")
-GET_TYPE(HAS MEMORY_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "cstdlib")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "STDC_HEADERS"
+    ENTRY   "1"
+    MSG     "to 1 if you have the ANSI C header files.")
+
+#==============================================================================#
+
+CHECK_FOR_HEADER(HEADER_FILE "memory.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_MEMORY_H"
-    NAME    "HAVE_MEMORY_H"
     ENTRY   "1"
     MSG     "if you have the <memory.h> library")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "inttypes.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "inttypes.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_INTTYPES_H"
-    NAME    "HAVE_INTTYPES_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <inttypes.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "stdint.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "stdint.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_STDINT_H"
-    NAME    "HAVE_STDINT_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <stdint.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "stdlib.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "stdlib.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_STDLIB_H"
-    NAME    "HAVE_STDLIB_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <stdlib.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "strings.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "strings.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_STRINGS_H"
-    NAME    "HAVE_STRINGS_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <strings.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "string.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "string.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_STRING_H"
-    NAME    "HAVE_STRING_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <string.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "sys/stat.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "sys/stat.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_SYS_STAT_H"
-    NAME    "HAVE_SYS_STAT_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <sys/stat.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "sys/types.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "sys/types.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_SYS_TYPES_H"
-    NAME    "HAVE_SYS_TYPES_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <sys/types.h> header file.")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "unistd.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "unistd.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_UNISTD_H"
-    NAME    "HAVE_UNISTD_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <unistd.h> header file.")
 
 #==============================================================================#
 
-GET_TYPE(HAS wcslib_FOUND)
-SET_VAR(${HAS}
+GET_DEFINED_FLAG(HAS wcslib_FOUND)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_WCSLIB"
-    NAME    "HAVE_WCSLIB"
     ENTRY   "1"
     MSG     "if you are using wcslib")
 
 #==============================================================================#
 
-FIND_HEADER(HEADER_FILE "wcslib/wcs.h")
-GET_TYPE(HAS HEADER_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(HEADER_FILE "wcslib/wcs.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_WCSLIB_WCS_H"
-    NAME    "HAVE_WCSLIB_WCS_H"
     ENTRY   "1"
     MSG     "to 1 if you have the <wcslib/wcs.h> header file.")
 
 #==============================================================================#
 
-GET_TYPE(HAS USE_MKL)
-SET_VAR(${HAS}
+GET_DEFINED_FLAG(HAS USE_MKL)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_MKL"
-    NAME    "HAVE_MKL"
     ENTRY   "1"
     MSG     "if you are using MKL")
 
 #==============================================================================#
 
-GET_TYPE(HAS Threads_FOUND)
-SET_VAR(${HAS}
+GET_DEFINED_FLAG(HAS Threads_FOUND)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_PTHREAD"
-    NAME    "HAVE_PTHREAD"
     ENTRY   "1"
     MSG     "if you have POSIX threads libraries and header files. ")
 
 #==============================================================================#
 
-GET_TYPE(HAS OpenMP_FOUND)
-SET_VAR(${HAS}
+GET_DEFINED_FLAG(HAS OpenMP_FOUND)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_OPENMP"
-    NAME    "HAVE_OPENMP"
     ENTRY   "1"
     MSG     "if OpenMP is enabled.")
 
 #==============================================================================#
 
-FIND_HEADER(MKL_DFTI_FILE "mkl_dfti.h")
-GET_TYPE(HAS MKL_DFTI_FILE)
-SET_VAR(${HAS}
+CHECK_FOR_HEADER(MKL_DFTI_FILE "mkl_dfti.h")
+GET_DEFINED_FLAG(HAS MKL_DFTI_FILE)
+SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_MKL_DFTI_H"
-    NAME    "HAVE_MKL_DFTI_H"
     ENTRY   "1"
     MSG     "if to 1 if you have the <mkl_dfti.h> header file.")
 
 #==============================================================================#
 
-STRING(TOLOWER "${CMAKE_PROJECT_NAME}" LOWER_CMAKE_PROJECT_NAME)
-SET_VAR(DEFINE
-    NAME    "PACKAGE"
-    ENTRY   "\"${LOWER_CMAKE_PROJECT_NAME}\""
-    LABEL   "PACKAGE"
-    MSG     "of package")
-
+GET_DEFINED_FLAG(HAS Python3_FOUND)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_PYTHON"
+    ENTRY   "\"${PYTHON_VERSION_STRING}\""
+    MSG     "contains the Python version number currently in use")
 
 #==============================================================================#
 
-SET_VAR(DEFINE
-    NAME    "PACKAGE_NAME"
-    ENTRY   "\"${CMAKE_PROJECT_NAME}\""
-    LABEL   "PACKAGE_NAME"
-    MSG     "to the full name of the package")
+CHECK_FOR_HEADER(HEADER_FILE "dlfcn.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_DLFCN_H"
+    ENTRY   1
+    MSG     "to 1 if you have the <dlfcn.h> header file.")
 
+#==============================================================================#
+
+GET_DEFINED_FLAG(HAS USE_ELEMENTAL)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_ELEMENTAL"
+    ENTRY   1
+    MSG     "we have Elemental")
+
+#==============================================================================#
+
+CHECK_FOR_HEADER(HEADER_FILE "El.hpp")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_EL_HPP"
+    ENTRY   1
+    MSG     "to 1 if you have the <El.hpp> header file.")
+
+#==============================================================================#
+
+GET_DEFINED_FLAG(HAS USE_FFTW)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_FFTW"
+    ENTRY   1
+    MSG     "we have FFTW")
+
+#==============================================================================#
+
+GET_DEFINED_FLAG(HAS FFTW3_THREADS_FOUND)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_FFTW_THREADS"
+    ENTRY   1
+    MSG     "if you have the FFTW threads library.")
+
+#==============================================================================#
+
+CHECK_FOR_HEADER(HEADER_FILE "fftw3.h")
+GET_DEFINED_FLAG(HAS HEADER_FILE)
+SET_MACRO_FIELDS(${HAS}
+    LABEL   "HAVE_FFTW3_H"
+    ENTRY   1
+    MSG     "to 1 if you have the <fftw3.h> header file.")
+
+#==============================================================================#
+#==============================================================================#
+#
+#           PACKAGE DETAILS
+#
+#==============================================================================#
 #==============================================================================#
 
 execute_process(COMMAND ${GIT_COMMAND} describe --tags --abbrev=0
     OUTPUT_VARIABLE GIT_LAST_TAG
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 execute_process(COMMAND ${GIT_COMMAND} rev-list --count --branches
     OUTPUT_VARIABLE GIT_DEV_NUMBER
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-SET_VAR(DEFINE
-    NAME    "PACKAGE_VERSION"
-    ENTRY   "\"${GIT_LAST_TAG}.dev${GIT_DEV_NUMBER}\""
-    LABEL   "PACKAGE_VERSION"
-    MSG     "to the version of this package.")
-
-#==============================================================================#
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 execute_process(COMMAND ${GIT_COMMAND} remote get-url origin
     OUTPUT_VARIABLE GIT_URL
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-SET_VAR(DEFINE
-    NAME    "PACKAGE_URL"
-    ENTRY   "\"${GIT_URL}\""
-    LABEL   "PACKAGE_URL"
-    MSG     "to the home page for this package.")
-
-#==============================================================================#
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 STRING(REPLACE "/" ";" GIT_TARNAME "${GIT_URL}")
 LIST(LENGTH GIT_TARNAME GIT_TARNAME_LENGTH)
 MATH(EXPR GIT_TARNAME_LENGTH "${GIT_TARNAME_LENGTH}-1")
-LIST(GET GIT_TARNAME ${GIT_TARNAME_LENGTH} GIT_TARNAME) 
+LIST(GET GIT_TARNAME ${GIT_TARNAME_LENGTH} GIT_TARNAME)
 STRING(REPLACE ".git" "" GIT_TARNAME "${GIT_TARNAME}")
 
-SET_VAR(DEFINE
-    NAME    "PACKAGE_TARNAME"
-    ENTRY   "\"${GIT_TARNAME}\""
+#==============================================================================#
+
+STRING(TOLOWER "${CMAKE_PROJECT_NAME}" LOWER_CMAKE_PROJECT_NAME)
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "PACKAGE"
+    ENTRY   "\"${LOWER_CMAKE_PROJECT_NAME}\""
+    MSG     "of package")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "PACKAGE_BUGREPORT"
+    ENTRY   "\"${PROJECT_BUGREPORT}\""
+    MSG     "to the address where bug reports for this package should be sent.")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "PACKAGE_NAME"
+    ENTRY   "\"${CMAKE_PROJECT_NAME}\""
+    MSG     "to the full name of the package")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "PACKAGE_STRING"
+    ENTRY   "\"${CMAKE_PROJECT_NAME} ${GIT_LAST_TAG}.dev${GIT_DEV_NUMBER}\""
+    MSG     "to the version of this package.")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "PACKAGE_VERSION"
+    ENTRY   "\"${GIT_LAST_TAG}.dev${GIT_DEV_NUMBER}\""
+    MSG     "to the version of this package.")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "PACKAGE_URL"
+    ENTRY   "\"${GIT_URL}\""
+    MSG     "to the home page for this package.")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
     LABEL   "PACKAGE_TARNAME"
+    ENTRY   "\"${GIT_TARNAME}\""
     MSG     "to the one symbol short name of this package.")
+
+#==============================================================================#
+
+SET_MACRO_FIELDS(DEFINE
+    LABEL   "VERSION"
+    ENTRY   "\"${GIT_LAST_TAG}.dev${GIT_DEV_NUMBER}\""
+    MSG     "to the version number of this package.")
 
 #==============================================================================#
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#==============================================================================#
+#==============================================================================#
+#
+#       GENERATE CONFIG FILE
+#
+#==============================================================================#
+#==============================================================================#
 STRING(TOLOWER "${PROJECT_NAME}" LOWER_PROJECT_NAME)
 
 # write a build specific config.h header file
 write_toast_config_file(
     TEMPLATE
         ${CMAKE_SOURCE_DIR}/cmake/Templates/config.hh.in
-    FILE_NAME 
+    FILE_NAME
         config.h
-    WRITE_PATH 
+    WRITE_PATH
         ${PROJECT_SOURCE_DIR}
     INSTALL_PATH
         ${CMAKE_INSTALL_CMAKEDIR}/${CMAKE_BUILD_TYPE}/${LOWER_PROJECT_NAME}
@@ -527,6 +604,8 @@ write_toast_config_file(
         "${DEFINE_VARIABLES}"
     UNDEFINE_VARS
         "${UNDEFINE_VARIABLES}"
+    SKIP_VARS
+        ${SKIP_DEFINITIONS_IN_CONFIG}
 )
 
 

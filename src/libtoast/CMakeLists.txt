@@ -2,26 +2,11 @@
 # build libtoast
 #
 
-include(MacroLibraryTargets)
-
 if(NOT CMAKE_VERSION VERSION_LESS 3.0)
     cmake_policy(SET CMP0043 NEW)
 endif()
 
-set(LIBRARIES ${EXTERNAL_LIBRARIES})
-
-GLOBAL_OBJECT_TARGET(NAME libtoast-object
-    COMPONENTS
-        sources.cmake
-        atm/sources.cmake
-        capi/sources.cmake
-        fod/sources.cmake
-        map/sources.cmake
-        math/sources.cmake
-        tod/sources.cmake
-)
-
-get_property(GLOBAL_OBJECT_TARGETS GLOBAL PROPERTY GLOBAL_OBJECT_TARGETS)
+include(MacroLibraryTargets)
 
 #------------------------------------------------------------------------------#
 # function - capitalize - make a string capitalized (first letter is capital)
@@ -41,19 +26,77 @@ function(capitalize str var)
 endfunction()
 
 
-
 #------------------------------------------------------------------------------#
+#
 capitalize(${PROJECT_NAME} CPROJECT_NAME)
 
 
 #------------------------------------------------------------------------------#
-# Set the library suffix
-include(LibrarySuffixes)
+#
+set(PROJECT_LIBRARIES ${EXTERNAL_LIBRARIES})
+
+GLOBAL_OBJECT_TARGET(NAME libtoast-object
+    COMPONENTS
+        sources.cmake
+        atm/sources.cmake
+        fod/sources.cmake
+        map/sources.cmake
+        math/sources.cmake
+        tod/sources.cmake
+)
+
+add_subdirectory(test)
+
 
 #------------------------------------------------------------------------------#
+#
+get_property(GLOBAL_OBJECT_TARGETS GLOBAL PROPERTY GLOBAL_OBJECT_TARGETS)
+
+
+# =============================================================================#
+# Library and executable build
+# =============================================================================#
+set(PROJECT_LINK_TARGET )
+
+#------------------------------------------------------------------------------#
+
+if(BUILD_STATIC_LIBS)
+
+    add_library(${PROJECT_NAME}-static STATIC $<TARGET_OBJECTS:libtoast-object>)
+
+    set_target_properties(${PROJECT_NAME}-static
+        PROPERTIES OUTPUT_NAME      "${PROJECT_NAME}"
+                   VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
+                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
+                   LINKER_LANGUAGE  CXX)
+
+    target_link_libraries(${PROJECT_NAME}-static
+        ${EXTERNAL_LIBRARIES})
+
+    set(PROJECT_LINK_TARGETS ${PROJECT_NAME}-static)
+
+    #--------------------------------------------------------------------------#
+
+    add_library(toast-test-static STATIC $<TARGET_OBJECTS:libtoast-test-object>)
+
+    set_target_properties(toast-test-static
+        PROPERTIES OUTPUT_NAME      "toast_test"
+                   VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
+                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
+                   LINKER_LANGUAGE  CXX)
+
+    target_link_libraries(toast-test-static
+        ${PROJECT_NAME}-static ${EXTERNAL_LIBRARIES})
+
+    set(TEST_LINK_TARGETS toast-test-static)
+
+endif()
+
+#------------------------------------------------------------------------------#
+
 if(BUILD_SHARED_LIBS)
 
-    add_library(${PROJECT_NAME}-shared SHARED ${GLOBAL_OBJECT_TARGETS})
+    add_library(${PROJECT_NAME}-shared SHARED $<TARGET_OBJECTS:libtoast-object>)
 
     set_target_properties(${PROJECT_NAME}-shared
         PROPERTIES OUTPUT_NAME      "${PROJECT_NAME}"
@@ -63,29 +106,38 @@ if(BUILD_SHARED_LIBS)
                    LINKER_LANGUAGE  CXX)
 
     target_link_libraries(${PROJECT_NAME}-shared
-                          ${EXTERNAL_LIBRARIES})
+        ${EXTERNAL_LIBRARIES})
 
-endif()
+    list(APPEND PROJECT_LIBRARIES ${PROJECT_NAME}-shared)
 
-if(BUILD_STATIC_LIBS)
+    set(PROJECT_LINK_TARGETS ${PROJECT_NAME}-shared)
 
-    add_library(${PROJECT_NAME}-static STATIC ${GLOBAL_OBJECT_TARGETS})
+    #--------------------------------------------------------------------------#
 
-    set_target_properties(${PROJECT_NAME}-static
-        PROPERTIES OUTPUT_NAME     "${PROJECT_NAME}"
+    add_library(toast-test-shared SHARED $<TARGET_OBJECTS:libtoast-test-object>)
+
+    set_target_properties(toast-test-shared
+        PROPERTIES OUTPUT_NAME     "toast_test"
                    VERSION         "${${PROJECT_NAME}_SHORT_VERSION}"
-                   POSITION_INDEPENDENT_CODE ON
+                   SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
                    LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
-                   LINKER_LANGUAGE CXX)
+                   LINKER_LANGUAGE  CXX)
 
-    target_link_libraries(${PROJECT_NAME}-static
-                          ${EXTERNAL_LIBRARIES})
+    target_link_libraries(toast-test-shared
+        ${PROJECT_NAME}-shared ${EXTERNAL_LIBRARIES})
+
+    set(TEST_LINK_TARGETS toast-test-shared)
 
 endif()
-
-get_directory_property(compile_defs COMPILE_DEFINITIONS)
 
 #------------------------------------------------------------------------------#
+
+add_executable(toast_test toast_test.cpp)
+target_link_libraries(toast_test
+    ${PROJECT_LINK_TARGETS} ${TEST_LINK_TARGETS} ${EXTERNAL_LIBRARIES})
+
+#------------------------------------------------------------------------------#
+get_directory_property(compile_defs COMPILE_DEFINITIONS)
 
 include(GenerateConfigHeader)
 

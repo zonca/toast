@@ -2,7 +2,9 @@
 include(MacroDefineModule)
 
 DEFINE_MODULE(NAME libtoast.tod
-    HEADER_EXT ".h"
-    SOURCE_EXT ".cpp"
+    HEADERS     ${TOAST_HEADERS}
+    SOURCES     ${TOAST_SOURCES}
+    HEADER_EXT  ".hpp;.hh;.h"
+    SOURCE_EXT  ".cpp;.cc;.c"
 )
 

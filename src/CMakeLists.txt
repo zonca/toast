@@ -24,5 +24,5 @@ include_directories(${PROJECT_SOURCE_DIR}/src/libtoast/math/Random123/features)
 add_subdirectory(libtoast)
 
 if(USE_PYTHON)
-    add_subdirectory(python)
+    #add_subdirectory(python)
 endif()

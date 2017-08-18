@@ -43,8 +43,13 @@ add_option(USE_ELEMENTAL "Use Elemental" OFF)
 #        Threads (pthreads)
 #
 ################################################################################
-SET(CMAKE_THREAD_PREFER_PTHREADS ON)
-FIND_PACKAGE(Threads QUIET)
+if(USE_PTHREADS)
+
+    SET(CMAKE_THREAD_PREFER_PTHREADS ON)
+    FIND_PACKAGE(Threads QUIET)
+    #add_definitions(-DHAVE_PTHREAD)
+
+endif()
 
 
 ################################################################################
@@ -63,7 +68,7 @@ if(USE_MPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 
-    add_definitions(-DUSE_MPI)
+    #add_definitions(-DHAVE_MPI=1)
 
 endif()
 
@@ -76,7 +81,7 @@ endif()
 if(USE_OPENMP)
 
     if(CMAKE_CXX_COMPILER_IS_CLANG AND ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        message(AUTHOR_WARNING 
+        message(AUTHOR_WARNING
             "Clang on Darwin (as of OS X Mavericks) does not have OpenMP Support")
     endif()
 
@@ -86,7 +91,9 @@ if(USE_OPENMP)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 
-    add_definitions(-DUSE_OPENMP)
+    #add_definitions(-DHAVE_OPENMP=1)
+    #add_definitions(-D_OPENMP)
+    #list(APPEND SKIP_DEFINITIONS_IN_CONFIG _OPENMP)
 
 endif(USE_OPENMP)
 
@@ -98,15 +105,15 @@ endif(USE_OPENMP)
 ################################################################################
 if(USE_PYTHON)
 
-    find_package( PythonLibs 3.3 3.4 3.5 REQUIRED )
-    find_package( PythonInterp 3.3 3.4 3.5 REQUIRED )
-    
+    find_package( PythonLibs 3.3 REQUIRED )
+    find_package( PythonInterp 3.3 REQUIRED )
+
     find_package_handle_standard_args(Python3 DEFAULT_MSG
         PYTHON_VERSION_STRING PYTHON_EXECUTABLE PYTHON_INCLUDE_DIRS
         PYTHON_LIBRARIES)
 
-    add_definitions(-DUSE_PYTHON)
-    
+    #add_definitions(-DHAVE_PYTHON=\"${PYTHON_VERSION}\")
+
 endif(USE_PYTHON)
 
 
@@ -118,25 +125,25 @@ endif(USE_PYTHON)
 if(USE_MKL)
 
     if(NOT CMAKE_CXX_COMPILER_IS_INTEL)
-    
+
         set(MKL_THREADING "Sequential")
         ConfigureRootSearchPath(MKL)
         find_package(MKL REQUIRED)
-        
+
         foreach(_def ${MKL_DEFINITIONS})
             add_definitions(-D${_def})
         endforeach()
         list(APPEND EXTERNAL_LINK_FLAGS "${MKL_CXX_LINK_FLAGS}")
-        
+
     elseif(CMAKE_COMPILER_IS_INTEL)
-    
+
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl")
 
     endif()
 
-    add_definitions(-DUSE_MKL)
-    
+    #add_definitions(-DHAVE_MKL=1)
+
 endif()
 
 
@@ -153,14 +160,16 @@ if(USE_TBB)
         find_package(TBB REQUIRED COMPONENTS malloc)
 
     elseif(CMAKE_COMPILER_IS_INTEL)
-    
+
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -tbb")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -tbb")
-        
+
     endif()
-    
+
     add_definitions(-DUSE_TBB)
     add_definitions(-DUSE_TBB_MALLOC)
+    #add_definitions(-DUSE_TBB=1)
+    #add_definitions(-DUSE_TBB_MALLOC=1)
 
 endif()
 
@@ -171,8 +180,8 @@ endif()
 #
 ################################################################################
 foreach(_LIB BLAS LAPACK OpenBLAS)
+
     string(TOUPPER "${_LIB}" _UPPER_LIB)
-    
     if(USE_${_UPPER_LIB})
 
         ConfigureRootSearchPath(${_LIB})
@@ -190,11 +199,18 @@ endforeach()
 ################################################################################
 if(USE_FFTW)
 
-    ConfigureRootSearchPath(FFTW FFTW3)
+    ConfigureRootSearchPath(FFTW3)
     find_package(FFTW3 REQUIRED)
+    #add_definitions(-DHAVE_FFTW=1)
 
-    add_definitions(-DUSE_FFTW3)
-    
+    if(NOT USE_MKL)
+        # double precision with threads
+        find_package(FFTW3 COMPONENTS threads)
+        #if(FFTW3_THREADS_FOUND)
+        #    add_definitions(-DHAVE_FFTW_THREADS=1)
+        #endif()
+    endif()
+
 endif(USE_FFTW)
 
 
@@ -208,8 +224,8 @@ if(USE_WCSLIB)
     ConfigureRootSearchPath(wcslib)
     find_package(wcslib REQUIRED)
 
-    add_definitions(-DUSE_WCSLIB)
-    
+    #add_definitions(-DHAVE_WCSLIB=1)
+
 endif(USE_WCSLIB)
 
 
@@ -223,8 +239,8 @@ if(USE_ELEMENTAL)
     ConfigureRootSearchPath(Elemental)
     find_package(Elemental REQUIRED)
 
-    add_definitions(-DUSE_ELEMENTAL)
-    
+    #add_definitions(-DHAVE_ELEMENTAL=1)
+
 endif(USE_ELEMENTAL)
 
 
@@ -272,7 +288,7 @@ if(USE_SSE)
         add_definitions(-D${_DEF})
     endforeach()
     unset(SSE_DEFINITIONS)
-    
+
 endif()
 
 

@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.
-All rights reserved.  Use of this source code is governed by 
+All rights reserved.  Use of this source code is governed by
 a BSD-style license that can be found in the LICENSE file.
 */
 
@@ -8,10 +8,10 @@ a BSD-style license that can be found in the LICENSE file.
 
 #ifdef HAVE_MKL
 #  include <mkl_dfti.h>
-#else
-#  ifdef HAVE_FFTW
-#    include <fftw3.h>
-#  endif
+#endif
+
+#ifdef HAVE_FFTW
+#  include <fftw3.h>
 #endif
 
 #ifdef _OPENMP
@@ -24,9 +24,9 @@ a BSD-style license that can be found in the LICENSE file.
 #ifdef HAVE_FFTW
 
 class r1d_fftw : public toast::fft::r1d {
-    
+
     public :
-        
+
         r1d_fftw ( int64_t length, int64_t n, toast::fft::plan_type type, toast::fft::direction dir, double scale ) : toast::fft::r1d ( length, n, type, dir, scale ) {
 
             int threads = 1;
@@ -129,7 +129,7 @@ class r1d_fftw : public toast::fft::r1d {
         std::vector < double * > tdata ( ) {
             return tview_;
         }
-        
+
         std::vector < double * > fdata ( ) {
             return fview_;
         }
@@ -152,7 +152,7 @@ class r1d_fftw : public toast::fft::r1d {
 class r1d_mkl : public toast::fft::r1d {
 
     public :
-        
+
         r1d_mkl ( int64_t length, int64_t n, toast::fft::plan_type type, toast::fft::direction dir, double scale ) : toast::fft::r1d ( length, n, type, dir, scale ) {
 
             // allocate memory
@@ -269,7 +269,7 @@ class r1d_mkl : public toast::fft::r1d {
 
                 for ( j = 1; j < half; ++j ) {
                     t = 2 * j;
-                    //cerr << "cce2hc:  hc/cce (" << j << "," << len-j << ")/(" << even+t-1 << "," << even+t << ") set to Re/Im [" << cce [ offset + even + t - 1 ] << ", " << cce [ offset + even + t ] << " ]" << endl; 
+                    //cerr << "cce2hc:  hc/cce (" << j << "," << len-j << ")/(" << even+t-1 << "," << even+t << ") set to Re/Im [" << cce [ offset + even + t - 1 ] << ", " << cce [ offset + even + t ] << " ]" << endl;
                     hc[ offset + j ] = cce [ offset + even + t - 1 ];
                     hc[ offset + len - j ] = cce [ offset + even + t ];
                 }
@@ -356,7 +356,7 @@ toast::fft::r1d * toast::fft::r1d::create ( int64_t length, int64_t n, plan_type
 
 #  endif
 #endif
-  
+
     return NULL;
 }
 
@@ -370,7 +370,7 @@ toast::fft::r1d_plan_store::~r1d_plan_store ( ) {
 void toast::fft::r1d_plan_store::clear ( ) {
     fplans_.clear();
     rplans_.clear();
-    return;  
+    return;
 }
 
 
@@ -384,7 +384,7 @@ void toast::fft::r1d_plan_store::cache ( int64_t len, int64_t n ) {
 
     int nthreads = 1;
 
-    #ifdef _OPENMP  
+    #ifdef _OPENMP
     nthreads = omp_get_max_threads();
     #endif
 
@@ -417,7 +417,7 @@ toast::fft::r1d_p toast::fft::r1d_plan_store::forward ( int64_t len, int64_t n )
 
     int rank = 0;
 
-    #ifdef _OPENMP  
+    #ifdef _OPENMP
     rank = omp_get_thread_num();
     #endif
 
@@ -443,7 +443,7 @@ toast::fft::r1d_p toast::fft::r1d_plan_store::backward ( int64_t len, int64_t n 
 
     int rank = 0;
 
-    #ifdef _OPENMP  
+    #ifdef _OPENMP
     rank = omp_get_thread_num();
     #endif
 
@@ -461,7 +461,7 @@ toast::fft::r1d_p toast::fft::r1d_plan_store::backward ( int64_t len, int64_t n 
         rank_plan[ key ] = toast::fft::r1d_p ( toast::fft::r1d::create ( len, n, toast::fft::plan_type::fast, toast::fft::direction::backward, 1.0 ) );
     }
 
-    return rank_plan[ key ];  
+    return rank_plan[ key ];
 }
 
 
