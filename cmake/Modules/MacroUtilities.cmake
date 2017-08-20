@@ -611,18 +611,43 @@ macro(DETERMINE_LIBDIR_DEFAULT)
   # reason is: amd64 ABI: http://www.x86-64.org/documentation/abi.pdf
   # Note that the future of multi-arch handling may be even
   # more complicated than that: http://wiki.debian.org/Multiarch
-  if(CMAKE_SYSTEM_NAME MATCHES "Linux"
-      AND NOT CMAKE_CROSSCOMPILING
-      AND NOT EXISTS "/etc/debian_version")
-    if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-      message(AUTHOR_WARNING
-        "Unable to determine default library directory because no target architecture is known. "
-        "Please enable at least one language.")
-    else()
-      if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(LIBDIR_DEFAULT "lib64")
+  if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
+      set(__LAST_LIBDIR_DEFAULT "lib")
+      # __LAST_LIBDIR_DEFAULT is the default value that we compute from
+      # _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX, not a cache entry for
+      # the value that was last used as the default.
+      # This value is used to figure out whether the user changed the
+      # CMAKE_INSTALL_LIBDIR value manually, or if the value was the
+      # default one. When CMAKE_INSTALL_PREFIX changes, the value is
+      # updated to the new default, unless the user explicitly changed it.
+  endif()
+  if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|kFreeBSD|GNU)$"
+      AND NOT CMAKE_CROSSCOMPILING)
+      if (EXISTS "/etc/debian_version") # is this a debian system ?
+          if(CMAKE_LIBRARY_ARCHITECTURE)
+              if("${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
+                  set(_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+              endif()
+              if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX
+                 AND "${_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
+                  set(__LAST_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+              endif()
+          endif()
+      else() # not debian, rely on CMAKE_SIZEOF_VOID_P:
+          if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
+              message(AUTHOR_WARNING
+                  "Unable to determine default CMAKE_INSTALL_LIBDIR directory "
+                  "because no target architecture is known. "
+                  "Please enable at least one language before including GNUInstallDirs.")
+          else()
+              if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+                  set(_LIBDIR_DEFAULT "lib64")
+                  if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
+                      set(__LAST_LIBDIR_DEFAULT "lib64")
+                  endif()
+              endif()
+          endif()
       endif()
-    endif()
   endif()
 endmacro()
 

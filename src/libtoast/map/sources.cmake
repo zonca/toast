@@ -11,3 +11,4 @@ DEFINE_MODULE(NAME libtoast.map
     SOURCE_EXT  ".cpp;.cc;.c"
 )
 
+install(FILES ${TOAST_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/toast)

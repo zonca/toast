@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.
-All rights reserved.  Use of this source code is governed by 
+All rights reserved.  Use of this source code is governed by
 a BSD-style license that can be found in the LICENSE file.
 */
 
@@ -44,14 +44,14 @@ TEST_F( fftTest, roundtrip ) {
 
     double sigma = ((double)length / 2.0) * ::sqrt( 2.0 / ((double)length - 1.0));
 
-    for ( int64_t i = 0; i < n; ++i ) {
+    for ( int64_t i = 0; i < n; ++i )
+    {
         double mean = 0.0;
-        for ( int64_t j = 0; j < length; ++j ) {
+        for ( int64_t j = 0; j < length; ++j )
+        {
             mean += forward->fdata()[i][j];
-            //std::cerr << forward->fdata()[0][j] << std::endl;
         }
         mean /= (double)length;
-        //std::cout << "mean[" << i << "] = " << mean << std::endl;
 
         double var = 0.0;
         for ( int64_t j = 0; j < length; ++j ) {
@@ -62,8 +62,6 @@ TEST_F( fftTest, roundtrip ) {
         double outlier = ::fabs( var - ((double)length / 2.0) );
 
         ASSERT_TRUE( outlier < 3.0 * sigma );
-
-        //std::cout << "var[" << i << "] = " << var << ", (len / 2) = " << ((double)length / 2.0) << " sigma = " << sigma << " outlier = " << outlier << std::endl;
     }
 
 

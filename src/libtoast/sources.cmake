@@ -8,3 +8,4 @@ DEFINE_MODULE(NAME libtoast.main
     SOURCE_EXT  .cpp .cc .c
 )
 
+install(FILES ${CMAKE_CURRENT_LIST_DIR}/toast.hpp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

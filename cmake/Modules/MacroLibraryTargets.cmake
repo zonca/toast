@@ -205,7 +205,7 @@ endmacro()
 #
 MACRO(GLOBAL_OBJECT_TARGET)
     CMAKE_PARSE_ARGUMENTS(GLOBOBJ
-        ""
+        "INSTALL"
         "NAME"
         "COMPONENTS"
         ${ARGN}
@@ -242,13 +242,15 @@ MACRO(GLOBAL_OBJECT_TARGET)
         PROPERTY GLOBAL_OBJECT_TARGETS \$<TARGET_OBJECTS:${GLOBOBJ_NAME}>)
 
     # Header install?
-    foreach(_header ${${GLOBOBJ_NAME}_GLOBAL_HEADERS})
-        file(RELATIVE_PATH _fpath "${PROJECT_SOURCE_DIR}/source" "${_header}")
-        get_filename_component(_fpath ${_fpath} PATH)
-        install(FILES ${_header}
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${_fpath}
-            COMPONENT Development)
-    endforeach()
+    if(GLOBOBJ_INSTALL)
+        foreach(_header ${${GLOBOBJ_NAME}_GLOBAL_HEADERS})
+            file(RELATIVE_PATH _fpath "${CMAKE_CURRENT_LIST_DIR}" "${_header}")
+            get_filename_component(_fpath ${_fpath} PATH)
+            install(FILES ${_header}
+                DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/${_fpath}
+                COMPONENT Development)
+        endforeach()
+    endif()
 
     # Store the include path of the component so that the build tree
     # config file can pick up all needed header paths

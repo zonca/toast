@@ -13,5 +13,7 @@ if(USE_ELEMENTAL)
         SOURCE_EXT  ".cpp;.cc;.c"
     )
 
+    install(FILES ${TOAST_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/toast)
+
 endif(USE_ELEMENTAL)
 
