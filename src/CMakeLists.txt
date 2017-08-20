@@ -193,6 +193,9 @@ install(FILES
     "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
     COMPONENT dev)
+# install the executables
+install(TARGETS toast_test
+    DESTINATION ${CMAKE_INSTALL_BINDIR})
 # install the libraries
 install(TARGETS ${_TARGETS}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}

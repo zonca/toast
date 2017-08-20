@@ -59,6 +59,18 @@ add_subdirectory(src)
 
 #------------------------------------------------------------------------------#
 
+file(GLOB PYTHON_EXAMPLES
+    ${CMAKE_SOURCE_DIR}/examples/*.py
+    ${CMAKE_SOURCE_DIR}/pipelines/*.py)
+
+install(FILES ${PYTHON_EXAMPLES} DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PERMISSIONS
+    OWNER_READ    GROUP_READ    WORLD_READ
+    OWNER_WRITE
+    OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE)
+
+#------------------------------------------------------------------------------#
+
 print_features()
 
 include(CMakeUninstallTarget)
