@@ -275,12 +275,11 @@ SET_MACRO_FIELDS(${HAS}
 
 #==============================================================================#
 
-CHECK_FOR_HEADER(HEADER_FILE "cmath")
-GET_DEFINED_FLAG(HAS HEADER_FILE)
+GET_DEFINED_FLAG(HAS IMF_FOUND)
 SET_MACRO_FIELDS(${HAS}
     LABEL   "HAVE_MATH"
     ENTRY   "1"
-    MSG     "if you have the C math library")
+    MSG     "if you have the Intel IMF math library")
 
 #==============================================================================#
 

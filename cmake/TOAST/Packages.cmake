@@ -3,6 +3,7 @@
 include(MacroUtilities)
 include(GenericCMakeOptions)
 include(GenericCMakeFunctions)
+include(Compilers)
 
 if(NOT CMAKE_VERSION VERSION_LESS 2.6.3)
     cmake_policy(SET CMP0011 NEW)
@@ -22,12 +23,15 @@ endif()
 # - wcslib
 # - Elemental
 
+add_option(USE_SSE "Use SSE/AVX optimization flags" ON)
+
 add_option(USE_MPI "Use MPI" ON)
 add_option(USE_OPENMP "Use OpenMP" ON)
 add_option(USE_PYTHON "Use Python" OFF)
 
 add_option(USE_MKL "Enable Intel Math Kernel Library (MKL)" ON)
 add_option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" ON)
+add_option(USE_MATH "Enable Intel IMF Math library" ${CMAKE_CXX_COMPILER_IS_INTEL})
 
 add_option(USE_BLAS "Use BLAS" ON)
 add_option(USE_LAPACK "Use LAPACK" ON)
@@ -36,7 +40,6 @@ add_option(USE_OPENBLAS "Use OpenBLAS" OFF)
 add_option(USE_FFTW "Use FFTW" ON)
 add_option(USE_WCSLIB "Use wcslib" ON)
 add_option(USE_ELEMENTAL "Use Elemental" OFF)
-
 
 ################################################################################
 #
@@ -64,9 +67,9 @@ if(USE_MPI)
 
     # Add the MPI-specific compiler and linker flags
     # Also, search for #includes in MPI's paths
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+    add(CMAKE_C_FLAGS_EXTRA    "${MPI_C_COMPILE_FLAGS}")
+    add(CMAKE_CXX_FLAGS_EXTRA  "${MPI_CXX_COMPILE_FLAGS}")
+    add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
 
     #add_definitions(-DHAVE_MPI=1)
 
@@ -86,14 +89,9 @@ if(USE_OPENMP)
     endif()
 
     find_package(OpenMP REQUIRED)
-
     # Add the OpenMP-specific compiler and linker flags
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-
-    #add_definitions(-DHAVE_OPENMP=1)
-    #add_definitions(-D_OPENMP)
-    #list(APPEND SKIP_DEFINITIONS_IN_CONFIG _OPENMP)
+    add(CMAKE_C_FLAGS_EXTRA   "${OpenMP_C_FLAGS}")
+    add(CMAKE_CXX_FLAGS_EXTRA "${OpenMP_CXX_FLAGS}")
 
 endif(USE_OPENMP)
 
@@ -111,8 +109,6 @@ if(USE_PYTHON)
     find_package_handle_standard_args(Python3 DEFAULT_MSG
         PYTHON_VERSION_STRING PYTHON_EXECUTABLE PYTHON_INCLUDE_DIRS
         PYTHON_LIBRARIES)
-
-    #add_definitions(-DHAVE_PYTHON=\"${PYTHON_VERSION}\")
 
 endif(USE_PYTHON)
 
@@ -137,12 +133,10 @@ if(USE_MKL)
 
     elseif(CMAKE_COMPILER_IS_INTEL)
 
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mkl")
+        add(CMAKE_C_FLAGS_EXTRA   "-mkl")
+        add(CMAKE_CXX_FLAGS_EXTRA "-mkl")
 
     endif()
-
-    #add_definitions(-DHAVE_MKL=1)
 
 endif()
 
@@ -161,15 +155,26 @@ if(USE_TBB)
 
     elseif(CMAKE_COMPILER_IS_INTEL)
 
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -tbb")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -tbb")
+        add(CMAKE_C_FLAGS_EXTRA   "-tbb")
+        add(CMAKE_CXX_FLAGS_EXTRA "-tbb")
 
     endif()
 
     add_definitions(-DUSE_TBB)
     add_definitions(-DUSE_TBB_MALLOC)
-    #add_definitions(-DUSE_TBB=1)
-    #add_definitions(-DUSE_TBB_MALLOC=1)
+
+endif()
+
+
+################################################################################
+#
+#        Math - Intel IMF library
+#
+################################################################################
+if(USE_MATH)
+
+    ConfigureRootSearchPath(IMF)
+    find_package(IMF REQUIRED)
 
 endif()
 
@@ -201,14 +206,10 @@ if(USE_FFTW)
 
     ConfigureRootSearchPath(FFTW3)
     find_package(FFTW3 REQUIRED)
-    #add_definitions(-DHAVE_FFTW=1)
 
     if(NOT USE_MKL)
         # double precision with threads
         find_package(FFTW3 COMPONENTS threads)
-        #if(FFTW3_THREADS_FOUND)
-        #    add_definitions(-DHAVE_FFTW_THREADS=1)
-        #endif()
     endif()
 
 endif(USE_FFTW)
@@ -224,8 +225,6 @@ if(USE_WCSLIB)
     ConfigureRootSearchPath(wcslib)
     find_package(wcslib REQUIRED)
 
-    #add_definitions(-DHAVE_WCSLIB=1)
-
 endif(USE_WCSLIB)
 
 
@@ -238,8 +237,6 @@ if(USE_ELEMENTAL)
 
     ConfigureRootSearchPath(Elemental)
     find_package(Elemental REQUIRED)
-
-    #add_definitions(-DHAVE_ELEMENTAL=1)
 
 endif(USE_ELEMENTAL)
 
@@ -254,6 +251,7 @@ set(EXTERNAL_INCLUDE_DIRS
     ${PYTHON_INCLUDE_DIRS}
     ${MKL_INCLUDE_DIRS}
     ${TBB_INCLUDE_DIRS}
+    ${IMF_INCLUDE_DIRS}
     ${FFTW3_INCLUDE_DIRS}
     ${wcslib_INCLUDE_DIRS}
     ${Elemental_INCLUDE_DIRS}
@@ -264,6 +262,7 @@ set(EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT}
     ${PYTHON_LIBRARIES}
     ${MKL_LIBRARIES}
     ${TBB_LIBRARIES}
+    ${IMF_LIBRARIES}
     ${BLAS_LIBRARIES}
     ${LAPACK_LIBRARIES}
     ${OpenBLAS_LIBRARIES}
@@ -283,11 +282,13 @@ if(USE_SSE)
 
     include(FindSSE)
 
-    GET_SSE_COMPILE_FLAGS(CMAKE_CXX_FLAGS_EXTRA SSE_DEFINITIONS)
+    GET_SSE_COMPILE_FLAGS(_CXX_FLAGS_EXTRA SSE_DEFINITIONS)
     foreach(_DEF ${SSE_DEFINITIONS})
         add_definitions(-D${_DEF})
     endforeach()
     unset(SSE_DEFINITIONS)
+
+    add(CMAKE_CXX_FLAGS_EXTRA "${_CXX_FLAGS_EXTRA}")
 
 endif()
 
