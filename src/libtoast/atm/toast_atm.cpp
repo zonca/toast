@@ -4,7 +4,9 @@
   a BSD-style license that can be found in the LICENSE file.
 */
 
-#define DEBUG
+#if !defined(DEBUG)
+#   define DEBUG
+#endif
 
 #include <toast_atm_internal.hpp>
 
@@ -39,33 +41,34 @@ double mean( std::vector<double> vec ) {
 
 
 toast::atm::sim::sim( double azmin, double azmax, double elmin, double elmax,
-		      double tmin, double tmax,
-		      double lmin_center, double lmin_sigma,
-		      double lmax_center, double lmax_sigma,
-		      double w_center, double w_sigma,
-		      double wdir_center, double wdir_sigma,
-		      double z0_center, double z0_sigma,
-		      double T0_center, double T0_sigma,
-		      double zatm, double zmax,
-		      double xstep, double ystep, double zstep,
-		      long nelem_sim_max,
-		      int verbosity, MPI_Comm comm, int gangsize,
-		      uint64_t key1,uint64_t key2,
-		      uint64_t counter1, uint64_t counter2, char *cachedir
-    ) : azmin(azmin), azmax(azmax),
-        elmin(elmin), elmax(elmax), tmin(tmin), tmax(tmax),
-        lmin_center(lmin_center), lmin_sigma(lmin_sigma),
-        lmax_center(lmax_center), lmax_sigma(lmax_sigma),
-        w_center(w_center), w_sigma(w_sigma),
-        wdir_center(wdir_center), wdir_sigma(wdir_sigma),
-        z0_center(z0_center), z0_sigma(z0_sigma),
-        T0_center(T0_center), T0_sigma(T0_sigma),
-        zatm(zatm), zmax(zmax), xstep(xstep), ystep(ystep),
-        zstep(zstep), nelem_sim_max(nelem_sim_max),
-        verbosity(verbosity),
-        comm(comm), gangsize(gangsize),
-        key1(key1), key2(key2),
-        counter1start(counter1), counter2start(counter2), cachedir(cachedir) {
+              double tmin, double tmax,
+              double lmin_center, double lmin_sigma,
+              double lmax_center, double lmax_sigma,
+              double w_center, double w_sigma,
+              double wdir_center, double wdir_sigma,
+              double z0_center, double z0_sigma,
+              double T0_center, double T0_sigma,
+              double zatm, double zmax,
+              double xstep, double ystep, double zstep,
+              long nelem_sim_max,
+              int verbosity, MPI_Comm comm, int gangsize,
+              uint64_t key1,uint64_t key2,
+              uint64_t counter1, uint64_t counter2, char *cachedir)
+: comm(comm), cachedir(cachedir),
+  gangsize(gangsize), verbosity(verbosity),
+  key1(key1), key2(key2), counter1start(counter1), counter2start(counter2),
+  azmin(azmin), azmax(azmax),
+  elmin(elmin), elmax(elmax), tmin(tmin), tmax(tmax),
+  lmin_center(lmin_center), lmin_sigma(lmin_sigma),
+  lmax_center(lmax_center), lmax_sigma(lmax_sigma),
+  w_center(w_center), w_sigma(w_sigma),
+  wdir_center(wdir_center), wdir_sigma(wdir_sigma),
+  z0_center(z0_center), z0_sigma(z0_sigma),
+  T0_center(T0_center), T0_sigma(T0_sigma),
+  zatm(zatm), zmax(zmax),
+  xstep(xstep), ystep(ystep), zstep(zstep),
+  nelem_sim_max(nelem_sim_max)
+{
 
     counter1 = counter1start;
     counter2 = counter2start;
@@ -366,7 +369,7 @@ void toast::atm::sim::load_realization() {
 
         freal.read( (char*) &(*full_index)[0],
                     full_index->size()*sizeof(long) );
-        for ( int i=0; i<nelem; ++i ) {
+        for ( size_t i=0; i<nelem; ++i ) {
             long ifull = (*full_index)[i];
             (*compressed_index)[ifull] = i;
         }
@@ -501,7 +504,7 @@ void toast::atm::sim::simulate( bool use_cache ) {
                 delete cov;
             }
 
-            if ( ind_stop == nelem ) break;
+            if ( (size_t) ind_stop == nelem ) break;
 
             ++slice;
         }
@@ -556,10 +559,10 @@ void toast::atm::sim::get_slice( long &ind_start, long &ind_stop ) {
         ix2 = ix1;
         while ( ix1 == ix2 ) {
             ++ind_stop;
-            if ( ind_stop == nelem ) break;
+            if ( (size_t) ind_stop == nelem ) break;
             ix2 = (*full_index)[ind_stop] * xstrideinv;
         }
-        if ( ind_stop == nelem ) break;
+        if ( (size_t) ind_stop == nelem ) break;
         if ( ind_stop - ind_start > nelem_sim_max ) break;
         ix1 = ix2;
     }
@@ -634,7 +637,7 @@ void toast::atm::sim::smooth() {
     }
 
     if ( realization->rank() == 0 ) {
-        for ( int i=0; i<realization->size(); ++i ) {
+        for ( size_t i=0; i<realization->size(); ++i ) {
             (*realization)[i] = smoothed_realization[i];
         }
     }
@@ -649,7 +652,7 @@ void toast::atm::sim::smooth() {
 
 
 void toast::atm::sim::observe( double *t, double *az, double *el, double *tod,
-			       long nsamp, double fixed_r ) {
+                   long nsamp, double fixed_r ) {
 
     if ( !cached ) {
         throw std::runtime_error( "There is no cached observation to observe" );
@@ -860,20 +863,21 @@ void toast::atm::sim::draw() {
         z0 = 0;
         T0 = 0;
 
-        while( lmin >= lmax ){
+        while( lmin >= lmax )
+        {
             lmin = 0;
             lmax = 0;
-            while (lmin <= 0 && irand < nrand-1)
+            while (lmin <= 0 && (size_t) irand < nrand-1)
                 lmin = lmin_center + randn[irand++] * lmin_sigma;
-            while (lmax <= 0 && irand < nrand-1)
+            while (lmax <= 0 && (size_t) irand < nrand-1)
                 lmax = lmax_center + randn[irand++] * lmax_sigma;
         }
-        while (w < 0 && irand < nrand-1)
+        while (w < 0 && (size_t) irand < nrand-1)
             w = w_center + randn[irand++] * w_sigma;
         wdir = fmod( wdir_center + randn[irand++] * wdir_sigma, M_PI );
-        while (z0 <= 0 && irand < nrand)
+        while (z0 <= 0 && (size_t) irand < nrand)
             z0 = z0_center + randn[irand++] * z0_sigma;
-        while (T0 <= 0 && irand < nrand)
+        while (T0 <= 0 && (size_t) irand < nrand)
             T0 = T0_center + randn[irand++] * T0_sigma;
 
         if (irand == nrand)
@@ -1504,7 +1508,7 @@ long toast::atm::sim::coord2ind( double x, double y, double z ) {
 
 double toast::atm::sim::interp( double x, double y, double z,
                                 std::vector<long> &last_ind,
-				std::vector<double> &last_nodes ) {
+                std::vector<double> &last_nodes ) {
 
     // Trilinear interpolation
 
@@ -1576,14 +1580,14 @@ double toast::atm::sim::interp( double x, double y, double z,
 #ifdef DEBUG
         long ifullmax = compressed_index->size()-1;
         if (
-            ifull000 < 0 || ifull000 > ifullmax ||
-            ifull001 < 0 || ifull001 > ifullmax ||
-            ifull010 < 0 || ifull010 > ifullmax ||
-            ifull011 < 0 || ifull011 > ifullmax ||
-            ifull100 < 0 || ifull100 > ifullmax ||
-            ifull101 < 0 || ifull101 > ifullmax ||
-            ifull110 < 0 || ifull110 > ifullmax ||
-            ifull111 < 0 || ifull111 > ifullmax ) {
+            ifull000 < 0 || ifull000 > (size_t) ifullmax ||
+            ifull001 < 0 || ifull001 > (size_t) ifullmax ||
+            ifull010 < 0 || ifull010 > (size_t) ifullmax ||
+            ifull011 < 0 || ifull011 > (size_t) ifullmax ||
+            ifull100 < 0 || ifull100 > (size_t) ifullmax ||
+            ifull101 < 0 || ifull101 > (size_t) ifullmax ||
+            ifull110 < 0 || ifull110 > (size_t) ifullmax ||
+            ifull111 < 0 || ifull111 > (size_t) ifullmax ) {
             std::ostringstream o;
             o.precision( 16 );
             o << "atmsim::observe : bad full index. "
@@ -1735,7 +1739,7 @@ El::DistMatrix<double> *toast::atm::sim::build_covariance(
 
     // Report memory usage
 
-    double my_mem = cov->AllocatedMemory() * 2 * sizeof(double) / pow(2.0, 20);
+    double my_mem = cov->AllocatedMemory() * 2 * sizeof(double) / pow(2, 20);
     double tot_mem;
     if ( MPI_Allreduce( &my_mem, &tot_mem, 1, MPI_DOUBLE, MPI_SUM, comm_gang ) )
         throw std::runtime_error(
@@ -1846,7 +1850,7 @@ double toast::atm::sim::cov_eval( double *coord1, double *coord2 ) {
 
 
 void toast::atm::sim::sqrt_covariance( El::DistMatrix<double> *cov,
-				       long ind_start, long ind_stop ) {
+                       long ind_start, long ind_stop ) {
 
     // Cholesky decompose the covariance matrix.  If the matrix is singular,
     // regularize it by adding power to the diagonal.
@@ -1931,7 +1935,7 @@ void toast::atm::sim::sqrt_covariance( El::DistMatrix<double> *cov,
 
 
 void toast::atm::sim::apply_covariance( El::DistMatrix<double> *cov,
-					long ind_start, long ind_stop ) {
+                    long ind_start, long ind_stop ) {
 
     double t1 = MPI_Wtime();
 

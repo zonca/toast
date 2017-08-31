@@ -34,7 +34,7 @@ void toast::filter::polyfilter(
     int norder = order + 1;
 
 #pragma omp parallel for schedule(static)
-    for ( int iscan=0; iscan<nscan; ++iscan ) {
+    for ( size_t iscan = 0; iscan < nscan; ++iscan ) {
         int start = starts[iscan];
         int stop = stops[iscan];
         if ( start < 0 ) start = 0;
