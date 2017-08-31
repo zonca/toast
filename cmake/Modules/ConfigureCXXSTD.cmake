@@ -134,7 +134,7 @@ endif()
 #-----------------------------------------------------------------------
 # Configure/Select C++ Standard
 # Require at least C++11 with no extensions and the following features
-set(CMAKE_CXX_EXTENSIONS ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   cxx_alias_templates
@@ -177,11 +177,11 @@ add_feature(BUILD_CXXSTD "Compiling against C++ Standard '${BUILD_CXXSTD}'")
 # at least one feature from that standard and append these to the required
 # feature list
 if(BUILD_CXXSTD GREATER 11)
-  if(CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES)
-    list(APPEND ${PROJECT_NAME}_TARGET_COMPILE_FEATURES ${CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES})
-  else()
-    message(FATAL_ERROR "${PROJECT_NAME} requested to be compiled against C++ standard '${BUILD_CXXSTD}'\nbut detected compiler '${CMAKE_CXX_COMPILER_ID}', version '${CMAKE_CXX_COMPILER_VERSION}'\ndoes not support any features of that standard")
-  endif()
+    if(CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES)
+        list(APPEND ${PROJECT_NAME}_TARGET_COMPILE_FEATURES ${CMAKE_CXX${BUILD_CXXSTD}_COMPILE_FEATURES})
+    else()
+        message(FATAL_ERROR "${PROJECT_NAME} requested to be compiled against C++ standard '${BUILD_CXXSTD}'\nbut detected compiler '${CMAKE_CXX_COMPILER_ID}', version '${CMAKE_CXX_COMPILER_VERSION}'\ndoes not support any features of that standard")
+    endif()
 endif()
 
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")
