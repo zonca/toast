@@ -21,19 +21,19 @@ endif()
 # - wcslib
 # - Elemental
 
-add_option(USE_SSE "Use SSE/AVX optimization flags" ON)
+add_option(USE_SSE "Use SSE/AVX optimization flags" OFF)
 
 add_option(USE_MPI "Use MPI" ON)
 add_option(USE_OPENMP "Use OpenMP" ON)
 add_option(USE_PYTHON "Use Python" ON)
 
-add_option(USE_MKL "Enable Intel Math Kernel Library (MKL)" ON)
+add_option(USE_MKL "Enable Intel Math Kernel Library (MKL)" OFF)
 add_option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" OFF)
 add_option(USE_MATH "Enable Intel IMF Math library" ${CMAKE_CXX_COMPILER_IS_INTEL})
 
 add_option(USE_BLAS "Use BLAS" ON)
 add_option(USE_LAPACK "Use LAPACK" ON)
-add_option(USE_OPENBLAS "Use OpenBLAS" OFF)
+#add_option(USE_OPENBLAS "Use OpenBLAS" OFF)
 
 add_option(USE_FFTW "Use FFTW" OFF)
 add_option(USE_WCSLIB "Use wcslib" OFF)

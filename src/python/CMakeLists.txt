@@ -5,11 +5,16 @@
 #
 set_source_files_properties(cbuffer.c PROPERTIES LANGUAGE C)
 add_library(cbuffer-shared SHARED cbuffer.c)
+if(CMAKE_C_COMPILER_IS_GNU AND NOT APPLE)
+    set(_LINK_FLAGS "-Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions")
+else()
+    set(_LINK_FLAGS "")
+endif()
 set_target_properties(cbuffer-shared
     PROPERTIES OUTPUT_NAME      "cbuffer"
                VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
                SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
-               LINK_FLAGS       "-Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions"
+               LINK_FLAGS       "${_LINK_FLAGS}"
                PREFIX           ""
                SUFFIX           ${DEFAULT_SHARED_LIBRARY_SUFFIX}
                COMPILE_FLAGS    "${CMAKE_C_FLAGS_EXTRA}"
