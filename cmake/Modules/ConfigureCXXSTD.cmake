@@ -134,7 +134,7 @@ endif()
 #-----------------------------------------------------------------------
 # Configure/Select C++ Standard
 # Require at least C++11 with no extensions and the following features
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 set(${PROJECT_NAME}_TARGET_COMPILE_FEATURES
   cxx_alias_templates

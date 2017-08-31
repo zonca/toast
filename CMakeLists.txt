@@ -15,9 +15,10 @@ endif()
 
 project(TOAST C CXX)
 
+# Prefix our module paths for preference over CMake ones if exist
 set(CMAKE_MODULE_PATH
-    ${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}
     ${PROJECT_SOURCE_DIR}/cmake/Modules
+    ${PROJECT_SOURCE_DIR}/cmake/Packages
     ${CMAKE_MODULE_PATH})
 
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
