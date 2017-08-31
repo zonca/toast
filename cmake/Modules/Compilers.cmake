@@ -77,13 +77,11 @@ foreach(LANG C CXX)
 
     # set other to no
     foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC CLANG PGI XLC HP_ACC MIPS)
-        foreach(LANG C CXX)
-            if(${CMAKE_${LANG}_COMPILER_IS_${TYPE}})
-                continue()
-            else()
-                SET_COMPILER_VAR(${TYPE} OFF)
-            endif()
-        endforeach()
+        if(${CMAKE_${LANG}_COMPILER_IS_${TYPE}})
+            continue()
+        else()
+            SET_COMPILER_VAR(${TYPE} OFF)
+        endif()
     endforeach()
 endforeach()
 

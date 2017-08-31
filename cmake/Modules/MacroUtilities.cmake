@@ -46,9 +46,6 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.1)
     cmake_policy(SET CMP0054 NEW)
 endif()
 
-include(MacroDefineModule)
-include(MacroLibraryTargets)
-
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS
 #-----------------------------------------------------------------------
@@ -333,36 +330,36 @@ function(subConfigureRootSearchPath _package_name _search_other)
         endif()
         # root changed so we want to refind the package
         if(UNCACHE_PACKAGE_VARS)
-          string(TOLOWER "${_package_name}" CAP_PACKAGE_NAME)
-          string(SUBSTRING "${CAP_PACKAGE_NAME}" 0 1 FIRST)
-          string(SUBSTRING "${CAP_PACKAGE_NAME}" 1 -1 REST)
-          string(TOUPPER "${FIRST}" FIRST)
-          string(CONCAT CAP_PACKAGE_NAME "${FIRST}" "${REST}")
-          string(TOUPPER "${_package_name}" UPP_PACKAGE_NAME)
-          string(TOLOWER "${_package_name}" LOW_PACKAGE_NAME)
+            string(TOLOWER "${_package_name}" CAP_PACKAGE_NAME)
+            string(SUBSTRING "${CAP_PACKAGE_NAME}" 0 1 FIRST)
+            string(SUBSTRING "${CAP_PACKAGE_NAME}" 1 -1 REST)
+            string(TOUPPER "${FIRST}" FIRST)
+            string(CONCAT CAP_PACKAGE_NAME "${FIRST}" "${REST}")
+            string(TOUPPER "${_package_name}" UPP_PACKAGE_NAME)
+            string(TOLOWER "${_package_name}" LOW_PACKAGE_NAME)
 
-          get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
-          foreach(_name ${_package_name} ${CAP_PACKAGE_NAME}
-                  ${UPP_PACKAGE_NAME} ${LOW_PACKAGE_NAME})
-              # skip maintain
-              if(NOT MAINTAIN_${_name}_CACHE)
-                  # loop over cached variables
-                  foreach(_var ${CACHED_VARIABLES})
-                      if("${_var}_" MATCHES "${_name}")
-                          if(NOT "${_var}" STREQUAL "${_name}_ROOT" AND
-                             NOT "${_var}" STREQUAL "PREVIOUS_${_name}_ROOT" AND
-                             NOT "${_var}" STREQUAL "MAINTAIN_${_name}_CACHE")
-                              unset(${_var} CACHE)
-                              list(REMOVE_ITEM CACHED_VARIABLES "${_var}")
-                          endif()
-                      endif()
-                  endforeach(_var ${CACHE_VARIABLES})
-              endif()
-          endforeach()
+            get_cmake_property(CACHED_VARIABLES CACHE_VARIABLES)
+            foreach(_name ${_package_name} ${CAP_PACKAGE_NAME}
+                    ${UPP_PACKAGE_NAME} ${LOW_PACKAGE_NAME})
+                # skip maintain
+                if(NOT MAINTAIN_${_name}_CACHE)
+                    # loop over cached variables
+                    foreach(_var ${CACHED_VARIABLES})
+                        if("${_var}_" MATCHES "${_name}")
+                            if(NOT "${_var}" STREQUAL "${_name}_ROOT" AND
+                                    NOT "${_var}" STREQUAL "PREVIOUS_${_name}_ROOT" AND
+                                    NOT "${_var}" STREQUAL "MAINTAIN_${_name}_CACHE")
+                                unset(${_var} CACHE)
+                                list(REMOVE_ITEM CACHED_VARIABLES "${_var}")
+                            endif()
+                        endif()
+                    endforeach(_var ${CACHE_VARIABLES})
+                endif()
+            endforeach()
         endif()
     else()
         if(EXISTS "${${_package_name}_ROOT}" AND
-           IS_DIRECTORY "${${_package_name}_ROOT}")
+                IS_DIRECTORY "${${_package_name}_ROOT}")
             set(_add ON)
             foreach(_path ${CMAKE_PREFIX_PATH})
                 if("${_path}" STREQUAL "${${_package_name}_ROOT}")

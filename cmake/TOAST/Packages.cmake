@@ -9,8 +9,6 @@ if(NOT CMAKE_VERSION VERSION_LESS 2.6.3)
     cmake_policy(SET CMP0011 NEW)
 endif()
 
-
-
 # - MPI
 # - OpenMP
 # - Python
@@ -27,7 +25,7 @@ add_option(USE_SSE "Use SSE/AVX optimization flags" ON)
 
 add_option(USE_MPI "Use MPI" ON)
 add_option(USE_OPENMP "Use OpenMP" ON)
-add_option(USE_PYTHON "Use Python" OFF)
+add_option(USE_PYTHON "Use Python" ON)
 
 add_option(USE_MKL "Enable Intel Math Kernel Library (MKL)" ON)
 add_option(USE_TBB "Enable Intel Thread Building Blocks (TBB)" ON)
@@ -39,7 +37,7 @@ add_option(USE_OPENBLAS "Use OpenBLAS" OFF)
 
 add_option(USE_FFTW "Use FFTW" ON)
 add_option(USE_WCSLIB "Use wcslib" ON)
-add_option(USE_ELEMENTAL "Use Elemental" OFF)
+add_option(USE_ELEMENTAL "Use Elemental" ON)
 
 ################################################################################
 #
@@ -50,7 +48,7 @@ if(USE_PTHREADS)
 
     SET(CMAKE_THREAD_PREFER_PTHREADS ON)
     FIND_PACKAGE(Threads QUIET)
-    #add_definitions(-DHAVE_PTHREAD)
+    add_definitions(-DUSE_THREADS)
 
 endif()
 
@@ -66,12 +64,10 @@ if(USE_MPI)
     find_package(MPI REQUIRED)
 
     # Add the MPI-specific compiler and linker flags
-    # Also, search for #includes in MPI's paths
     add(CMAKE_C_FLAGS_EXTRA    "${MPI_C_COMPILE_FLAGS}")
     add(CMAKE_CXX_FLAGS_EXTRA  "${MPI_CXX_COMPILE_FLAGS}")
     add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-    #add_definitions(-DHAVE_MPI=1)
+    add_definitions(-DUSE_MPI)
 
 endif()
 
@@ -92,6 +88,7 @@ if(USE_OPENMP)
     # Add the OpenMP-specific compiler and linker flags
     add(CMAKE_C_FLAGS_EXTRA   "${OpenMP_C_FLAGS}")
     add(CMAKE_CXX_FLAGS_EXTRA "${OpenMP_CXX_FLAGS}")
+    add_definitions(-DUSE_OPENMP)
 
 endif(USE_OPENMP)
 
@@ -120,23 +117,14 @@ endif(USE_PYTHON)
 ################################################################################
 if(USE_MKL)
 
-    if(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+    ConfigureRootSearchPath(MKL)
+    find_package(MKL REQUIRED)
 
-        set(MKL_THREADING "Sequential")
-        ConfigureRootSearchPath(MKL)
-        find_package(MKL REQUIRED)
-
-        foreach(_def ${MKL_DEFINITIONS})
-            add_definitions(-D${_def})
-        endforeach()
-        list(APPEND EXTERNAL_LINK_FLAGS "${MKL_CXX_LINK_FLAGS}")
-
-    elseif(CMAKE_COMPILER_IS_INTEL)
-
-        add(CMAKE_C_FLAGS_EXTRA   "-mkl")
-        add(CMAKE_CXX_FLAGS_EXTRA "-mkl")
-
-    endif()
+    foreach(_def ${MKL_DEFINITIONS})
+        add_definitions(-D${_def})
+    endforeach()
+    add(EXTERNAL_LINK_FLAGS "${MKL_CXX_LINK_FLAGS}")
+    add_definitions(-DUSE_MKL)
 
 endif()
 
@@ -148,20 +136,13 @@ endif()
 ################################################################################
 if(USE_TBB)
 
-    if(NOT CMAKE_COMPILER_IS_INTEL)
-
-        ConfigureRootSearchPath(TBB)
-        find_package(TBB REQUIRED COMPONENTS malloc)
-
-    elseif(CMAKE_COMPILER_IS_INTEL)
-
-        add(CMAKE_C_FLAGS_EXTRA   "-tbb")
-        add(CMAKE_CXX_FLAGS_EXTRA "-tbb")
-
-    endif()
+    ConfigureRootSearchPath(TBB)
+    find_package(TBB REQUIRED COMPONENTS malloc)
 
     add_definitions(-DUSE_TBB)
-    add_definitions(-DUSE_TBB_MALLOC)
+    if(TBB_MALLOC_FOUND)
+        add_definitions(-DUSE_TBB_MALLOC)
+    endif()
 
 endif()
 
@@ -175,6 +156,8 @@ if(USE_MATH)
 
     ConfigureRootSearchPath(IMF)
     find_package(IMF REQUIRED)
+
+    add_definitions(-DUSE_MATH_IMF)
 
 endif()
 
@@ -194,6 +177,8 @@ foreach(_LIB BLAS LAPACK OpenBLAS)
 
     endif()
 
+    add_definitions(-DUSE_${_UPPER_LIB})
+
 endforeach()
 
 
@@ -212,6 +197,8 @@ if(USE_FFTW)
         find_package(FFTW3 COMPONENTS threads)
     endif()
 
+    add_definitions(-DUSE_FFTW)
+
 endif(USE_FFTW)
 
 
@@ -225,6 +212,8 @@ if(USE_WCSLIB)
     ConfigureRootSearchPath(wcslib)
     find_package(wcslib REQUIRED)
 
+    add_definitions(-DUSE_WCSLIB)
+
 endif(USE_WCSLIB)
 
 
@@ -237,6 +226,8 @@ if(USE_ELEMENTAL)
 
     ConfigureRootSearchPath(Elemental)
     find_package(Elemental REQUIRED)
+
+    add_definitions(-DUSE_ELEMENTAL)
 
 endif(USE_ELEMENTAL)
 
@@ -271,7 +262,8 @@ set(EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT}
     ${Elemental_LIBRARIES}
 )
 
-
+REMOVE_DUPLICATES(EXTERNAL_INCLUDE_DIRS)
+REMOVE_DUPLICATES(EXTERNAL_LIBRARIES)
 
 ################################################################################
 #

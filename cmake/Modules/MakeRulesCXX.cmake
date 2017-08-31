@@ -138,20 +138,20 @@ elseif(CMAKE_CXX_COMPILER_IS_INTEL)
     if(USE_SSE)
         add(_def_cxx "-use-intel-optimized-headers")
     endif()
-    
+
     get_intel_intrinsic_include_dir()
 
     # -cxxlib -gcc-name -gxx-name -fabi-version -no-gcc
     set(_def_cxx )
     foreach(TYPE GCC GXX)
-    
+
         # executable default name
         set(EXE "gcc")
         if("${TYPE}" STREQUAL "GXX")
             set(EXE "g++")
         endif()
-        
-        if(NOT ${TYPE} AND NOT "$ENV{${TYPE})" STREQUAL "")
+
+        if(NOT ${TYPE} AND NOT "$ENV{${TYPE}}" STREQUAL "")
             set(${TYPE} $ENV{${TYPE}} CACHE PATH "Intel ${TYPE} path")
         endif()
 
@@ -161,12 +161,12 @@ elseif(CMAKE_CXX_COMPILER_IS_INTEL)
             message(AUTHOR_WARNING "${_msg}")
             unset(_msg)
         endif()
-        
+
         if("${${TYPE}}" STREQUAL "")
-        
+
             # find gcc/g++
             find_program(${TYPE}_PATH ${EXE})
-            
+
             if(NOT ${TYPE}_PATH)
                 # kill if not found
                 message(FATAL_ERROR "Failure finding \"${LTYPE}\"")
@@ -174,17 +174,17 @@ elseif(CMAKE_CXX_COMPILER_IS_INTEL)
                 # warning them is not explicitly defined but not if -Wno-dev
                 message(AUTHOR_WARNING "Using \"${${TYPE}_PATH}\" for ${TYPE}")
             endif()
-            
+
             # don't cache
             set(${TYPE} ${${TYPE}_PATH})
-            
+
         else()
-        
+
             # make sure it is cached
             set(${TYPE} ${TYPE} CACHE PATH "Intel ${TYPE} compiler path")
-            
+
         endif()
-        
+
         # only guaranteed on GNU standard bin layout (e.g. /usr/bin/gcc)
         if(UNIX AND NOT ${TYPE}_ROOT)
             get_filename_component(${TYPE}_ROOT "${${TYPE}}"        DIRECTORY)
@@ -204,12 +204,12 @@ elseif(CMAKE_CXX_COMPILER_IS_INTEL)
         else()
             add(_def_cxx "-cxxlib=${${TYPE}_ROOT} -gxx-name=${GCCN}")
         endif()
-        
+
         unset(${TYPE}_ROOT) # won't affect cache version
         unset(GCCN)
-        
+
     endforeach()
-    
+
     set(CMAKE_CXX_FLAGS_INIT                "${_def_cxx}")
     set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG -DFPE_DEBUG")
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
@@ -228,7 +228,7 @@ elseif(CMAKE_CXX_COMPILER_IS_XLC)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-O2 -g -qdbextra -qcheck=all -qfullpath -qtwolink -+")
     set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O2 -qtwolink -+")
     set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "${CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT}")
-    
+
 #---------------------------------------------------------------------
 # HP aC++ Compiler
 #

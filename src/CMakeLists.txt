@@ -44,26 +44,12 @@ if(BUILD_STATIC_LIBS)
     #--------------------------------------------------------------------------#
     add_library(${PROJECT_NAME}-static STATIC $<TARGET_OBJECTS:libtoast-object>)
     set_target_properties(${PROJECT_NAME}-static
-        PROPERTIES OUTPUT_NAME      "${PROJECT_NAME}"
+        PROPERTIES OUTPUT_NAME      "toast"
                    VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
                    LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
                    LINKER_LANGUAGE  CXX)
     target_link_libraries(${PROJECT_NAME}-static ${EXTERNAL_LIBRARIES})
     set(PROJECT_LINK_TARGETS ${PROJECT_NAME}-static)
-    #--------------------------------------------------------------------------#
-
-    #--------------------------------------------------------------------------#
-    # static test library
-    #--------------------------------------------------------------------------#
-    add_library(toast-test-static STATIC $<TARGET_OBJECTS:libtoast-test-object>)
-    set_target_properties(toast-test-static
-        PROPERTIES OUTPUT_NAME      "toast_test"
-                   VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
-                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
-                   LINKER_LANGUAGE  CXX)
-    target_link_libraries(toast-test-static
-        ${PROJECT_NAME}-static ${EXTERNAL_LIBRARIES})
-    set(TEST_LINK_TARGETS toast-test-static)
     #--------------------------------------------------------------------------#
 
 endif()
@@ -77,29 +63,14 @@ if(BUILD_SHARED_LIBS)
     #--------------------------------------------------------------------------#
     add_library(${PROJECT_NAME}-shared SHARED $<TARGET_OBJECTS:libtoast-object>)
     set_target_properties(${PROJECT_NAME}-shared
-        PROPERTIES OUTPUT_NAME      "${PROJECT_NAME}"
+        PROPERTIES OUTPUT_NAME      "toast"
                    VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
                    SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
                    LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
-                   LINKER_LANGUAGE  CXX)
+                   RPATH            ${CMAKE_INSTALL_FULL_PYTHONDIR})
     target_link_libraries(${PROJECT_NAME}-shared ${EXTERNAL_LIBRARIES})
     list(APPEND PROJECT_LIBRARIES ${PROJECT_NAME}-shared)
     set(PROJECT_LINK_TARGETS ${PROJECT_NAME}-shared)
-    #--------------------------------------------------------------------------#
-
-    #--------------------------------------------------------------------------#
-    # shared test library
-    #--------------------------------------------------------------------------#
-    add_library(toast-test-shared SHARED $<TARGET_OBJECTS:libtoast-test-object>)
-    set_target_properties(toast-test-shared
-        PROPERTIES OUTPUT_NAME     "toast_test"
-                   VERSION         "${${PROJECT_NAME}_SHORT_VERSION}"
-                   SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
-                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
-                   LINKER_LANGUAGE  CXX)
-    target_link_libraries(toast-test-shared
-        ${PROJECT_NAME}-shared ${EXTERNAL_LIBRARIES})
-    set(TEST_LINK_TARGETS toast-test-shared)
     #--------------------------------------------------------------------------#
 
 endif()
@@ -110,17 +81,6 @@ endif()
 # =============================================================================#
 if(USE_PYTHON)
     add_subdirectory(python)
-
-    add_library(cbuffer-shared SHARED $<TARGET_OBJECTS:libtoast-object>)
-    set_target_properties(cbuffer-shared
-        PROPERTIES OUTPUT_NAME      "cbuffer"
-                   VERSION          "${${PROJECT_NAME}_SHORT_VERSION}"
-                   SOVERSION        "${${PROJECT_NAME}_MAJOR_VERSION}"
-                   LINK_FLAGS       "${EXTERNAL_CXX_LINK_FLAGS}"
-                   LINKER_LANGUAGE  CXX)
-    target_link_libraries(cbuffer-shared ${EXTERNAL_LIBRARIES})
-    list(APPEND PROJECT_LIBRARIES cbuffer-shared)
-
 endif()
 
 
@@ -129,7 +89,7 @@ endif()
 # =============================================================================#
 add_executable(toast_test libtoast/toast_test.cpp)
 target_link_libraries(toast_test
-    ${PROJECT_LINK_TARGETS} ${TEST_LINK_TARGETS} ${EXTERNAL_LIBRARIES})
+    ${PROJECT_LINK_TARGETS} ${EXTERNAL_LIBRARIES})
 
 # =============================================================================#
 #   Export

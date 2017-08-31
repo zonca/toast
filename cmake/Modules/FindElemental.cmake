@@ -45,56 +45,105 @@
 # SOFTWARE.
 
 INCLUDE (FindPackageHandleStandardArgs)
-
+set(Elemental_CMAKE_CONFIG ON CACHE BOOL "Use CMake configuration if found")
+mark_as_advanced(Elemental_CMAKE_CONFIG)
 
 #----- Elemental installation root
 FIND_PATH (Elemental_ROOT
-  NAMES include/elemental.h
+  NAMES include/El.hpp
   PATHS ${Elemental_ROOT}
         ENV Elemental_ROOT
         ENV ElementalROOT
   DOC "Elemental root directory")
 
 
-#----- Elemental include directory
-FIND_PATH (Elemental_INCLUDE_DIR
-  NAMES elemental.h
-  HINTS ${Elemental_ROOT}
-  PATH_SUFFIXES include
-  DOC "Elemental include directory")
+if(Elemental_CMAKE_CONFIG AND
+   EXISTS "${Elemental_ROOT}/CMake/elemental/ElementalConfig.cmake")
+
+    include("${Elemental_ROOT}/CMake/elemental/ElementalConfig.cmake")
+
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS (Elemental REQUIRED_VARS Elemental_ROOT
+        Elemental_INCLUDE_DIRS Elemental_LIBRARIES VERSION_VAR Elemental_VERSION)
+
+else()
+    #----- Elemental include directory
+    FIND_PATH (Elemental_INCLUDE_DIR
+        NAMES El.hpp
+        HINTS ${Elemental_ROOT}
+        PATH_SUFFIXES include
+        DOC "Elemental include directory")
 
 
-#----- Elemental library
-FIND_LIBRARY (Elemental_LIBRARY
-  NAMES elemental
-  HINTS ${Elemental_ROOT}
-  PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR_DEFAULT} lib lib64
-  DOC "Elemental library")
+    #----- Elemental library
+    FIND_LIBRARY (Elemental_LIBRARY
+        NAMES El
+        HINTS ${Elemental_ROOT}
+        PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR_DEFAULT} lib lib64
+        DOC "Elemental library")
 
 
-#----- Determine library's version
-SET (_Elemental_VERSION_HEADER ${Elemental_INCLUDE_DIR}/version.h)
+    #----- Elemental library
+    FIND_LIBRARY (Elemental_SuiteSparse_LIBRARY
+        NAMES ElSuiteSparse
+        HINTS ${Elemental_ROOT}
+        PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR_DEFAULT} lib lib64
+        DOC "Elemental SuiteSparse library")
 
-IF (EXISTS ${_Elemental_VERSION_HEADER})
+
+    #----- Elemental library
+    FIND_LIBRARY (Elemental_pmrrr_LIBRARY
+        NAMES pmrrr
+        HINTS ${Elemental_ROOT}
+        PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR_DEFAULT} lib lib64
+        DOC "Elemental pmrrr library")
+
+
+    #----- Elemental library
+    FIND_LIBRARY (Elemental_parmetis_LIBRARY
+        NAMES parmetis
+        HINTS ${Elemental_ROOT}
+        PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR_DEFAULT} lib lib64
+        DOC "Elemental parmetis library")
+
+
+    #----- Elemental library
+    FIND_LIBRARY (Elemental_metis_LIBRARY
+        NAMES metis
+        HINTS ${Elemental_ROOT}
+        PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR_DEFAULT} lib lib64
+        DOC "Elemental metis library")
+
+
+    #----- Determine library's version
+    SET (_Elemental_VERSION_HEADER ${Elemental_INCLUDE_DIR}/El/config.h)
+
+    IF (EXISTS ${_Elemental_VERSION_HEADER})
     FILE (READ ${_Elemental_VERSION_HEADER} _Elemental_VERSION_CONTENTS)
 
-    STRING (REGEX REPLACE ".*#define __INTEL_Elemental__[ \t]+([0-9]+).*" "\\1"
+    STRING (REPLACE "\"" "" _Elemental_VERSION_CONTENTS "${_Elemental_VERSION_CONTENTS}")
+    STRING (REGEX REPLACE ".*#define EL_VERSION_MAJOR[ \t]+([0-9]+).*" "\\1"
         Elemental_VERSION_MAJOR "${_Elemental_VERSION_CONTENTS}")
-    STRING (REGEX REPLACE ".*#define __INTEL_Elemental_MINOR__[ \t]+([0-9]+).*" "\\1"
+    STRING (REGEX REPLACE ".*#define EL_VERSION_MINOR[ \t]+([0-9]+).*" "\\1"
         Elemental_VERSION_MINOR "${_Elemental_VERSION_CONTENTS}")
-    STRING (REGEX REPLACE ".*#define __INTEL_Elemental_UPDATE__[ \t]+([0-9]+).*" "\\1"
-        Elemental_VERSION_PATCH "${_Elemental_VERSION_CONTENTS}")
+    # -dev suffix will screw up CMake version check
+    #STRING (REPLACE "-dev" "" Elemental_VERSION_MINOR "${Elemental_VERSION_MINOR}")
 
-    SET (Elemental_VERSION ${Elemental_VERSION_MAJOR}.${Elemental_VERSION_MINOR}.${Elemental_VERSION_PATCH})
-    SET (Elemental_VERSION_COMPONENTS 3)
-ENDIF (EXISTS ${_Elemental_VERSION_HEADER})
+    SET (Elemental_VERSION ${Elemental_VERSION_MAJOR}.${Elemental_VERSION_MINOR})
+    SET (Elemental_VERSION_COMPONENTS 2)
+    ENDIF (EXISTS ${_Elemental_VERSION_HEADER})
 
 
-FIND_PACKAGE_HANDLE_STANDARD_ARGS (Elemental REQUIRED_VARS Elemental_ROOT
-    Elemental_INCLUDE_DIR Elemental_LIBRARY VERSION_VAR Elemental_VERSION)
+    FIND_PACKAGE_HANDLE_STANDARD_ARGS (Elemental REQUIRED_VARS Elemental_ROOT
+        Elemental_INCLUDE_DIR Elemental_LIBRARY VERSION_VAR Elemental_VERSION)
 
-MARK_AS_ADVANCED (Elemental_INCLUDE_DIR Elemental_LIBRARY)
+    MARK_AS_ADVANCED (Elemental_INCLUDE_DIR Elemental_LIBRARY)
 
-SET (Elemental_INCLUDE_DIRS ${Elemental_INCLUDE_DIR})
-SET (Elemental_LIBRARIES ${Elemental_LIBRARY})
+    SET (Elemental_INCLUDE_DIRS ${Elemental_INCLUDE_DIR})
+    SET (Elemental_LIBRARIES ${Elemental_LIBRARY})
+    FOREACH (_LIB SuiteSparse pmrrr parmetis metis)
+        IF(Elemental_${_LIB}_LIBRARY)
+            LIST (APPEND Elemental_LIBRARIES ${Elemental_${_LIB}_LIBRARY})
+        ENDIF()
+    ENDFOREACH()
 
+endif()
