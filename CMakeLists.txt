@@ -15,6 +15,13 @@ endif()
 
 project(TOAST C CXX)
 
+set(CMAKE_BUILD_TYPE Release CACHE STRING "CMake build type")
+# Above cache variable isn't immediately set in first build
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+string(TOUPPER ${CMAKE_BUILD_TYPE} UPPER_BUILD_TYPE)
+
 # Prefix our module paths for preference over CMake ones if exist
 set(CMAKE_MODULE_PATH
     ${PROJECT_SOURCE_DIR}/cmake/Modules
@@ -24,14 +31,11 @@ set(CMAKE_MODULE_PATH
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
     ${CMAKE_SOURCE_DIR}/cmake/Modules/MakeRulesCXX.cmake)
 
-set(CMAKE_BUILD_TYPE Release CACHE STRING "CMake build type")
-
 include(MakeRulesCXX)
 include(GenericCMakeFunctions)
 set_project_version("2" "2" "0" "Time Ordered Astrophysics Scalable Tools")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
-string(TOUPPER "${CMAKE_BUILD_TYPE}" UPPER_BUILD_TYPE)
 set(PROJECT_BUGREPORT "work@theodorekisner.com")
 
 # clear CMAKE_PREFIX_PATH if not explicitly specified on command line
