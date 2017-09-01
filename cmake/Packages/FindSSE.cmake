@@ -195,6 +195,11 @@ FUNCTION(GET_SSE_COMPILE_FLAGS _FLAGS_VAR _DEFS_VAR)
             endif()
         endforeach()
 
+        if(APPLE AND USE_CLANG_ASSEMBLER)
+            add(SSE_CXX_FLAGS "-Wa,-W")
+            add(SSE_CXX_FLAGS "-Wa,-q")
+        endif(APPLE AND USE_CLANG_ASSEMBLER)
+
     endif(CMAKE_COMPILER_IS_INTEL_ICC OR CMAKE_COMPILER_IS_INTEL_ICPC)
 
     set(${_FLAGS_VAR} "${ARCH_CXX_FLAGS} ${SSE_CXX_FLAGS}" PARENT_SCOPE)
