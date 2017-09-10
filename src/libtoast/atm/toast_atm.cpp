@@ -652,7 +652,8 @@ void toast::atm::sim::smooth() {
 
 
 void toast::atm::sim::observe( double *t, double *az, double *el, double *tod,
-                   long nsamp, double fixed_r ) {
+                   long nsamp, double fixed_r )
+{
 
     if ( !cached ) {
         throw std::runtime_error( "There is no cached observation to observe" );
@@ -1508,7 +1509,8 @@ long toast::atm::sim::coord2ind( double x, double y, double z ) {
 
 double toast::atm::sim::interp( double x, double y, double z,
                                 std::vector<long> &last_ind,
-                std::vector<double> &last_nodes ) {
+                std::vector<double> &last_nodes )
+{
 
     // Trilinear interpolation
 
@@ -1935,7 +1937,8 @@ void toast::atm::sim::sqrt_covariance( El::DistMatrix<double> *cov,
 
 
 void toast::atm::sim::apply_covariance( El::DistMatrix<double> *cov,
-                    long ind_start, long ind_stop ) {
+                    long ind_start, long ind_stop )
+{
 
     double t1 = MPI_Wtime();
 
