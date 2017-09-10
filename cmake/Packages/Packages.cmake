@@ -124,7 +124,16 @@ endif(USE_PYTHON)
 if(USE_MKL)
 
     ConfigureRootSearchPath(MKL)
-    find_package(MKL REQUIRED)
+
+    set(MKL_COMPONENTS rt) # mkl_rt as default
+
+    if(CMAKE_C_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_GNU)
+        set_ifnot(MKL_THREADING OpenMP)
+        set(MKL_COMPONENTS gnu_thread core intel_lp64)
+        find_package(GOMP REQUIRED)
+    endif()
+
+    find_package(MKL REQUIRED COMPONENTS ${MKL_COMPONENTS})
 
     foreach(_def ${MKL_DEFINITIONS})
         add_definitions(-D${_def})
@@ -258,6 +267,7 @@ set(EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT}
     ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES} ${MPI_EXTRA_LIBRARY}
     ${PYTHON_LIBRARIES}
     ${MKL_LIBRARIES}
+    ${GOMP_LIBRARIES}
     ${TBB_LIBRARIES}
     ${IMF_LIBRARIES}
     ${BLAS_LIBRARIES}

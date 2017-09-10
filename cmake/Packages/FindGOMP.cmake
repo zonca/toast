@@ -38,27 +38,7 @@
 INCLUDE (FindPackageHandleStandardArgs)
 INCLUDE (GenericCMakeFunctions)
 
-
-#----- GOMP installation root
-FIND_PATH (GOMP_ROOT
-  NAMES omp.h
-  PATHS ${GOMP_ROOT}
-        ENV GOMP_ROOT
-  DOC "GOMP root directory")
-MARK_AS_ADVANCED(GOMP_ROOT)
-
-
-#----- GOMP include directory
-FIND_PATH (GOMP_INCLUDE_DIR
-  NAMES omp.h
-  HINTS ${GOMP_ROOT}
-  PATH_SUFFIXES include
-  DOC "GOMP include directory")
-MARK_AS_ADVANCED(GOMP_INCLUDE_DIR)
-SET (GOMP_INCLUDE_DIRS ${GOMP_INCLUDE_DIR})
-
-
-#----- GOMP library
+#----- GOMP suffixes
 #----- works for Ubuntu. Not sure about other systems
 GET_VERSION_COMPONENTS(GCC ${CMAKE_C_COMPILER_VERSION})
 GET_VERSION_COMPONENTS(GXX ${CMAKE_CXX_COMPILER_VERSION})
@@ -75,6 +55,31 @@ SET(GOMP_SUFFIXES
     gcc/${CMAKE_SYSTEM_PROCESSOR}-${SYS_NAME}-gnu/${GXX_MAJOR_VERSION}
     gcc/${CMAKE_SYSTEM_PROCESSOR}-${SYS_NAME}-gnu/${GCC_MAJOR_VERSION})
 
+
+#----- GOMP installation root
+FIND_PATH (GOMP_ROOT
+    NAMES include/omp.h
+    HINTS
+        ${GOMP_ROOT}
+        ENV GOMP_ROOT
+        /usr/lib64
+        /usr/lib
+        /usr/lib32
+    PATH_SUFFIXES
+        ${GOMP_SUFFIXES}
+    DOC "GOMP root directory")
+MARK_AS_ADVANCED(GOMP_ROOT)
+
+
+#----- GOMP include directory
+FIND_PATH (GOMP_INCLUDE_DIR
+  NAMES omp.h
+  HINTS ${GOMP_ROOT}
+  PATH_SUFFIXES include
+  DOC "GOMP include directory")
+
+
+#----- GOMP library
 FIND_LIBRARY (GOMP_LIBRARY
     NAMES gomp libgomp
     HINTS
@@ -84,10 +89,24 @@ FIND_LIBRARY (GOMP_LIBRARY
     PATH_SUFFIXES ${GOMP_SUFFIXES}
     DOC "GCC OpenMP library")
 
-MARK_AS_ADVANCED(GOMP_LIBRARY)
+
+#----- assume the compiler can find it
+IF(NOT GOMP_LIBRARY)
+    SET(GOMP_LIBRARY gomp)
+ENDIF(NOT GOMP_LIBRARY)
 
 
 #----- Standard arguments
-FIND_PACKAGE_HANDLE_STANDARD_ARGS (GOMP REQUIRED_VARS GOMP_ROOT
-    GOMP_INCLUDE_DIR GOMP_LIBRARY)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(GOMP REQUIRED_VARS GOMP_LIBRARY)
 
+
+#----- FindGOMP non-cache variables
+SET(GOMP_LIBRARIES ${GOMP_LIBRARY})
+
+IF(GOMP_INCLUDE_DIR)
+    SET (GOMP_INCLUDE_DIRS ${GOMP_INCLUDE_DIR})
+ENDIF(GOMP_INCLUDE_DIR)
+
+
+#----- Hide in advanced section of GUI
+MARK_AS_ADVANCED(GOMP_ROOT GOMP_INCLUDE_DIR GOMP_LIBRARY)

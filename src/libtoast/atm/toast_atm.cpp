@@ -559,10 +559,10 @@ void toast::atm::sim::get_slice( long &ind_start, long &ind_stop ) {
         ix2 = ix1;
         while ( ix1 == ix2 ) {
             ++ind_stop;
-            if ( (size_t) ind_stop == nelem ) break;
+            if ( ind_stop == nelem ) break;
             ix2 = (*full_index)[ind_stop] * xstrideinv;
         }
-        if ( (size_t) ind_stop == nelem ) break;
+        if ( ind_stop == nelem ) break;
         if ( ind_stop - ind_start > nelem_sim_max ) break;
         ix1 = ix2;
     }
@@ -637,7 +637,7 @@ void toast::atm::sim::smooth() {
     }
 
     if ( realization->rank() == 0 ) {
-        for ( size_t i=0; i<realization->size(); ++i ) {
+        for ( int i=0; i<realization->size(); ++i ) {
             (*realization)[i] = smoothed_realization[i];
         }
     }
@@ -1582,14 +1582,14 @@ double toast::atm::sim::interp( double x, double y, double z,
 #ifdef DEBUG
         long ifullmax = compressed_index->size()-1;
         if (
-            ifull000 < 0 || ifull000 > (size_t) ifullmax ||
-            ifull001 < 0 || ifull001 > (size_t) ifullmax ||
-            ifull010 < 0 || ifull010 > (size_t) ifullmax ||
-            ifull011 < 0 || ifull011 > (size_t) ifullmax ||
-            ifull100 < 0 || ifull100 > (size_t) ifullmax ||
-            ifull101 < 0 || ifull101 > (size_t) ifullmax ||
-            ifull110 < 0 || ifull110 > (size_t) ifullmax ||
-            ifull111 < 0 || ifull111 > (size_t) ifullmax ) {
+            ifull000 < 0 || ifull000 > ifullmax ||
+            ifull001 < 0 || ifull001 > ifullmax ||
+            ifull010 < 0 || ifull010 > ifullmax ||
+            ifull011 < 0 || ifull011 > ifullmax ||
+            ifull100 < 0 || ifull100 > ifullmax ||
+            ifull101 < 0 || ifull101 > ifullmax ||
+            ifull110 < 0 || ifull110 > ifullmax ||
+            ifull111 < 0 || ifull111 > ifullmax ) {
             std::ostringstream o;
             o.precision( 16 );
             o << "atmsim::observe : bad full index. "
@@ -1741,7 +1741,7 @@ El::DistMatrix<double> *toast::atm::sim::build_covariance(
 
     // Report memory usage
 
-    double my_mem = cov->AllocatedMemory() * 2 * sizeof(double) / pow(2, 20);
+    double my_mem = cov->AllocatedMemory() * 2 * sizeof(double) / pow(2.0, 20);
     double tot_mem;
     if ( MPI_Allreduce( &my_mem, &tot_mem, 1, MPI_DOUBLE, MPI_SUM, comm_gang ) )
         throw std::runtime_error(
