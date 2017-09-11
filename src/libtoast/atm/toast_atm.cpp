@@ -1741,7 +1741,7 @@ El::DistMatrix<double> *toast::atm::sim::build_covariance(
 
     // Report memory usage
 
-    double my_mem = cov->AllocatedMemory() * 2 * sizeof(double) / pow(2.0, 20);
+    double my_mem = cov->AllocatedMemory() * 2 * sizeof(double) / pow(2.0, 20.0);
     double tot_mem;
     if ( MPI_Allreduce( &my_mem, &tot_mem, 1, MPI_DOUBLE, MPI_SUM, comm_gang ) )
         throw std::runtime_error(
@@ -1803,8 +1803,8 @@ double toast::atm::sim::cov_eval( double *coord1, double *coord2 ) {
     // Coordinates are in the horizontal frame
 
     const long nn = 1;
-    const double ndxinv = xxstep / (nn-1);
-    const double ndzinv = zzstep / (nn-1);
+    const double ndxinv = xxstep / (nn);
+    const double ndzinv = zzstep / (nn);
     const double ninv = 1. / ( nn * nn );
 
     double val = 0;

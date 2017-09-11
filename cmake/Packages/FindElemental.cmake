@@ -55,7 +55,7 @@ FIND_PATH (Elemental_ROOT
         ENV Elemental_ROOT
         ENV ElementalROOT
   DOC "Elemental root directory")
-
+mark_as_advanced(Elemental_ROOT)
 
 if(Elemental_CMAKE_CONFIG AND
    EXISTS "${Elemental_ROOT}/CMake/elemental/ElementalConfig.cmake")
@@ -136,8 +136,6 @@ else()
     FIND_PACKAGE_HANDLE_STANDARD_ARGS (Elemental REQUIRED_VARS Elemental_ROOT
         Elemental_INCLUDE_DIR Elemental_LIBRARY VERSION_VAR Elemental_VERSION)
 
-    MARK_AS_ADVANCED (Elemental_INCLUDE_DIR Elemental_LIBRARY)
-
     SET (Elemental_INCLUDE_DIRS ${Elemental_INCLUDE_DIR})
     SET (Elemental_LIBRARIES ${Elemental_LIBRARY})
     FOREACH (_LIB SuiteSparse pmrrr parmetis metis)
@@ -147,3 +145,10 @@ else()
     ENDFOREACH()
 
 endif()
+
+
+
+#----- Elemental library
+MARK_AS_ADVANCED(Elemental_INCLUDE_DIR
+    Elemental_LIBRARY Elemental_SuiteSparse_LIBRARY
+    Elemental_pmrrr_LIBRARY Elemental_parmetis_LIBRARY Elemental_metis_LIBRARY )

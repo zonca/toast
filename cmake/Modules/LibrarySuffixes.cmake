@@ -37,4 +37,6 @@ elseif("${_build_type}" STREQUAL "MINSIZEREL")
 endif()
 
 unset(_build_type)
-
+mark_as_advanced(DEFAULT_SHARED_LIBRARY_SUFFIX
+    DEFAULT_STATIC_LIBRARY_SUFFIX
+    DEFAULT_EXECUTABLE_SUFFIX)

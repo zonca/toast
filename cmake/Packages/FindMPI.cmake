@@ -564,6 +564,7 @@ foreach (lang C CXX)
     endif()
   endforeach()
 
+  mark_as_advanced(MPI_LIBRARY MPI_EXTRA_LIBRARY)
   # Special handling for MPI_LIBRARY and MPI_EXTRA_LIBRARY, which we nixed in the
   # new FindMPI.  These need to be merged into MPI_<lang>_LIBRARIES
   if (NOT MPI_${lang}_LIBRARIES AND (MPI_LIBRARY OR MPI_EXTRA_LIBRARY))

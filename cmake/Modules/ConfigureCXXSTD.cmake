@@ -185,5 +185,3 @@ if(BUILD_CXXSTD GREATER 11)
 endif()
 
 set(BUILD_CXXSTD "c++${BUILD_CXXSTD}")
-
-

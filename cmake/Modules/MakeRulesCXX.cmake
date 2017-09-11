@@ -108,9 +108,12 @@ endmacro()
 #
 if(CMAKE_CXX_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_CLANG)
 
-    set(_def_cxx        "-Wno-deprecated -Wno-unused-function -Wno-unused-variable")
-    add(_def_cxx        "-Wno-unused-parameter")
-    set(_verb_cxx_flags "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual -Wshadow -pipe -pedantic")
+    set(_def_cxx     "-Wno-deprecated")
+    add(_def_cxx     "-Wno-unused-parameter -fdiagnostics-color=always")
+    set(_verb_flags  "-Wwrite-strings -Wpointer-arith -Woverloaded-virtual")
+    add(_verb_flags  "-pedantic")
+    set(_loud_flags  "-Wshadow -Wextra")
+    set(_quiet_flags "-Wno-unused-function -Wno-unused-variable")
     if(CMAKE_CXX_COMPILER_IS_GNU)
         add(_def_cxx      "-Wno-unused-but-set-variable -Wno-unused-local-typedefs")
         add(_fast_flags   "-ftree-vectorize -ftree-loop-vectorize")
@@ -120,11 +123,11 @@ if(CMAKE_CXX_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_CLANG)
     endif()
 
     set(CMAKE_CXX_FLAGS_INIT                "-W -Wall ${_def_cxx}")
-    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG -DFPE_DEBUG")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG -DFPE_DEBUG ${_loud_flags}")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG ${_quiet_flags}")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-g -O2 ${_fast_flags}")
-    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags}")
-    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g3 -DDEBUG -DFPE_DEBUG ${_verb_cxx_flags}")
+    set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags} ${_quiet_flags}")
+    set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g3 -DDEBUG -DFPE_DEBUG ${_verb_flags} ${_loud_flags}")
 
 
 #------------------------------------------------------------------------------#

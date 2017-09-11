@@ -55,7 +55,7 @@ INCLUDE (FindPackageHandleStandardArgs)
 
 #----- wcslib installation root
 FIND_PATH (wcslib_ROOT
-  NAMES wcslib/wcs.h
+  NAMES include/wcslib/wcs.h
   PATHS ${wcslib_ROOT}
         ENV wcslib_ROOT
         ENV wcslibROOT
@@ -95,11 +95,11 @@ IF (EXISTS ${_wcslib_VERSION_HEADER})
     unset(wcslib_VERSION_LIST)
 
     SET (wcslib_VERSION_COMPONENTS 2)
-    
+
 ENDIF (EXISTS ${_wcslib_VERSION_HEADER})
 
 LIST(APPEND wcslib_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-MARK_AS_ADVANCED (wcslib_INCLUDE_DIR wcslib_LIBRARY wcslib_BINARY_DIR)
+MARK_AS_ADVANCED (wcslib_ROOT wcslib_INCLUDE_DIR wcslib_LIBRARY wcslib_BINARY_DIR)
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS (wcslib REQUIRED_VARS wcslib_ROOT
     wcslib_INCLUDE_DIR wcslib_LIBRARY VERSION_VAR wcslib_VERSION)

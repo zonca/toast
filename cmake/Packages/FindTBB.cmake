@@ -337,8 +337,8 @@ SET (TBB_BINARY_DIR ${TBB_BINARY_DIR} CACHE PATH "TBB binary directory")
 #------------------------------------------------------------------------------#
 # Cleanup
 #------------------------------------------------------------------------------#
-MARK_AS_ADVANCED (TBB_INCLUDE_DIR TBB_LIBRARY TBB_LIBRARY_RELEASE
-    TBB_LIBRARY_DEBUG TBB_BINARY_DIR)
+MARK_AS_ADVANCED (TBB_ROOT TBB_ROOT_DIR TBB_INCLUDE_DIR TBB_LIBRARY
+    TBB_LIBRARY_RELEASE TBB_LIBRARY_DEBUG TBB_BINARY_DIR)
 
 IF (NOT _TBB_CHECK_COMPONENTS)
     SET (_TBB_FPHSA_ADDITIONAL_ARGS HANDLE_COMPONENTS)
