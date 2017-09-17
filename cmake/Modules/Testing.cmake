@@ -5,14 +5,21 @@ if(BUILD_TESTING)
     # -- Configure CTest
     # ------------------------------------------------------------------------ #
 
-    ## -- CTest Config (source tree)
-    configure_file(${CMAKE_SOURCE_DIR}/cmake/Templates/CTestConfig.cmake.in
-        ${CMAKE_SOURCE_DIR}/CTestConfig.cmake @ONLY)
+    ## -- USE_<PROJECT> and <PROJECT>_ROOT
+    set(CMAKE_CONFIGURE_OPTIONS )
+    foreach(_OPTION BLAS FFTW LAPACK MKL MPI OPENMP PYTHON SSE TBB WCSLIB
+            ELEMENTAL MATH)
+        add(CMAKE_CONFIGURE_OPTIONS "-DUSE_${_OPTION}=${USE_${_OPTION}}")
+        if(NOT "${${_OPTION}_ROOT}" STREQUAL "")
+            add(CMAKE_CONFIGURE_OPTIONS "-D${_OPTION}_ROOT=${${_OPTION}_ROOT}")
+        endif(NOT "${${_OPTION}_ROOT}" STREQUAL "")
+    endforeach()
 
-    ## -- CTest Config (binary tree)
+    ## -- CTest Config
     configure_file(${CMAKE_SOURCE_DIR}/cmake/Templates/CTestConfig.cmake.in
         ${CMAKE_BINARY_DIR}/CTestConfig.cmake @ONLY)
 
+    ENABLE_TESTING()
     include(CTest)
 
     ## -- CTest Setup

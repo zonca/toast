@@ -2,9 +2,12 @@
 include(ProcessorCount)
 ProcessorCount(CTEST_PROCESSOR_COUNT)
 
-set(CTEST_MAKE_COMMAND  "@CMAKE_MAKE_PROGRAM@")
-set(CTEST_CMAKE_COMMAND "@CMAKE_COMMAND@")
-set(CTEST_GENERATOR     "@CMAKE_GENERATOR@")
+set(CTEST_MAKE_COMMAND      "@CMAKE_MAKE_PROGRAM@")
+set(CTEST_CMAKE_COMMAND     "@CMAKE_COMMAND@")
+set(CTEST_GENERATOR         "@CMAKE_GENERATOR@")
+set(CTEST_CONFIG_OPTIONS    "@CMAKE_CONFIGURE_OPTIONS@")
+set(CTEST_COMPILER          "@CMAKE_CXX_COMPILER_ID@")
+set(CTEST_COMPILER_VERSION  "@CMAKE_CXX_COMPILER_VERSION@")
 
 find_program(CTEST_HOSTNAME_COMMAND NAMES hostname)
 find_program(CTEST_UNAME_COMMAND    NAMES uname)
@@ -21,7 +24,7 @@ getuname(cpu    -m)
 
 set(MODEL Continuous)
 
-set(CTEST_BUILD_NAME            "${osname}-${cpu}-${osrel}-${MODEL}")
+set(CTEST_BUILD_NAME            "${osname}-${cpu}-${osrel}-${CTEST_COMPILER}-${CTEST_COMPILER_VERSION}-${MODEL}")
 set(CTEST_DASHBOARD_ROOT        "${DASHBOARD_ROOT_DIR}/toast-cdash")
 set(CTEST_SOURCE_DIRECTORY      "${CTEST_DASHBOARD_ROOT}/toast")
 set(CTEST_BINARY_DIRECTORY      "${CTEST_DASHBOARD_ROOT}/build-${CTEST_BUILD_NAME}")
@@ -30,7 +33,7 @@ set(OPTION_BUILD                "-j${CTEST_PROCESSOR_COUNT}")
 set(CTEST_CHECKOUT_COMMAND      "${CTEST_GIT_COMMAND} clone -b cmake https://github.com/hpc4cmb/toast ${CTEST_SOURCE_DIRECTORY}")
 set(CTEST_UPDATE_COMMAND        "${CTEST_GIT_COMMAND}")
 set(CTEST_CONFIGURATION_TYPE    "Release")
-set(CTEST_CONFIGURE_COMMAND     "${CTEST_CMAKE_COMMAND} -DBUILD_TESTING=ON -DUSE_BLAS=ON -DUSE_FFTW=ON -DUSE_LAPACK=ON -DUSE_MKL=ON -DUSE_MPI=ON -DUSE_OPENMP=ON -DUSE_PYTHON=ON -DUSE_SSE=ON -DUSE_TBB=ON -DUSE_WCSLIB=ON ${CTEST_SOURCE_DIRECTORY} -G ${CTEST_GENERATOR}")
+set(CTEST_CONFIGURE_COMMAND     "${CTEST_CMAKE_COMMAND} ${CTEST_CONFIG_OPTIONS} -DBUILD_TESTING=OFF ${CTEST_SOURCE_DIRECTORY} -G ${CTEST_GENERATOR}")
 set(CTEST_BUILD_COMMAND         "${CTEST_MAKE_COMMAND} ${OPTION_BUILD}")
 
 # ---------------------------------------------------------------------------- #
@@ -43,17 +46,23 @@ set(CTEST_TIMEOUT           "7200")
 ## -- Set output to english
 set( $ENV{LC_MESSAGES}      "en_EN" )
 
+# ---------------------------------------------------------------------------- #
+# -- Configure file
+# ---------------------------------------------------------------------------- #
+
+## -- CTest Config
+configure_file(CTestConfig.cmake    ${CTEST_BINARY_DIRECTORY}/CTestConfig.cmake)
+
+## -- CTest Custom
+configure_file(CTestCustom.cmake    ${CTEST_BINARY_DIRECTORY}/CTestCustom.cmake)
+
+## -- CTest Custom
+configure_file(CTestTestfile.cmake  ${CTEST_BINARY_DIRECTORY}/CTestTestfile.cmake)
+
+# ---------------------------------------------------------------------------- #
+# -- CTest Start
+# ---------------------------------------------------------------------------- #
 ctest_start(${MODEL}   TRACK ${MODEL})
-
-# ---------------------------------------------------------------------------- #
-# -- Configure CTest
-# ---------------------------------------------------------------------------- #
-
-## -- CTest Custom
-configure_file(CTestCustom.cmake ${CTEST_BINARY_DIRECTORY}/CTestCustom.cmake)
-
-## -- CTest Custom
-configure_file(CTestTestfile.cmake ${CTEST_BINARY_DIRECTORY}/CTestTestfile.cmake)
 
 ## -- read CTestCustom.cmake file
 ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
