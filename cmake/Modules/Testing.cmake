@@ -1,5 +1,27 @@
 
+function(GET_TEMPORARY_DIRECTORY DIR_VAR DIR_BASE)
+    set(_TMP_ROOT "$ENV{TMPDIR}")
+    if("${_TMP_ROOT}" STREQUAL "")
+        set(_TMP_ROOT "/tmp")
+    endif()
+    find_program(MKTEMP_COMMAND NAMES mktemp)
+    set(_TMP_STR "${_TMP_ROOT}/${DIR_BASE}-XXXX")
+    if(MKTEMP_COMMAND)
+        execute_process(COMMAND ${MKTEMP_COMMAND} -d ${_TMP_STR}
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            OUTPUT_VARIABLE _VAR
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        set(${DIR_VAR} "${_VAR}" PARENT_SCOPE)
+    else()
+        message(WARNING "Unable to create temporary directory - using ${_TMP_STR}")
+        execute_process(COMMAND "${CMAKE_COMMAND} -E make_directory ${_TMP_STR}")
+        set(${DIR_VAR} "${_TMP_STR}" PARENT_SCOPE)
+    endif(MKTEMP_COMMAND)
+endfunction()
+
 if(BUILD_TESTING)
+
+    GET_TEMPORARY_DIRECTORY(CMAKE_DASHBOARD_ROOT "${CMAKE_PROJECT_NAME}-cdash")
 
     # ------------------------------------------------------------------------ #
     # -- Configure CTest

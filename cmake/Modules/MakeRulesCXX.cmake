@@ -138,81 +138,12 @@ elseif(CMAKE_CXX_COMPILER_IS_INTEL)
     set(_def_cxx "-Wno-unknown-pragmas -Wno-deprecated")
     set(_extra_cxx_flags "-Wno-non-virtual-dtor -Wpointer-arith -Wwrite-strings -fp-model precise")
 
-    add(_def_cxx "-xHOST -ipo -w0 -qno-offload")
+    add(_def_cxx "-ipo -w0")
     if(USE_SSE)
         add(_def_cxx "-use-intel-optimized-headers")
     endif()
 
     get_intel_intrinsic_include_dir()
-
-    # -cxxlib -gcc-name -gxx-name -fabi-version -no-gcc
-    set(_def_cxx )
-    foreach(TYPE GCC GXX)
-
-        # executable default name
-        set(EXE "gcc")
-        if("${TYPE}" STREQUAL "GXX")
-            set(EXE "g++")
-        endif()
-
-        if(NOT ${TYPE} AND NOT "$ENV{${TYPE}}" STREQUAL "")
-            set(${TYPE} $ENV{${TYPE}} CACHE PATH "Intel ${TYPE} path")
-        endif()
-
-        if("${${TYPE}}" STREQUAL "")
-            set(_msg "\nPlease specify the ${TYPE} environment variable")
-            add(_msg "(GCC C/C++ compiler to use with the Intel compiler)\n")
-            message(AUTHOR_WARNING "${_msg}")
-            unset(_msg)
-        endif()
-
-        if("${${TYPE}}" STREQUAL "")
-
-            # find gcc/g++
-            find_program(${TYPE}_PATH ${EXE})
-
-            if(NOT ${TYPE}_PATH)
-                # kill if not found
-                message(FATAL_ERROR "Failure finding \"${LTYPE}\"")
-            else()
-                # warning them is not explicitly defined but not if -Wno-dev
-                message(AUTHOR_WARNING "Using \"${${TYPE}_PATH}\" for ${TYPE}")
-            endif()
-
-            # don't cache
-            set(${TYPE} ${${TYPE}_PATH})
-
-        else()
-
-            # make sure it is cached
-            set(${TYPE} ${TYPE} CACHE PATH "Intel ${TYPE} compiler path")
-
-        endif()
-
-        # only guaranteed on GNU standard bin layout (e.g. /usr/bin/gcc)
-        if(UNIX AND NOT ${TYPE}_ROOT)
-            get_filename_component(${TYPE}_ROOT "${${TYPE}}"        DIRECTORY)
-            get_filename_component(${TYPE}_ROOT "${${TYPE}_ROOT}"   DIRECTORY)
-        else()
-            if("${TYPE}" STREQUAL "GXX")
-                set(_msg "\nPlease specify the ${TYPE}_ROOT environment variable")
-                add(_msg "(GCC C/C++ compiler root directory to use with the Intel compiler)\n")
-                message(FATAL_ERROR "${_msg}")
-            endif()
-        endif()
-
-        get_filename_component(GCCN "${${TYPE}}" NAME)
-
-        if("${TYPE}" STREQUAL "GCC")
-            add(_def_cxx "-gcc-name=${GCCN}")
-        else()
-            add(_def_cxx "-cxxlib=${${TYPE}_ROOT} -gxx-name=${GCCN}")
-        endif()
-
-        unset(${TYPE}_ROOT) # won't affect cache version
-        unset(GCCN)
-
-    endforeach()
 
     set(CMAKE_CXX_FLAGS_INIT                "${_def_cxx}")
     set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG -DFPE_DEBUG")
