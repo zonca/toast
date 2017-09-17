@@ -13,24 +13,7 @@
 set(CTEST_COMPILER "@CMAKE_CXX_COMPILER_ID@")
 
 find_program(CTEST_HOSTNAME_COMMAND NAMES hostname)
-find_program(CTEST_UNAME_COMMAND    NAMES uname)
-
-get_filename_component(DASHBOARD_ROOT_DIR @CMAKE_SOURCE_DIR@ PATH)
 exec_program(${CTEST_HOSTNAME_COMMAND} ARGS OUTPUT_VARIABLE HOSTNAME)
-macro(getuname name flag)
-  exec_program("${CTEST_UNAME_COMMAND}" ARGS "${flag}" OUTPUT_VARIABLE "${name}")
-endmacro(getuname)
-getuname(osname -s)
-getuname(osrel  -r)
-getuname(cpu    -m)
-
-set(MODEL Continuous)
-
-set(CTEST_SITE                  "${HOSTNAME}")
-set(CTEST_BUILD_NAME            "${osname}-${cpu}-${osrel}-${CTEST_COMPILER}-${MODEL}")
-set(CTEST_DASHBOARD_ROOT        "${DASHBOARD_ROOT_DIR}/toast-cdash")
-set(CTEST_SOURCE_DIRECTORY      "${CTEST_DASHBOARD_ROOT}/toast")
-set(CTEST_BINARY_DIRECTORY      "${CTEST_DASHBOARD_ROOT}/build-${CTEST_BUILD_NAME}")
 
 set(CTEST_PROJECT_NAME          "@CMAKE_PROJECT_NAME@")
 set(CTEST_NIGHTLY_START_TIME    "09:15:00 PDT")
