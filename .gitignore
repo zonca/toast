@@ -58,3 +58,4 @@ __pycache__/
 
 # QtCreator project file
 CMakeLists.txt.user
+CTestConfig.cmake

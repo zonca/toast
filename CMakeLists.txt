@@ -95,6 +95,9 @@ endif()
 
 #------------------------------------------------------------------------------#
 
-print_features()
+add_feature(BUILD_TESTING "Enable CTest and CDash submission")
 
 include(CMakeUninstallTarget)
+include(Testing)
+
+print_features()
