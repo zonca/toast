@@ -122,13 +122,18 @@ if(CMAKE_CXX_COMPILER_IS_GNU OR CMAKE_CXX_COMPILER_IS_CLANG)
         INCLUDE_DIRECTORIES("/usr/include/libcxxabi")
     endif()
 
+    option(ENABLE_GCOV "Enable compilation flags for GNU coverage tool (gcov)" OFF)
+    mark_as_advanced(ENABLE_GCOV)
+    if(ENABLE_GCOV)
+        add(_def_cxx "-fprofile-arcs -ftest-coverage")
+    endif(ENABLE_GCOV)
+
     set(CMAKE_CXX_FLAGS_INIT                "-W -Wall ${_def_cxx}")
     set(CMAKE_CXX_FLAGS_DEBUG_INIT          "-g -DDEBUG -DFPE_DEBUG ${_loud_flags}")
     set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT     "-Os -DNDEBUG ${_quiet_flags}")
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "-g -O2 ${_fast_flags}")
     set(CMAKE_CXX_FLAGS_RELEASE_INIT        "-O3 -DNDEBUG ${_fast_flags} ${_quiet_flags}")
     set(CMAKE_CXX_FLAGS_VERBOSEDEBUG_INIT   "-g3 -DDEBUG -DFPE_DEBUG ${_verb_flags} ${_loud_flags}")
-
 
 #------------------------------------------------------------------------------#
 # Intel C++ Compilers
