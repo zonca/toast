@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.
-All rights reserved.  Use of this source code is governed by
+All rights reserved.  Use of this source code is governed by 
 a BSD-style license that can be found in the LICENSE file.
 */
 
@@ -23,12 +23,15 @@ const static int toast_qarray_ompthresh = 100;
 
 // Dot product of lists of arrays.
 
-void toast::qarray::list_dot ( size_t n, size_t m, size_t d, double const * a,
+void toast::qarray::list_dot ( size_t n, size_t m, size_t d, double const * a, 
     double const * b, double * dotprod ) {
 
-    int nt = omp_get_num_threads();
-
-    if ( n < (size_t) toast_qarray_ompthresh * nt ) {
+    int nt = 1;
+    #ifdef _OPENMP
+    nt = omp_get_num_threads();
+    #endif
+    
+    if ( n < toast_qarray_ompthresh * nt ) {
         for ( size_t i = 0; i < n; ++i ) {
             dotprod[i] = 0.0;
             for ( size_t j = 0; j < d; ++j ) {
@@ -64,8 +67,8 @@ void toast::qarray::inv ( size_t n, double * q ) {
 // Norm of quaternion array
 
 void toast::qarray::amplitude ( size_t n, size_t m, size_t d, double const * v, double * norm ) {
-
-    double * temp = static_cast < double * > ( toast::mem::aligned_alloc (
+    
+    double * temp = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::list_dot ( n, m, d, v, v, temp );
@@ -82,14 +85,17 @@ void toast::qarray::amplitude ( size_t n, size_t m, size_t d, double const * v, 
 
 void toast::qarray::normalize ( size_t n, size_t m, size_t d, double const * q_in, double * q_out ) {
 
-    double * norm = static_cast < double * > ( toast::mem::aligned_alloc (
+    double * norm = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::amplitude ( n, m, d, q_in, norm );
 
-    int nt = omp_get_num_threads();
+    int nt = 1;
+    #ifdef _OPENMP
+    nt = omp_get_num_threads();
+    #endif
 
-    if ( n < (size_t) toast_qarray_ompthresh * nt ) {
+    if ( n < toast_qarray_ompthresh * nt ) {
         for ( size_t i = 0; i < n; ++i ) {
             for ( size_t j = 0; j < d; ++j ) {
                 q_out[m * i + j] = q_in[m * i + j] / norm[i];
@@ -114,14 +120,17 @@ void toast::qarray::normalize ( size_t n, size_t m, size_t d, double const * q_i
 
 void toast::qarray::normalize_inplace ( size_t n, size_t m, size_t d, double * q ) {
 
-    double * norm = static_cast < double * > ( toast::mem::aligned_alloc (
+    double * norm = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::amplitude ( n, m, d, q, norm );
 
-    int nt = omp_get_num_threads();
+    int nt = 1;
+    #ifdef _OPENMP
+    nt = omp_get_num_threads();
+    #endif
 
-    if ( n < (size_t) toast_qarray_ompthresh * nt ) {
+    if ( n < toast_qarray_ompthresh * nt ) {
         for ( size_t i = 0; i < n; ++i ) {
             for ( size_t j = 0; j < d; ++j ) {
                 q[m * i + j] /= norm[i];
@@ -151,7 +160,7 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
         n = nv;
     }
 
-    double * q_unit = static_cast < double * > ( toast::mem::aligned_alloc (
+    double * q_unit = static_cast < double * > ( toast::mem::aligned_alloc ( 
         4 * nq * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::normalize ( nq, 4, 4, q, q_unit );
@@ -163,7 +172,10 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
     size_t qf;
     double xw, yw, zw, x2, xy, xz, y2, yz, z2;
 
-    int nt = omp_get_num_threads();
+    int nt = 1;
+    #ifdef _OPENMP
+    nt = omp_get_num_threads();
+    #endif
 
     // this is to avoid branching inside the for loop.
     size_t chv;
@@ -179,7 +191,7 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
         chq = 1;
     }
 
-    if ( n < (size_t) toast_qarray_ompthresh * nt ) {
+    if ( n < toast_qarray_ompthresh * nt ) {
         if ( nq == 1 ) {
             xw =  q_unit[3] * q_unit[0];
             yw =  q_unit[3] * q_unit[1];
@@ -193,14 +205,14 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
             for ( i = 0; i < n; ++i ) {
                 vfin = 3 * i * chv;
                 vfout = 3 * i;
-                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] +
-                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] )
+                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] + 
+                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] ) 
                     + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] +
-                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] )
+                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] + 
+                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] ) 
                     + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] +
-                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] )
+                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] + 
+                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] ) 
                     + v_in[vfin + 2];
             }
         } else {
@@ -218,14 +230,14 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
                 yz =  q_unit[qf + 1] * q_unit[qf + 2];
                 z2 = -q_unit[qf + 2] * q_unit[qf + 2];
 
-                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] +
-                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] )
+                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] + 
+                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] ) 
                     + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] +
-                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] )
+                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] + 
+                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] ) 
                     + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] +
-                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] )
+                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] + 
+                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] ) 
                     + v_in[vfin + 2];
             }
         }
@@ -244,14 +256,14 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
             for ( i = 0; i < n; ++i ) {
                 vfin = 3 * i * chv;
                 vfout = 3 * i;
-                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] +
-                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] )
+                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] + 
+                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] ) 
                     + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] +
-                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] )
+                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] + 
+                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] ) 
                     + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] +
-                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] )
+                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] + 
+                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] ) 
                     + v_in[vfin + 2];
             }
 
@@ -275,14 +287,14 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
                 y2 = -q_unit[qf + 1] * q_unit[qf + 1];
                 yz =  q_unit[qf + 1] * q_unit[qf + 2];
                 z2 = -q_unit[qf + 2] * q_unit[qf + 2];
-                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] +
-                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] )
+                v_out[vfout + 0] = 2*( (y2 + z2) * v_in[vfin + 0] + 
+                    (xy - zw) * v_in[vfin + 1] + (yw + xz) * v_in[vfin + 2] ) 
                     + v_in[vfin + 0];
-                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] +
-                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] )
+                v_out[vfout + 1] = 2*( (zw + xy) * v_in[vfin + 0] + 
+                    (x2 + z2) * v_in[vfin + 1] + (yz - xw) * v_in[vfin + 2] ) 
                     + v_in[vfin + 1];
-                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] +
-                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] )
+                v_out[vfout + 2] = 2*( (xz - yw) * v_in[vfin + 0] + 
+                    (xw + yz) * v_in[vfin + 1] + (x2 + y2) * v_in[vfin + 2] ) 
                     + v_in[vfin + 2];
             }
         }
@@ -298,7 +310,10 @@ void toast::qarray::rotate ( size_t nq, double const * q, size_t nv, double cons
 
 void toast::qarray::mult ( size_t np, double const * p, size_t nq, double const * q, double * r ) {
 
-    int nt = omp_get_num_threads();
+    int nt = 1;
+    #ifdef _OPENMP
+    nt = omp_get_num_threads();
+    #endif
 
     size_t n = np;
     if ( nq > n ) {
@@ -324,18 +339,18 @@ void toast::qarray::mult ( size_t np, double const * p, size_t nq, double const 
     size_t qf;
     size_t f;
 
-    if ( n < (size_t) toast_qarray_ompthresh * nt ) {
+    if ( n < toast_qarray_ompthresh * nt ) {
         for ( size_t i = 0; i < n; ++i ) {
             f = 4 * i;
             pf = 4 * i * chp;
             qf = 4 * i * chq;
-            r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2]
+            r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2] 
                 - p[pf + 2] * q[qf + 1] + p[pf + 3] * q[qf + 0];
-            r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3]
+            r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3] 
                 + p[pf + 2] * q[qf + 0] + p[pf + 3] * q[qf + 1];
-            r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0]
+            r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0] 
                 + p[pf + 2] * q[qf + 3] + p[pf + 3] * q[qf + 2];
-            r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1]
+            r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1] 
                 - p[pf + 2] * q[qf + 2] + p[pf + 3] * q[qf + 3];
         }
     } else {
@@ -344,13 +359,13 @@ void toast::qarray::mult ( size_t np, double const * p, size_t nq, double const 
             f = 4 * i;
             pf = 4 * i * chp;
             qf = 4 * i * chq;
-            r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2]
+            r[f + 0] =  p[pf + 0] * q[qf + 3] + p[pf + 1] * q[qf + 2] 
                 - p[pf + 2] * q[qf + 1] + p[pf + 3] * q[qf + 0];
-            r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3]
+            r[f + 1] = -p[pf + 0] * q[qf + 2] + p[pf + 1] * q[qf + 3] 
                 + p[pf + 2] * q[qf + 0] + p[pf + 3] * q[qf + 1];
-            r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0]
+            r[f + 2] =  p[pf + 0] * q[qf + 1] - p[pf + 1] * q[qf + 0] 
                 + p[pf + 2] * q[qf + 3] + p[pf + 3] * q[qf + 2];
-            r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1]
+            r[f + 3] = -p[pf + 0] * q[qf + 0] - p[pf + 1] * q[qf + 1] 
                 - p[pf + 2] * q[qf + 2] + p[pf + 3] * q[qf + 3];
         }
     }
@@ -393,7 +408,7 @@ void toast::qarray::slerp ( size_t n_time, size_t n_targettime, double const * t
             q = &( q_interp[4*i] );
 
             costheta = qlow[0] * qhigh[0] + qlow[1] * qhigh[1] + qlow[2] * qhigh[2] + qlow[3] * qhigh[3];
-
+            
             if ( ::fabs ( costheta - 1.0 ) < 1.0e-10 ) {
                 q[0] = qlow[0];
                 q[1] = qlow[1];
@@ -409,7 +424,7 @@ void toast::qarray::slerp ( size_t n_time, size_t n_targettime, double const * t
                 q[2] = ratio1 * qlow[2] + ratio2 * qhigh[2];
                 q[3] = ratio1 * qlow[3] + ratio2 * qhigh[3];
             }
-
+            
             norm = 1.0 / ::sqrt ( q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3] );
             q[0] *= norm;
             q[1] *= norm;
@@ -426,11 +441,11 @@ void toast::qarray::slerp ( size_t n_time, size_t n_targettime, double const * t
 
 void toast::qarray::exp ( size_t n, double const * q_in, double * q_out ) {
 
-    double * normv = static_cast < double * > ( toast::mem::aligned_alloc (
+    double * normv = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::amplitude ( n, 4, 3, q_in, normv );
-
+    
     double exp_q_w;
 
     #pragma omp parallel for default(shared) private(exp_q_w) schedule(static)
@@ -454,7 +469,7 @@ void toast::qarray::exp ( size_t n, double const * q_in, double * q_out ) {
 
 void toast::qarray::ln ( size_t n, double const * q_in, double * q_out ) {
 
-    double * normq = static_cast < double * > ( toast::mem::aligned_alloc (
+    double * normq = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::amplitude ( n, 4, 4, q_in, normq );
@@ -481,8 +496,8 @@ void toast::qarray::ln ( size_t n, double const * q_in, double * q_out ) {
 // Real power of quaternion array
 
 void toast::qarray::pow ( size_t n, double const * p, double const * q_in, double * q_out ) {
-
-    double * q_tmp = static_cast < double * > ( toast::mem::aligned_alloc (
+    
+    double * q_tmp = static_cast < double * > ( toast::mem::aligned_alloc ( 
         4 * n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
     toast::qarray::ln ( n, q_in, q_tmp );
@@ -520,28 +535,28 @@ void toast::qarray::from_axisangle ( size_t n, double const * axis, double const
 
     } else {
 
-        double * a = static_cast < double * > ( toast::mem::aligned_alloc (
+        double * a = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
         for ( size_t i = 0; i < n; ++i ) {
             a[i] = 0.5 * angle[i];
         }
 
-        double * sin_a = static_cast < double * > ( toast::mem::aligned_alloc (
+        double * sin_a = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
-        double * cos_a = static_cast < double * > ( toast::mem::aligned_alloc (
+        double * cos_a = static_cast < double * > ( toast::mem::aligned_alloc ( 
         n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
         toast::sf::sincos ( n, a, sin_a, cos_a );
-
+    
         for ( size_t i = 0; i < n; ++i ) {
             for ( size_t j = 0; j < 3; ++j ) {
                 q_out[4*i + j] = axis[3*i + j] * sin_a[i];
             }
             q_out[4*i + 3] = cos_a[i];
         }
-
+    
         toast::mem::aligned_free ( a );
         toast::mem::aligned_free ( sin_a );
         toast::mem::aligned_free ( cos_a );
@@ -616,26 +631,26 @@ void toast::qarray::from_rotmat ( const double * rotmat, double * q ) {
     double tr = rotmat[0] + rotmat[4] + rotmat[8];
     double S;
     double invS;
-    if ( tr > 0 ) {
+    if ( tr > 0 ) { 
         S = ::sqrt ( tr + 1.0 ) * 2.0; /* S=4*qw */
         invS = 1.0 / S;
         q[0] = (rotmat[7] - rotmat[5]) * invS;
         q[1] = (rotmat[2] - rotmat[6]) * invS;
-        q[2] = (rotmat[3] - rotmat[1]) * invS;
+        q[2] = (rotmat[3] - rotmat[1]) * invS; 
         q[3] = 0.25 * S;
-    } else if ( ( rotmat[0] > rotmat[4] ) && ( rotmat[0] > rotmat[8] ) ) {
+    } else if ( ( rotmat[0] > rotmat[4] ) && ( rotmat[0] > rotmat[8] ) ) { 
         S = ::sqrt ( 1.0 + rotmat[0] - rotmat[4] - rotmat[8] ) * 2.0; /* S=4*qx */
         invS = 1.0 / S;
         q[0] = 0.25 * S;
-        q[1] = (rotmat[1] + rotmat[3]) * invS;
-        q[2] = (rotmat[2] + rotmat[6]) * invS;
+        q[1] = (rotmat[1] + rotmat[3]) * invS; 
+        q[2] = (rotmat[2] + rotmat[6]) * invS; 
         q[3] = (rotmat[7] - rotmat[5]) * invS;
-    } else if ( rotmat[4] > rotmat[8] ) {
+    } else if ( rotmat[4] > rotmat[8] ) { 
         S = ::sqrt ( 1.0 + rotmat[4] - rotmat[0] - rotmat[8] ) * 2.0; /* S=4*qy */
         invS = 1.0 / S;
-        q[0] = (rotmat[1] + rotmat[3]) * invS;
+        q[0] = (rotmat[1] + rotmat[3]) * invS; 
         q[1] = 0.25 * S;
-        q[2] = (rotmat[5] + rotmat[7]) * invS;
+        q[2] = (rotmat[5] + rotmat[7]) * invS; 
         q[3] = (rotmat[2] - rotmat[6]) * invS;
     } else {
         S = ::sqrt ( 1.0 + rotmat[8] - rotmat[0] - rotmat[4] ) * 2.0; /* S=4*qz */
@@ -676,7 +691,7 @@ void toast::qarray::from_vectors ( double const * vec1, double const * vec2, dou
 
 // Create quaternions from latitude, longitude, and position angles
 
-void toast::qarray::from_angles ( size_t n, double const * theta,
+void toast::qarray::from_angles ( size_t n, double const * theta, 
     double const * phi, double * const pa, double * quat, bool IAU ) {
 
     #pragma omp parallel default(shared)
@@ -752,7 +767,7 @@ void toast::qarray::from_angles ( size_t n, double const * theta,
 
 // Convert quaternions to latitude, longitude, and position angle
 
-void toast::qarray::to_angles ( size_t n, double const * quat, double * theta,
+void toast::qarray::to_angles ( size_t n, double const * quat, double * theta, 
     double * phi, double * pa, bool IAU ) {
 
     double const xaxis[3] = { 1.0, 0.0, 0.0 };
@@ -793,9 +808,9 @@ void toast::qarray::to_angles ( size_t n, double const * quat, double * theta,
                 phi[i] += toast::TWOPI;
             }
 
-            pa[i] = ::atan2 ( orient[0] * dir[1] - orient[1] * dir[0],
-                - ( orient[0] * dir[2] * dir[0] )
-                - ( orient[1] * dir[2] * dir[1] )
+            pa[i] = ::atan2 ( orient[0] * dir[1] - orient[1] * dir[0], 
+                - ( orient[0] * dir[2] * dir[0] ) 
+                - ( orient[1] * dir[2] * dir[1] ) 
                 + ( orient[2] * ( dir[0] * dir[0] + dir[1] * dir[1] ) ) );
 
             if ( IAU ) {

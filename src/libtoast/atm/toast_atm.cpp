@@ -196,7 +196,8 @@ toast::atm::sim::~sim() {
     if ( compressed_index ) delete compressed_index;
     if ( full_index ) delete full_index;
     if ( realization ) delete realization;
-    if ( comm_gang != MPI_COMM_NULL && comm_gang != MPI_COMM_SELF ) {
+    if ( comm_gang != MPI_COMM_NULL && comm_gang != MPI_COMM_SELF
+         && comm_gang != comm ) {
         if ( MPI_Comm_free( &comm_gang ) )
             throw std::runtime_error( "Failed to free MPI communicator." );
     }
@@ -369,7 +370,7 @@ void toast::atm::sim::load_realization() {
 
         freal.read( (char*) &(*full_index)[0],
                     full_index->size()*sizeof(long) );
-        for ( size_t i=0; i<nelem; ++i ) {
+        for ( int i=0; i<nelem; ++i ) {
             long ifull = (*full_index)[i];
             (*compressed_index)[ifull] = i;
         }
@@ -504,7 +505,7 @@ void toast::atm::sim::simulate( bool use_cache ) {
                 delete cov;
             }
 
-            if ( (size_t) ind_stop == nelem ) break;
+            if ( ind_stop == nelem ) break;
 
             ++slice;
         }
@@ -514,11 +515,21 @@ void toast::atm::sim::simulate( bool use_cache ) {
         for ( size_t slice=0; slice < slice_starts.size(); ++slice ) {
             ind_start = slice_starts[slice];
             ind_stop = slice_stops[slice];
+            int nind = ind_stop - ind_start;
             int root_gang = slice % ngang;
             int root = root_gang * gangsize;
-            if ( MPI_Bcast( realization->data()+ind_start, ind_stop-ind_start,
-                            MPI_DOUBLE, root, comm ) )
+            std::vector<double> tempvec(nind);
+            if ( rank == root ) {
+              if ( MPI_Bcast( realization->data()+ind_start, nind, MPI_DOUBLE,
+                              root, comm ) )
                 throw std::runtime_error("Failed to broadcast the realization");
+            } else {
+              if ( MPI_Bcast( tempvec.data(), nind, MPI_DOUBLE, root, comm ) )
+                throw std::runtime_error("Failed to broadcast the realization");
+            }
+            if ( realization->rank() == 0 )
+              std::memcpy( tempvec.data(), realization->data()+ind_start,
+                           sizeof(double) * nind );
         }
 
         //smooth();
@@ -652,8 +663,7 @@ void toast::atm::sim::smooth() {
 
 
 void toast::atm::sim::observe( double *t, double *az, double *el, double *tod,
-                   long nsamp, double fixed_r )
-{
+			       long nsamp, double fixed_r ) {
 
     if ( !cached ) {
         throw std::runtime_error( "There is no cached observation to observe" );
@@ -864,21 +874,20 @@ void toast::atm::sim::draw() {
         z0 = 0;
         T0 = 0;
 
-        while( lmin >= lmax )
-        {
+        while( lmin >= lmax ){
             lmin = 0;
             lmax = 0;
-            while (lmin <= 0 && (size_t) irand < nrand-1)
+            while (lmin <= 0 && irand < nrand-1)
                 lmin = lmin_center + randn[irand++] * lmin_sigma;
-            while (lmax <= 0 && (size_t) irand < nrand-1)
+            while (lmax <= 0 && irand < nrand-1)
                 lmax = lmax_center + randn[irand++] * lmax_sigma;
         }
-        while (w < 0 && (size_t) irand < nrand-1)
+        while (w < 0 && irand < nrand-1)
             w = w_center + randn[irand++] * w_sigma;
         wdir = fmod( wdir_center + randn[irand++] * wdir_sigma, M_PI );
-        while (z0 <= 0 && (size_t) irand < nrand)
+        while (z0 <= 0 && irand < nrand)
             z0 = z0_center + randn[irand++] * z0_sigma;
-        while (T0 <= 0 && (size_t) irand < nrand)
+        while (T0 <= 0 && irand < nrand)
             T0 = T0_center + randn[irand++] * T0_sigma;
 
         if (irand == nrand)
@@ -1509,8 +1518,7 @@ long toast::atm::sim::coord2ind( double x, double y, double z ) {
 
 double toast::atm::sim::interp( double x, double y, double z,
                                 std::vector<long> &last_ind,
-                std::vector<double> &last_nodes )
-{
+				std::vector<double> &last_nodes ) {
 
     // Trilinear interpolation
 
@@ -1852,7 +1860,7 @@ double toast::atm::sim::cov_eval( double *coord1, double *coord2 ) {
 
 
 void toast::atm::sim::sqrt_covariance( El::DistMatrix<double> *cov,
-                       long ind_start, long ind_stop ) {
+				       long ind_start, long ind_stop ) {
 
     // Cholesky decompose the covariance matrix.  If the matrix is singular,
     // regularize it by adding power to the diagonal.
@@ -1937,8 +1945,7 @@ void toast::atm::sim::sqrt_covariance( El::DistMatrix<double> *cov,
 
 
 void toast::atm::sim::apply_covariance( El::DistMatrix<double> *cov,
-                    long ind_start, long ind_stop )
-{
+					long ind_start, long ind_stop ) {
 
     double t1 = MPI_Wtime();
 

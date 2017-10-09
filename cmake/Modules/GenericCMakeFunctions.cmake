@@ -30,6 +30,7 @@ function(parse_command_line_options)
 
 endfunction()
 
+
 ################################################################################
 # function - capitalize - make a string capitalized (first letter is capital)
 #   usage:
@@ -231,6 +232,7 @@ endmacro()
 ################################################################################
 #   Find a static library
 ################################################################################
+
 function(find_static_library OUT LIB_NAME)
 
     if (WIN32 OR MSVC)

@@ -33,7 +33,7 @@ a BSD-style license that can be found in the LICENSE file.
 #ifdef HAVE_FFTW
 
 class r1d_fftw : public toast::fft::r1d {
-
+    
     public :
         
         r1d_fftw ( int64_t length, int64_t n, toast::fft::plan_type type, 
@@ -251,8 +251,7 @@ class r1d_mkl : public toast::fft::r1d {
                     1.0 );
                 check_status ( stderr, status );
 
-            } else 
-            {
+            } else {
 
                 status = DftiSetValue ( descriptor_, DFTI_OUTPUT_DISTANCE, 
                     (MKL_LONG)buflength_ );
@@ -276,7 +275,7 @@ class r1d_mkl : public toast::fft::r1d {
             if ( status != 0 ) {
                 std::ostringstream o;
                 o << "failed to create mkl FFT plan, status = " << status 
-                  << std::endl;
+                    << std::endl;
                 o << "Message: " << DftiErrorMessage ( status ) ;
                 TOAST_THROW( o.str().c_str() );
             }

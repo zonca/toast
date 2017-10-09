@@ -84,6 +84,12 @@ fi
 
 @cfitsio@
 
+# Install OpenBLAS
+
+if [ "x@INTEL_COMP@" != "xyes"]; then
+@openblas@
+fi
+
 # Install wcslib
 
 @wcslib@
@@ -111,6 +117,14 @@ fi
 # Install elemental
 
 @elemental@
+
+# Install HDF5
+
+@hdf5@
+
+# Install TIDAS
+
+@tidas@
 
 # Install PyMPIT for environment testing
 

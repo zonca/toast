@@ -224,8 +224,15 @@ def parse_arguments(comm):
                         required=False, default=1, type=np.int,
                         help='Number of frequencies with identical focal '
                         'planes')
+    parser.add_argument('--tidas',
+                        required=False, default=None,
+                        help='Output TIDAS export path')
 
     args = parser.parse_args()
+
+    if args.tidas is not None:
+        if not tt.tidas_available:
+            raise RuntimeError("TIDAS not found- cannot export")
 
     if comm.comm_world.rank == 0:
         print('\nAll parameters:')
@@ -545,9 +552,13 @@ def expand_pointing(args, comm, data, counter):
         hwprpm=hwprpm, hwpstep=hwpstep, hwpsteptime=hwpsteptime)
 
     pointing.exec(data)
-    for ob in data.obs:
-        tod = ob['tod']
-        tod.free_radec_quats()
+
+    # Only purge the pointing if we are NOT going to export the
+    # data to a TIDAS volume
+    if args.tidas is None:
+        for ob in data.obs:
+            tod = ob['tod']
+            tod.free_radec_quats()
 
     comm.comm_world.barrier()
     stop = MPI.Wtime()
@@ -1032,7 +1043,7 @@ def simulate_noise(args, comm, data, mc, counter, totalname_freq):
     return
 
 
-def scramble_gains(args, comm, data, mc, counter):
+def scramble_gains(args, comm, data, mc, counter, totalname_freq):
     if args.gain_sigma:
         if comm.comm_world.rank == 0:
             print('Scrambling gains', flush=args.flush)
@@ -1225,6 +1236,31 @@ def clear_signal(args, comm, data, sigclear, counter):
     return
 
 
+def output_tidas(args, comm, data, totalname, common_flag_name, flag_name):
+    if args.tidas is None:
+        return
+    from toast.tod.tidas import OpTidasExport
+    tidas_path = os.path.abspath(args.tidas)
+    comm.comm_world.Barrier()
+    if comm.comm_world.rank == 0:
+        print('Exporting TOD to a TIDAS volume at {}'.format(tidas_path),
+              flush=args.flush)
+    start = MPI.Wtime()
+
+    export = OpTidasExport(tidas_path, name=totalname, 
+        common_flag_name=common_flag_name, 
+        flag_name=flag_name, usedist=True)
+    export.exec(data)
+
+    comm.comm_world.Barrier()
+    stop = MPI.Wtime()
+    if comm.comm_world.rank == 0:
+        print('Wrote simulated TOD to {}:{} in {:.2f} s'
+              ''.format(tidas_path, totalname,
+                        stop-start), flush=args.flush)
+    return
+
+
 def apply_madam(args, comm, data, madampars, counter, mc, firstmc, outpath,
                 detweights, totalname_madam, flag_name, common_flag_name):
     if args.madam:
@@ -1346,7 +1382,14 @@ def main():
             simulate_noise(args, comm, data, mc+mcoffset, counter,
                            totalname_freq)
 
-            scramble_gains(args, comm, data, mc+mcoffset, counter)
+            scramble_gains(args, comm, data, mc+mcoffset, counter,
+                           totalname_freq)
+
+            if (mc == firstmc) and (ifreq == 0):
+                # For the first realization and frequency, optionally 
+                # export the timestream data to a TIDAS volume.
+                output_tidas(args, comm, data, totalname, common_flag_name,
+                             flag_name)
 
             outpath = setup_output(args, comm, mc+mcoffset)
 
