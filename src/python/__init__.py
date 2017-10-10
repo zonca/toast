@@ -11,6 +11,20 @@ designed to allow the processing of data from telescopes that acquire
 data as timestreams (rather than images).
 """
 
+import sys
+
+# ensure mpi4py hasn't been imported yet
+if 'mpi4py' in sys.modules:
+    print ('Error! mpi4py module must be imported after TOAST. Exiting...')
+    sys.exit(1)
+
+# import MPI if not done already
+# (should be) backwards compatible with old recommendation of:
+#   from toast.mpi import MPI
+# as the first line
+if not 'toast.mpi' in sys.modules:
+    from . import MPI
+
 from .tests import test
 
 from ._version import __version__

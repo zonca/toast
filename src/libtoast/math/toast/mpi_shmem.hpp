@@ -7,7 +7,7 @@
 #ifndef TOAST_MPI_SHMEM_HPP
 #define TOAST_MPI_SHMEM_HPP
 
-#include "mpi.h"
+#include <mpi.h>
 
 #include <cstring>
 #include <iostream>
