@@ -107,10 +107,10 @@ endif(USE_OPENMP)
 if(USE_PYTHON)
 
     find_package( PythonLibs 3.3 REQUIRED )
-    find_package( PythonInterp 3.3 REQUIRED )
+    set(PYTHON_VERSION_STRING "${PYTHONLIBS_VERSION_STRING}")
 
     find_package_handle_standard_args(Python3 DEFAULT_MSG
-        PYTHON_VERSION_STRING PYTHON_EXECUTABLE PYTHON_INCLUDE_DIRS
+        PYTHON_VERSION_STRING PYTHON_INCLUDE_DIRS
         PYTHON_LIBRARIES)
 
 endif(USE_PYTHON)

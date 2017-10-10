@@ -254,19 +254,57 @@ ENDMACRO(GENERATE_DISTCLEAN_TARGET)
 
 
 #-----------------------------------------------------------------------
-# Resolve symbolic links and remove duplicates in CMAKE_PREFIX_PATH
+# Determine if two paths are the same
+#
+#-----------------------------------------------------------------------
+function(equal_paths VAR PATH1 PATH2)
+    get_filename_component(PATH1 ${PATH1} ABSOLUTE)
+    get_filename_component(PATH2 ${PATH2} ABSOLUTE)
+
+    if ("${PATH1}" STREQUAL "${PATH2}")
+        set(${VAR} ON PARENT_SCOPE)
+    else()
+        set(${VAR} OFF PARENT_SCOPE)
+    endif()
+endfunction(equal_paths VAR PATH1 PATH2)
+
+
+#-----------------------------------------------------------------------
+# Resolve symbolic links, remove duplicates, and remove system paths
+#   in CMAKE_PREFIX_PATH
 #
 #-----------------------------------------------------------------------
 function(clean_prefix_path)
     set(_prefix_path )
     foreach(_path ${CMAKE_PREFIX_PATH})
         get_filename_component(_path ${_path} REALPATH)
-        list(APPEND _prefix_path ${_path})
+        set(IS_SYS_PATH OFF)
+        # loop over system path types
+        foreach(_type PREFIX INCLUDE LIBRARY APPBUNDLE FRAMEWORK PROGRAM)
+            # loop over system paths
+            foreach(_syspath ${CMAKE_SYSTEM_${_type}_PATH})
+                # check if equal
+                equal_paths(IS_SYS_PATH ${_path} ${_syspath})
+                # exit loop if equal
+                if(IS_SYS_PATH)
+                    break()
+                endif(IS_SYS_PATH)
+            endforeach(_syspath ${CMAKE_SYSTEM_${_type}_PATH})
+            # exit loop if equal
+            if(IS_SYS_PATH)
+                break()
+            endif(IS_SYS_PATH)
+        endforeach(_type PREFIX INCLUDE LIBRARY APPBUNDLE FRAMEWORK PROGRAM)
+        # if not a system path
+        if(NOT IS_SYS_PATH)
+            list(APPEND _prefix_path ${_path})
+        endif(NOT IS_SYS_PATH)
     endforeach()
-
+    # remove any duplicates
     if(NOT "${_prefix_path}" STREQUAL "")
         list(REMOVE_DUPLICATES _prefix_path)
     endif()
+    # force the new prefix path
     set(CMAKE_PREFIX_PATH ${_prefix_path} CACHE PATH
         "Prefix path for finding packages" FORCE)
 endfunction()

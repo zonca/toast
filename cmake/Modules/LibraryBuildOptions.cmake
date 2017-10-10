@@ -12,7 +12,7 @@
 #
 #
 
-include(MacroUtilities)
+INCLUDE(MacroUtilities)
 
 #-----------------------------------------------------------------------
 # Set up Build types or configurations
@@ -21,9 +21,9 @@ include(MacroUtilities)
 # However, exercise care when doing this not to override existing flags!!
 # We don't do this on WIN32 platforms yet because of some teething issues
 # with compiler specifics and linker flags
-if(NOT WIN32)
-  include(BuildModes)
-endif()
+IF(NOT WIN32)
+  INCLUDE(BuildModes)
+ENDIF()
 
 #-----------------------------------------------------------------------
 # Setup Shared and/or Static Library builds
@@ -35,28 +35,36 @@ endif()
 OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON)
 OPTION(BUILD_STATIC_LIBS "Build static libraries" OFF)
 
-mark_as_advanced(BUILD_SHARED_LIBS BUILD_STATIC_LIBS)
+MARK_AS_ADVANCED(BUILD_SHARED_LIBS BUILD_STATIC_LIBS)
 
-if(BUILD_SHARED_LIBS AND NOT APPLE)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-endif()
+IF(BUILD_SHARED_LIBS AND NOT APPLE)
+    SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+ENDIF()
+
+IF(BUILD_STATIC_LIBS)
+    OPTION(COMPILE_PIC "Compile position independent code" OFF)
+    MARK_AS_ADVANCED(COMPILE_PIC)
+    IF(COMPILE_PIC)
+        SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    ENDIF(COMPILE_PIC)
+ENDIF(BUILD_STATIC_LIBS)
 
 # Because both could be switched off accidently, FATAL_ERROR if neither
 # option has been selected.
-if(NOT BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS)
-  message(WARNING "Neither static nor shared libraries will be built")
-endif()
+IF(NOT BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS)
+    MESSAGE(WARNING "Neither static nor shared libraries will be built")
+ENDIF()
 
 
 #-----------------------------------------------------------------------
 # Set the output paths to be backward compatible on UNIX
-if(NOT UNIX)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime)
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/library)
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/archive)
-else()
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-endif()
+IF(NOT UNIX)
+  SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/runtime)
+  SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/library)
+  SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/outputs/archive)
+ELSE()
+  SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+  SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+  SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+ENDIF()
 
