@@ -15,10 +15,13 @@ a BSD-style license that can be found in the LICENSE file.
 
 namespace toast
 {
+    //------------------------------------------------------------------------//
 
     void init ( int argc, char * argv[] );
 
     void finalize ( );
+
+    //------------------------------------------------------------------------//
 
     namespace util
     {
@@ -40,16 +43,20 @@ namespace toast
         }
     }
 
+    //------------------------------------------------------------------------//
+
     // same as using std::uint*_t but my IDE recognizes ensuing
-    // references as types so this simply looks better to me... 
+    // references as types so this simply looks better to me...
     typedef std::uint16_t   uint16_t;
     typedef std::uint32_t   uint32_t;
     typedef std::uint64_t   uint64_t;
 
+    //------------------------------------------------------------------------//
+
     inline uint32_t get_num_threads()
     {
         // we don't want to check enviroment every time (hence: static)
-        // and we don't want threads potentially having to 
+        // and we don't want threads potentially having to
         // reach for a remote place in memory (hence: thread_local)
         static thread_local uint32_t nthread = 0;
         if(nthread == 0)
@@ -57,6 +64,8 @@ namespace toast
                                               std::thread::hardware_concurrency());
         return nthread;
     }
+
+    //------------------------------------------------------------------------//
 
 }
 
