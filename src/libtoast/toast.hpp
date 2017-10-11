@@ -13,6 +13,10 @@ a BSD-style license that can be found in the LICENSE file.
 #include <sstream>
 #include <thread>
 
+#ifdef _OPENMP
+#  include <omp.h>
+#endif
+
 namespace toast
 {
     //------------------------------------------------------------------------//
@@ -55,6 +59,12 @@ namespace toast
 
     inline uint32_t get_num_threads()
     {
+#if !defined(USE_TBB) && !defined(_OPENMP)
+        return 1;
+#elif defined(_OPENMP) // since TBB is not used currently, don't use below
+//#elif !defined(USE_TBB) && defined(_OPENMP)
+        return omp_get_num_threads();
+#else
         // we don't want to check enviroment every time (hence: static)
         // and we don't want threads potentially having to
         // reach for a remote place in memory (hence: thread_local)
@@ -63,6 +73,7 @@ namespace toast
             nthread = util::get_env<uint32_t>("TOAST_NUM_THREADS",
                                               std::thread::hardware_concurrency());
         return nthread;
+#endif
     }
 
     //------------------------------------------------------------------------//

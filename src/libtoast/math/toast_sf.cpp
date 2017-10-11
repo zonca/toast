@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.
-All rights reserved.  Use of this source code is governed by 
+All rights reserved.  Use of this source code is governed by
 a BSD-style license that can be found in the LICENSE file.
 */
 
@@ -15,7 +15,7 @@ a BSD-style license that can be found in the LICENSE file.
 #endif
 
 #include <cmath>
-
+#include "toast.hpp"
 
 // Fixed length at which we have enough work to justify using threads.
 const static int toast_sf_ompthresh = 100;
@@ -122,10 +122,7 @@ void toast::sf::fast_erfinv ( int n, double const * in, double * out ) {
 
 void toast::sf::sin ( int n, double const * ang, double * sinout ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -143,10 +140,7 @@ void toast::sf::sin ( int n, double const * ang, double * sinout ) {
 
 void toast::sf::cos ( int n, double const * ang, double * cosout ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -164,10 +158,7 @@ void toast::sf::cos ( int n, double const * ang, double * cosout ) {
 
 void toast::sf::sincos ( int n, double const * ang, double * sinout, double * cosout ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -181,16 +172,13 @@ void toast::sf::sincos ( int n, double const * ang, double * sinout, double * co
             cosout[i] = ::cos ( ang[i] );
         }
     }
-    
+
     return;
 }
 
 void toast::sf::atan2 ( int n, double const * y, double const * x, double * ang ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -208,10 +196,7 @@ void toast::sf::atan2 ( int n, double const * y, double const * x, double * ang 
 
 void toast::sf::sqrt ( int n, double const * in, double * out ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -228,10 +213,7 @@ void toast::sf::sqrt ( int n, double const * in, double * out ) {
 
 void toast::sf::rsqrt ( int n, double const * in, double * out ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -249,10 +231,7 @@ void toast::sf::rsqrt ( int n, double const * in, double * out ) {
 
 void toast::sf::exp ( int n, double const * in, double * out ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -270,10 +249,7 @@ void toast::sf::exp ( int n, double const * in, double * out ) {
 
 void toast::sf::log ( int n, double const * in, double * out ) {
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     if ( n < toast_sf_ompthresh * nt ) {
         for ( int i = 0; i < n; ++i ) {
@@ -554,10 +530,7 @@ void toast::sf::fast_erfinv ( int n, double const * in, double * out ) {
     // https://people.maths.ox.ac.uk/gilesm/codes/erfinv/
     //
 
-    int nt = 1;
-    #ifdef _OPENMP
-    nt = omp_get_num_threads();
-    #endif
+    int nt = toast::get_num_threads();
 
     double * arg = static_cast < double * > ( toast::mem::aligned_alloc ( n * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
@@ -586,7 +559,7 @@ void toast::sf::fast_erfinv ( int n, double const * in, double * out ) {
 
     #pragma omp parallel for default(shared) private(i, p, w) schedule(static)
     for ( i = 0; i < n; ++i ) {
-        
+
         w = - lg[i];
 
         if ( w < 6.250000 ) {

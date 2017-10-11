@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.
-All rights reserved.  Use of this source code is governed by 
+All rights reserved.  Use of this source code is governed by
 a BSD-style license that can be found in the LICENSE file.
 */
 
@@ -13,9 +13,10 @@ a BSD-style license that can be found in the LICENSE file.
 #  include <omp.h>
 #endif
 
+#include "toast.hpp"
 
-// void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
-//     int64_t const * indx_submap, int64_t const * indx_pix, double const * weights, 
+// void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
+//     int64_t const * indx_submap, int64_t const * indx_pix, double const * weights,
 //     double scale, double const * signal, double * zdata, int64_t * hits, double * invnpp ) {
 
 //     #pragma omp parallel default(shared)
@@ -39,7 +40,7 @@ a BSD-style license that can be found in the LICENSE file.
 //                 hpx = (indx_submap[i] * subsize) + indx_pix[i];
 //                 ipx = (indx_submap[i] * subsize * block) + (indx_pix[i] * block);
 //                 zsig = scale * signal[i];
-                
+
 //                 memset ( tzdata, 0, nnz*sizeof(double) );
 //                 memset ( tinvnpp, 0, block*sizeof(double) );
 
@@ -70,8 +71,8 @@ a BSD-style license that can be found in the LICENSE file.
 // }
 
 
-void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
-    int64_t const * indx_submap, int64_t const * indx_pix, double const * weights, 
+void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
+    int64_t const * indx_submap, int64_t const * indx_pix, double const * weights,
     double scale, double const * signal, double * zdata, int64_t * hits, double * invnpp ) {
 
     #pragma omp parallel default(shared)
@@ -84,11 +85,11 @@ void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nn
         int64_t ipx;
         int64_t off;
 
-        int threads = 1;
         int trank = 0;
 
+        auto threads = toast::get_num_threads();
+
         #ifdef _OPENMP
-        threads = omp_get_num_threads();
         trank = omp_get_thread_num();
         #endif
 
@@ -121,7 +122,7 @@ void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nn
 }
 
 
-// void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
+// void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
 //     int64_t const * indx_submap, int64_t const * indx_pix, int64_t * hits ) {
 
 //     #pragma omp parallel default(shared)
@@ -147,7 +148,7 @@ void toast::cov::accumulate_diagonal ( int64_t nsub, int64_t subsize, int64_t nn
 // }
 
 
-void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
+void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
     int64_t const * indx_submap, int64_t const * indx_pix, int64_t * hits ) {
 
     #pragma omp parallel default(shared)
@@ -156,11 +157,10 @@ void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64
         int64_t i, j, k;
         int64_t hpx;
 
-        int threads = 1;
+        auto threads = toast::get_num_threads();
         int trank = 0;
 
         #ifdef _OPENMP
-        threads = omp_get_num_threads();
         trank = omp_get_thread_num();
         #endif
 
@@ -172,7 +172,7 @@ void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64
                 tpix = hpx % threads;
                 if ( tpix == trank ) {
                     hits[hpx] += 1;
-                }    
+                }
             }
         }
 
@@ -182,8 +182,8 @@ void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64
 }
 
 
-// void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
-//     int64_t const * indx_submap, int64_t const * indx_pix, double const * weights, 
+// void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
+//     int64_t const * indx_submap, int64_t const * indx_pix, double const * weights,
 //     double scale, int64_t * hits, double * invnpp ) {
 
 //     #pragma omp parallel default(shared)
@@ -228,8 +228,8 @@ void toast::cov::accumulate_diagonal_hits ( int64_t nsub, int64_t subsize, int64
 // }
 
 
-void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
-    int64_t const * indx_submap, int64_t const * indx_pix, double const * weights, 
+void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
+    int64_t const * indx_submap, int64_t const * indx_pix, double const * weights,
     double scale, int64_t * hits, double * invnpp ) {
 
     #pragma omp parallel default(shared)
@@ -241,11 +241,10 @@ void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int
         int64_t ipx;
         int64_t off;
 
-        int threads = 1;
+        auto threads = toast::get_num_threads();
         int trank = 0;
 
         #ifdef _OPENMP
-        threads = omp_get_num_threads();
         trank = omp_get_thread_num();
         #endif
 
@@ -276,8 +275,8 @@ void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int
 }
 
 
-// void toast::cov::accumulate_zmap ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
-//     int64_t const * indx_submap, int64_t const * indx_pix, double const * weights, 
+// void toast::cov::accumulate_zmap ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
+//     int64_t const * indx_submap, int64_t const * indx_pix, double const * weights,
 //     double scale, double const * signal, double * zdata ) {
 
 //     #pragma omp parallel default(shared)
@@ -314,8 +313,8 @@ void toast::cov::accumulate_diagonal_invnpp ( int64_t nsub, int64_t subsize, int
 // }
 
 
-void toast::cov::accumulate_zmap ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp, 
-    int64_t const * indx_submap, int64_t const * indx_pix, double const * weights, 
+void toast::cov::accumulate_zmap ( int64_t nsub, int64_t subsize, int64_t nnz, int64_t nsamp,
+    int64_t const * indx_submap, int64_t const * indx_pix, double const * weights,
     double scale, double const * signal, double * zdata ) {
 
     #pragma omp parallel default(shared)
@@ -323,12 +322,11 @@ void toast::cov::accumulate_zmap ( int64_t nsub, int64_t subsize, int64_t nnz, i
         int64_t i, j, k;
         int64_t hpx;
         int64_t zpx;
-        
-        int threads = 1;
+
+        auto threads = toast::get_num_threads();
         int trank = 0;
 
         #ifdef _OPENMP
-        threads = omp_get_num_threads();
         trank = omp_get_thread_num();
         #endif
 
@@ -366,7 +364,7 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
 
     if ( nnz == 1 ) {
         // shortcut for NNZ == 1
-        
+
         if ( do_invert == 0 ) {
 
             for ( i = 0; i < nsub; ++i ) {
@@ -401,17 +399,17 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
         }
 
     } else {
-    
+
         // We assume a large value here, since the work space needed
         // will still be small.
         int NB = 256;
-    
+
         int lwork = NB * 2 + (int)nnz;
         int fnnz = (int)nnz;
-        
+
         double fzero = 0.0;
         double fone = 1.0;
-    
+
         char jobz_vec = 'V';
         char jobz_val = 'N';
         char uplo = 'L';
@@ -432,22 +430,22 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
             double emin;
             double emax;
             double rcond;
-        
+
             int info;
 
-            double * fdata = static_cast < double * > ( toast::mem::aligned_alloc ( 
+            double * fdata = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
-            
-            double * ftemp = static_cast < double * > ( toast::mem::aligned_alloc ( 
+
+            double * ftemp = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
-            
-            double * finv = static_cast < double * > ( toast::mem::aligned_alloc ( 
+
+            double * finv = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
-            
-            double * evals = static_cast < double * > ( toast::mem::aligned_alloc ( 
+
+            double * evals = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
-            
-            double * work = static_cast < double * > ( toast::mem::aligned_alloc ( 
+
+            double * work = static_cast < double * > ( toast::mem::aligned_alloc (
                 lwork * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
             // Here we "unroll" the loop over submaps and pixels within each submap.
@@ -457,7 +455,7 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
             for ( i = 0; i < (nsub * subsize); ++i ) {
 
                 dpx = i * block;
-                    
+
                 // copy to fortran buffer
                 off = 0;
                 ::memset ( fdata, 0, nnz*nnz*sizeof(double) );
@@ -478,7 +476,7 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
                 rcond = 0.0;
 
                 if ( info == 0 ) {
-                    
+
                     // it worked, compute condition number
                     emin = 1.0e100;
                     emax = 0.0;
@@ -503,9 +501,9 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
                                     ftemp[k*nnz + m] = evals[k] * fdata[k*nnz + m];
                                 }
                             }
-                            toast::lapack::gemm(&transN, &transT, &fnnz, &fnnz, &fnnz, 
+                            toast::lapack::gemm(&transN, &transT, &fnnz, &fnnz, &fnnz,
                                 &fone, ftemp, &fnnz, fdata, &fnnz, &fzero, finv, &fnnz);
-                                
+
                             off = 0;
                             for ( k = 0; k < nnz; ++k ) {
                                 for ( m = k; m < nnz; ++m ) {
@@ -521,7 +519,7 @@ void toast::cov::eigendecompose_diagonal ( int64_t nsub, int64_t subsize, int64_
                     }
 
                 }
-                
+
                 if ( do_invert != 0 ) {
                     if ( info != 0 ) {
                         off = 0;
@@ -574,10 +572,10 @@ void toast::cov::multiply_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz,
     } else {
 
         int fnnz = (int)nnz;
-        
+
         double fzero = 0.0;
         double fone = 1.0;
-    
+
         char uplo = 'L';
         char side = 'L';
 
@@ -592,13 +590,13 @@ void toast::cov::multiply_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz,
             int64_t m;
             int64_t off;
 
-            double * fdata1 = static_cast < double * > ( toast::mem::aligned_alloc ( 
+            double * fdata1 = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
-            double * fdata2 = static_cast < double * > ( toast::mem::aligned_alloc ( 
+            double * fdata2 = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
-            double * fdata3 = static_cast < double * > ( toast::mem::aligned_alloc ( 
+            double * fdata3 = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
             // Here we "unroll" the loop over submaps and pixels within each submap.
@@ -606,15 +604,15 @@ void toast::cov::multiply_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz,
 
             #pragma omp for schedule(static)
             for ( i = 0; i < (nsub * subsize); ++i ) {
-                
+
                 px = i * block;
-                    
+
                 // copy to fortran buffer
 
                 ::memset ( fdata1, 0, nnz*nnz*sizeof(double) );
                 ::memset ( fdata2, 0, nnz*nnz*sizeof(double) );
                 ::memset ( fdata3, 0, nnz*nnz*sizeof(double) );
-                
+
                 off = 0;
                 for ( k = 0; k < nnz; ++k ) {
                     for ( m = k; m < nnz; ++m ) {
@@ -680,7 +678,7 @@ void toast::cov::apply_diagonal ( int64_t nsub, int64_t subsize, int64_t nnz,
         int64_t m;
         int64_t off;
 
-        double * temp = static_cast < double * > ( toast::mem::aligned_alloc ( 
+        double * temp = static_cast < double * > ( toast::mem::aligned_alloc (
                 nnz * sizeof(double), toast::mem::SIMD_ALIGN ) );
 
         for ( i = 0; i < nsub; ++i ) {
