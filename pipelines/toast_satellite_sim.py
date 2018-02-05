@@ -735,6 +735,87 @@ def main():
     if comm.comm_world.rank == 0:
         print("Total Time:  {:.2f} seconds".format(elapsed), flush=True)
 
+    import healpy
+    from astropy.io import fits
+    for obs in data.obs:
+        tod = obs['tod']
+        times = tod.read_times()
+        glflags = tod.local_common_flags()
+
+        for det in tod.local_dets:
+            flags = tod.local_flags(det)
+
+            pixels = tod.cache.reference('pixels_{0}'.format(det))
+            quat = tod.cache.reference('quat_{0}'.format(det))
+            theta, phi, psi = qa.to_angles(quat, IAU=True)
+
+            total_tod = tod.cache.reference('tot_signal_{0}'.format(det))
+            dipole_tod = tod.cache.reference('dipole_{0}'.format(det))
+            signal_tod = tod.cache.reference('signal_{0}'.format(det))
+
+            hdu = fits.BinTableHDU.from_columns([fits.Column(name='TIME',
+                                                             format='D',
+                                                             unit='s',
+                                                             array=times),
+                                                 fits.Column(name='THETA',
+                                                             format='E',
+                                                             unit='rad',
+                                                             array=theta),
+                                                 fits.Column(name='PHI',
+                                                             format='E',
+                                                             unit='rad',
+                                                             array=phi),
+                                                 fits.Column(name='PSI',
+                                                             format='E',
+                                                             unit='rad',
+                                                             array=psi),
+                                                 fits.Column(name='FGTOD',
+                                                             format='E',
+                                                             unit='K',
+                                                             array=signal_tod),
+                                                 fits.Column(name='DIPTOD',
+                                                             format='E',
+                                                             unit='K',
+                                                             array=dipole_tod),
+                                                 fits.Column(name='TOTALTOD',
+                                                             format='E',
+                                                             unit='V',
+                                                             array=total_tod),
+                                                 fits.Column(name='FLAGS',
+                                                             format='I',
+                                                             unit='',
+                                                             array=flags),
+                                                 fits.Column(name='GLFLAGS',
+                                                             format='I',
+                                                             unit='',
+                                                             array=glflags)])
+            hdu.header['COMMENT'] = 'Angles are expressed in the Ecliptic system'
+            hdu.header['FIRSTT'] = (times[0], 'Time of the first sample [s]')
+            hdu.header['LASTT'] = (times[-1], 'Time of the last sample [s]')
+            #hdu.header['GAIN'] = (det.gain, 'Detector gain [V/K]')
+            hdu.header['NAME'] = (det, 'Name of the detector')
+            hdu.header['VERSION'] = ("0.1",
+                                     'Version of the code used to create '
+                                     'this file')
+
+            hdu.header['net'] = (NET[det], 'net')
+            hdu.header['ALPHA'] = (alpha[det], 'Slope of the 1/f noise')
+            hdu.header['FKNEE'] = (fknee[det],
+                                   'Knee frequency of the 1/f noise [Hz]')
+
+            output_file = os.path.join(args.outdir + "_000",
+                                       ('tod_{}_{}.fits'
+                                        .format(det, obs["name"])))
+
+            # Save a copy of the parameter file into the primary HDU of the file,
+            # so that it will be always possible to know the value of the input parameters
+            # used to create it
+            prim_hdu = fits.PrimaryHDU()
+            hdu_list = fits.HDUList([prim_hdu, hdu])
+            hdu_list.writeto(output_file, overwrite=True)
+
+            del pixels, quat, signal_tod, dipole_tod, total_tod, flags
+        del glflags
 
 if __name__ == "__main__":
     try:
