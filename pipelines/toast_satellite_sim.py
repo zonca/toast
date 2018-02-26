@@ -449,10 +449,12 @@ def main():
                 flag_mask=255, common_flag_mask=255)
         op_sim_dipole.exec(data)
 
-        for det in tod.local_dets:
-            ref_out = tod.cache.reference(signalname + "_" + det)
-            ref_out += tod.cache.reference("dipole" + "_" + det)
-            del ref_out
+        for obs in data.obs:
+            tod = obs["tod"]
+            for det in tod.local_dets:
+                ref_out = tod.cache.reference(signalname + "_" + det)
+                ref_out += tod.cache.reference("dipole" + "_" + det)
+                del ref_out
 
     # Mapmaking.  For purposes of this simulation, we use detector noise
     # weights based on the NET (white noise level).  If the destriping
