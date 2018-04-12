@@ -4,7 +4,7 @@
 # All rights reserved.  Use of this source code is governed by
 # a BSD-style license that can be found in the LICENSE file.
 
-from toast.mpi import MPI
+from toast.mpi import MPI, finalize
 
 import os
 import sys
@@ -373,6 +373,7 @@ def main():
             comm.comm_group,
             detquats,
             obsrange[ob].samples,
+            firstsamp=obsrange[ob].first,
             firsttime=obsrange[ob].start,
             rate=args.samplerate,
             spinperiod=args.spinperiod,
@@ -414,8 +415,8 @@ def main():
         # Constantly slewing precession axis
         degday = 360.0 / 365.25
         precquat = tt.slew_precession_axis(nsim=tod.local_samples[1],
-            firstsamp=obsoffset, samplerate=args.samplerate,
-            degday=degday)
+            firstsamp=(obsoffset + tod.local_samples[0]),
+            samplerate=args.samplerate, degday=degday)
 
         tod.set_prec_axis(qprec=precquat)
 
@@ -442,12 +443,15 @@ def main():
     localpix, localsm, subnpix = get_submaps(args, comm, data)
 
     signalname = "signal"
+    has_signal = False
     if args.input_pysm_model:
+        has_signal = True
         simulate_sky_signal(args, comm, data, mem_counter,
                                          [fp], subnpix, localsm, signalname=signalname)
 
     if args.input_dipole:
         print("Simulating dipole")
+        has_signal = True
         op_sim_dipole = tt.OpSimDipole(mode=args.input_dipole,
                 solar_speed=args.input_dipole_solar_speed_kms,
                 solar_gal_lat=args.input_dipole_solar_gal_lat_deg,
@@ -479,6 +483,7 @@ def main():
 
     if not args.madam:
         pass
+
     else:
 
         # Set up MADAM map making.
@@ -536,7 +541,8 @@ def main():
             nse.exec(data)
 
             # add sky signal
-            add_sky_signal(args, comm, data, totalname="tot_signal", signalname=signalname)
+            if has_signal:
+                add_sky_signal(args, comm, data, totalname="tot_signal", signalname=signalname)
 
             comm.comm_world.barrier()
             stop = MPI.Wtime()
@@ -665,7 +671,6 @@ if __name__ == "__main__":
         main()
         tman = timing.timing_manager()
         tman.report()
-        MPI.Finalize()
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
@@ -673,3 +678,4 @@ if __name__ == "__main__":
         print("".join(lines), flush=True)
         toast.raise_error(6) # typical error code for SIGABRT
         MPI.COMM_WORLD.Abort(6)
+    finalize()
