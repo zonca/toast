@@ -138,7 +138,7 @@ class OpSimPySM(Operator):
 
         lmax = 3 * self.nside - 1
 
-        if self.comm.rank == 0:
+        if self.comm.rank == 0 and self._debug:
             print('Collecting, Broadcasting map', flush=True)
         start = MPI.Wtime()
         local_maps = dict()  # FIXME use Cache instead
@@ -189,10 +189,14 @@ class OpSimPySM(Operator):
                 print('Communication completed', flush=True)
             if self.comm.rank == 0 and self.coord != "G":
                 # PySM is always in Galactic, make rotation to Ecliptic or Equatorial
-                rot = hp.Rotator(coord = [self.coord, "G"])
-                theta_gal, phi_gal = rot(hp.pix2ang(self.nside, np.arange(self.npix)))
-                for pol in range(3):
-                    full_map_rank0[pol] = hp.get_interp_val(full_map_rank0[pol], theta_gal, phi_gal)
+                rot = hp.Rotator(coord = ["G", self.coord])
+                # this requires healpy 1.12
+                try:
+                    full_map_rank0 = rot.rotate_map(full_map_rank0)
+                except AttributeError:
+                    print('PySM coordinate conversion from G to another reference frame requires'
+                          'healpy.Rotator.rotate_map available since healpy 1.12')
+                    raise
             if self.comm.rank == 0 and self._nest:
                 # PySM is RING, toast is NEST
                 full_map_rank0 = hp.reorder(full_map_rank0, r2n=True)

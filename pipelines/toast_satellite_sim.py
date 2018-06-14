@@ -8,6 +8,7 @@ from toast.mpi import MPI, finalize
 
 import os
 import sys
+import time
 
 import re
 import argparse
@@ -107,7 +108,7 @@ def simulate_sky_signal(args, comm, data, mem_counter, focalplanes, subnpix, loc
                                subnpix=subnpix, localsm=localsm,
                                apply_beam=args.apply_beam,
                                debug=args.debug,
-                               coord="E")
+                               coord=args.coord)
     op_sim_pysm.exec(data)
     stop = MPI.Wtime()
     if comm.comm_world.rank == 0:
@@ -118,6 +119,8 @@ def simulate_sky_signal(args, comm, data, mem_counter, focalplanes, subnpix, loc
             ref = tod.cache.reference(signalname + "_" + det)
             print('PySM signal first observation min max', det, ref.min(), ref.max())
             del ref
+
+    del op_sim_pysm
 
     mem_counter.exec(data)
 
@@ -180,6 +183,9 @@ def main():
         help="Healpix NSIDE" )
     parser.add_argument( "--subnside", required=False, type=int, default=4,
         help="Distributed pixel sub-map NSIDE" )
+
+    parser.add_argument('--coord', required=False, default='E',
+        help='Sky coordinate system [C,E,G]')
 
     parser.add_argument( "--baseline", required=False, type=float,
         default=60.0, help="Destriping baseline length (seconds)" )
@@ -297,8 +303,8 @@ def main():
     stop = MPI.Wtime()
     elapsed = stop - start
     if comm.comm_world.rank == 0:
-        print("Create focalplane:  {:.2f} seconds".format(stop-start),
-            flush=True)
+        print("Create focalplane ({} dets):  {:.2f} seconds"\
+            .format(len(fp.keys()), stop-start), flush=True)
     start = stop
 
     if args.debug:
@@ -374,6 +380,7 @@ def main():
             comm.comm_group,
             detquats,
             obsrange[ob].samples,
+            coord=args.coord,
             firstsamp=obsrange[ob].first,
             firsttime=obsrange[ob].start,
             rate=args.samplerate,
@@ -415,11 +422,14 @@ def main():
 
         # Constantly slewing precession axis
         degday = 360.0 / 365.25
-        precquat = tt.slew_precession_axis(nsim=tod.local_samples[1],
+        precquat = np.empty(4*tod.local_samples[1],
+                            dtype=np.float64).reshape((-1,4))
+        tt.slew_precession_axis(precquat,
             firstsamp=(obsoffset + tod.local_samples[0]),
             samplerate=args.samplerate, degday=degday)
 
         tod.set_prec_axis(qprec=precquat)
+        del precquat
 
     stop = MPI.Wtime()
     elapsed = stop - start
@@ -448,7 +458,7 @@ def main():
     if args.input_pysm_model:
         has_signal = True
         simulate_sky_signal(args, comm, data, mem_counter,
-                                         [fp], subnpix, localsm, signalname=signalname)
+                            [fp], subnpix, localsm, signalname=signalname)
 
     if args.input_dipole:
         print("Simulating dipole")
@@ -461,10 +471,11 @@ def main():
                 keep_quats=True,
                 keep_vel=False,
                 subtract=False,
-                coord="E",
+                coord=args.coord,
                 freq=0,  # we could use frequency for quadrupole correction
                 flag_mask=255, common_flag_mask=255)
         op_sim_dipole.exec(data)
+        del op_sim_dipole
 
         for obs in data.obs:
             tod = obs["tod"]
