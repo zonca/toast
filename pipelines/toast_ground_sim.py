@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2015-2017 by the parties listed in the AUTHORS file.
+# Copyright (c) 2015-2018 by the parties listed in the AUTHORS file.
 # All rights reserved.  Use of this source code is governed by
 # a BSD-style license that can be found in the LICENSE file.
 
-from toast.mpi import MPI
+import os
+if 'TOAST_STARTUP_DELAY' in os.environ:
+    import numpy as np
+    import time
+    delay = np.float(os.environ['TOAST_STARTUP_DELAY'])
+    wait = np.random.rand() * delay
+    #print('Sleeping for {} seconds before importing TOAST'.format(wait),
+    #      flush=True)
+    time.sleep(wait)
+
+from toast.mpi import MPI, finalize
 
 import argparse
 import copy
@@ -207,6 +217,9 @@ def parse_arguments(comm):
     parser.add_argument('--madam_baseline_order',
                         required=False, default=0, type=np.int,
                         help='Destriping baseline polynomial order')
+    parser.add_argument('--madam_precond_width',
+                        required=False, default=1, type=np.int,
+                        help='Madam preconditioner width')
     parser.add_argument('--madam_noisefilter',
                         required=False, default=False, action='store_true',
                         help='Destripe with the noise filter enabled')
@@ -512,6 +525,18 @@ def get_breaks(comm, all_ces, nces, args):
                 breaks.append(nces + i + 1)
 
     nbreak = len(breaks)
+    if nbreak < comm.ngroups-1:
+        if comm.comm_world.rank == 0:
+            print('WARNING: there are more process groups than observing days. '
+                  'Will try distributing by observation.', flush=True)
+        breaks = []
+        for i in range(nces-1):
+            scan1 = all_ces[i][4]
+            scan2 = all_ces[i+1][4]
+            if scan1 != scan2:
+                breaks.append(nces + i + 1)
+        nbreak = len(breaks)
+
     if nbreak != comm.ngroups-1:
         raise RuntimeError(
             'Number of observing days ({}) does not match number of process '
@@ -876,7 +901,11 @@ def setup_madam(args, comm):
     pars['write_hits'] = not args.skip_hits
     pars['nside_cross'] = cross
     pars['nside_submap'] = submap
-    pars['allreduce'] = not args.no_madam_allreduce
+    if args.no_madam_allreduce:
+        pars['allreduce'] = False
+    else:
+        pars['allreduce'] = True
+    pars['reassign_submaps'] = True
     pars['pixlim_cross'] = 1e-3
     pars['pixmode_cross'] = 2
     pars['pixlim_map'] = 1e-2
@@ -907,7 +936,7 @@ def setup_madam(args, comm):
         pars['kfilter'] = True
     else:
         pars['kfilter'] = False
-    pars['precond_width'] = 1
+    pars['precond_width'] = args.madam_precond_width
     pars['fsample'] = args.samplerate
     pars['iter_max'] = args.madam_iter_max
     pars['file_root'] = args.madam_prefix
@@ -1291,11 +1320,15 @@ def apply_madam(args, comm, time_comms, data, telescope_data, freq, madampars,
             print('No Madam outputs requested.  Skipping.', flush=args.flush)
         return
 
+    if args.madam_noisefilter:
+        madam_intervals = None
+    else:
+        madam_intervals = 'intervals'
     madam = tm.OpMadam(
         params=pars, detweights=detweights,
         name=totalname_madam,
         common_flag_mask=args.common_flag_mask,
-        purge_tod=False)
+        purge_tod=False, intervals=madam_intervals)
 
     if 'info' in madam.params:
         info = madam.params['info']
@@ -1523,3 +1556,4 @@ if __name__ == '__main__':
         print('*** tb_lineno:', exc_traceback.tb_lineno, flush=True)
         toast.raise_error(6) # typical error code for SIGABRT
         MPI.COMM_WORLD.Abort(6)
+    finalize()

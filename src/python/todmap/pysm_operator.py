@@ -44,7 +44,7 @@ def extract_detector_parameters(det, focalplanes):
         if det in fp:
             if "fwhm" in fp[det]:
                 return fp[det]["bandcenter_ghz"], fp[det]["bandwidth_ghz"], \
-                    fp[det]["fwhm"]
+                    fp[det]["fwhm"] / 60
             else:
                 return fp[det]["bandcenter_ghz"], fp[det]["bandwidth_ghz"], -1
     raise RuntimeError("Cannot find detector {} in any focalplane")
@@ -69,9 +69,10 @@ class OpSimPySM(Operator):
     """
 
     def __init__(self, comm=None,
-                 out='signal', pysm_model='', focalplanes=None, nside=None,
+                 out='signal', pysm_model='', pysm_precomputed_cmb_K_CMB=None,
+                 focalplanes=None, nside=None,
                  subnpix=None, localsm=None, apply_beam=False, nest=True,
-                 units='K_CMB', debug=False):
+                 units='K_CMB', debug=False, coord="G"):
         autotimer = timing.auto_timer(type(self).__name__)
         # We call the parent class constructor, which currently does nothing
         super().__init__()
@@ -79,9 +80,11 @@ class OpSimPySM(Operator):
         self._nest = nest
         self.comm = comm
         self._debug = debug
+        self.pysm_precomputed_cmb_K_CMB = pysm_precomputed_cmb_K_CMB
         self.dist_rings = DistRings(comm,
                                     nside=nside,
                                     nnz=3)
+        self.coord = coord
 
         pysm_sky_components = [
             'synchrotron',
@@ -99,6 +102,7 @@ class OpSimPySM(Operator):
         self.pysm_sky = PySMSky(comm=self.comm,
                                 local_pixels=self.dist_rings.local_pixels,
                                 nside=nside, pysm_sky_config=pysm_sky_config,
+                                pysm_precomputed_cmb_K_CMB=self.pysm_precomputed_cmb_K_CMB,
                                 units=units)
 
         self.nside = nside
@@ -183,6 +187,12 @@ class OpSimPySM(Operator):
             self.comm.Barrier()
             if self.comm.rank == 0 and self._debug:
                 print('Communication completed', flush=True)
+            if self.comm.rank == 0 and self.coord != "G":
+                # PySM is always in Galactic, make rotation to Ecliptic or Equatorial
+                rot = hp.Rotator(coord = [self.coord, "G"])
+                theta_gal, phi_gal = rot(hp.pix2ang(self.nside, np.arange(self.npix)))
+                for pol in range(3):
+                    full_map_rank0[pol] = hp.get_interp_val(full_map_rank0[pol], theta_gal, phi_gal)
             if self.comm.rank == 0 and self._nest:
                 # PySM is RING, toast is NEST
                 full_map_rank0 = hp.reorder(full_map_rank0, r2n=True)
@@ -190,6 +200,7 @@ class OpSimPySM(Operator):
 
             self.comm.Barrier()
             if self.comm.rank == 0 and self._debug:
+                print('PySM map min and max pixel value', hp.ma(full_map_rank0).min(), hp.ma(full_map_rank0).max(), flush=True)
                 print('Broadcasting the map to other processes', flush=True)
             self.distmap.broadcast_healpix_map(full_map_rank0)
             self.comm.Barrier()
@@ -197,6 +208,10 @@ class OpSimPySM(Operator):
                 print('Running OpSimScan', flush=True)
             scansim = OpSimScan(distmap=self.distmap, out=self._out, dets=[det])
             scansim.exec(data)
+            if self.comm.rank == 0 and self._debug:
+                tod = data.obs[0]["tod"]
+                sig = tod.cache.reference(self._out + "_" + det)
+                print('Rank 0 timeline min max after smoothing', sig.min(), sig.max(), flush=True)
 
         stop = MPI.Wtime()
         if self.comm.rank == 0:

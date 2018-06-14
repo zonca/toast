@@ -52,6 +52,8 @@ def slew_precession_axis(nsim=1000, firstsamp=0, samplerate=100.0, degday=1.0):
         shape (nsim, 4).
     """
     autotimer = timing.auto_timer()
+    zaxis = np.array([0.0, 0.0, 1.0])
+
     # this is the increment in radians per sample
     angincr = degday * (np.pi / 180.0) / (24.0 * 3600.0 * samplerate)
 
@@ -62,7 +64,8 @@ def slew_precession_axis(nsim=1000, firstsamp=0, samplerate=100.0, degday=1.0):
 
     satang = np.arange(nsim, dtype=np.float64)
     satang *= angincr
-    satang += angincr * firstsamp + (np.pi / 2)
+    satang += angincr * firstsamp
+    #satang += angincr * firstsamp + (np.pi / 2)
 
     cang = np.cos(satang)
     sang = np.sin(satang)
@@ -71,17 +74,7 @@ def slew_precession_axis(nsim=1000, firstsamp=0, samplerate=100.0, degday=1.0):
     sataxis = np.concatenate((cang.reshape(-1, 1), sang.reshape(-1, 1),
                               np.zeros((nsim, 1))), axis=1)
 
-    # the rotation about the axis is always pi/2
-    csatrot = np.cos(0.25 * np.pi)
-    ssatrot = np.sin(0.25 * np.pi)
-
-    # now construct the axis-angle quaternions for the precession
-    # axis
-    sataxis = np.multiply(np.repeat(ssatrot, nsim).reshape(-1,1), sataxis)
-    satquat = np.concatenate((sataxis, np.repeat(csatrot, nsim).reshape(-1,1)),
-                             axis=1)
-
-    return satquat
+    return qa.from_vectors(np.tile(zaxis, nsim).reshape(-1, 3), sataxis)
 
 
 def satellite_scanning(nsim=1000, firstsamp=0, samplerate=100.0, qprec=None,
@@ -97,6 +90,9 @@ def satellite_scanning(nsim=1000, firstsamp=0, samplerate=100.0, qprec=None,
 
     Args:
         nsim (int) : The number of samples to simulate.
+        firstsamp (int): The offset in samples from the start
+            of rotation.
+        samplerate (float): The sampling rate in Hz.
         qprec (ndarray): If None (the default), then the
             precession axis will be fixed along the
             X axis.  If a 1D array of size 4 is given,
@@ -105,7 +101,6 @@ def satellite_scanning(nsim=1000, firstsamp=0, samplerate=100.0, qprec=None,
             precession axis.  If a 2D array of shape
             (nsim, 4) is given, this is the time-varying
             rotation of the Z axis to the precession axis.
-        samplerate (float): The sampling rate in Hz.
         spinperiod (float): The period (in minutes) of the
             rotation about the spin axis.
         spinangle (float): The opening angle (in degrees)
@@ -371,6 +366,8 @@ class TODSatellite(TOD):
         detectors (dictionary): each key is the detector name, and each value
             is a quaternion tuple.
         samples (int):  The total number of samples.
+        firstsamp (int): The offset in samples from the start
+            of the mission.
         firsttime (float): starting time of data.
         rate (float): sample rate in Hz.
         spinperiod (float): The period (in minutes) of the
@@ -384,13 +381,14 @@ class TODSatellite(TOD):
         All other keyword arguments are passed to the parent constructor.
 
     """
-    def __init__(self, mpicomm, detectors, samples, firsttime=0.0, rate=100.0,
-                 spinperiod=1.0, spinangle=85.0, precperiod=0.0, precangle=0.0,
-                 **kwargs):
+    def __init__(self, mpicomm, detectors, samples, firstsamp=0, firsttime=0.0,
+        rate=100.0, spinperiod=1.0, spinangle=85.0, precperiod=0.0,
+        precangle=0.0, **kwargs):
 
         self._fp = detectors
         self._detlist = sorted(list(self._fp.keys()))
 
+        self._firstsamp = firstsamp
         self._firsttime = firsttime
         self._rate = rate
         self._spinperiod = spinperiod
@@ -440,7 +438,8 @@ class TODSatellite(TOD):
 
         # generate and cache the boresight pointing
         self._boresight = satellite_scanning(
-            nsim=self.local_samples[1], firstsamp=self.local_samples[0],
+            nsim=self.local_samples[1],
+            firstsamp=(self._firstsamp + self.local_samples[0]),
             qprec=qprec, samplerate=self._rate, spinperiod=self._spinperiod,
             spinangle=self._spinangle, precperiod=self._precperiod,
             precangle=self._precangle)
@@ -991,6 +990,11 @@ class TODGround(TOD):
         quats = np.zeros([n, 4])
         for i, t in enumerate(times):
             quats[i] = self._get_coord_quat(t)
+            # Make sure we have a consistent branch in the quaternions.
+            # Otherwise we'll get interpolation issues.
+            if i > 0 and (np.sum(np.abs(quats[i-1]+quats[i]))
+                          < np.sum(np.abs(quats[i-1]-quats[i]))):
+                quats[i] *= -1
         quats = qa.norm(quats)
 
         return times, quats
@@ -1017,7 +1021,7 @@ class TODGround(TOD):
             xra, xdec = self._observer.radec_of(       0,       0, fixed=False)
             yra, ydec = self._observer.radec_of(-np.pi/2,       0, fixed=False)
             zra, zdec = self._observer.radec_of(       0, np.pi/2, fixed=False)
-        except:
+        except Exception as e:
             # Modified pyephem not available.
             # Translated pointing will include stellar aberration.
             xra, xdec = self._observer.radec_of(       0,       0)
@@ -1026,16 +1030,42 @@ class TODGround(TOD):
         self._observer.pressure = pressure
         xvec, yvec, zvec = ang2vec(np.pi/2-np.array([xdec, ydec, zdec]),
                                    np.array([xra, yra, zra]))
+        # Orthonormalize for numerical stability
+        xvec /= np.sqrt(np.dot(xvec, xvec))
+        yvec -= np.dot(xvec, yvec) * xvec
+        yvec /= np.sqrt(np.dot(yvec, yvec))
+        zvec -= np.dot(xvec, zvec) * xvec + np.dot(yvec, zvec) * yvec
+        zvec /= np.sqrt(np.dot(zvec, zvec))
         # Solve for the quaternions from the transformed axes.
         X = (xvec[1] + yvec[0]) / 4
         Y = (xvec[2] + zvec[0]) / 4
         Z = (yvec[2] + zvec[1]) / 4
-        d = np.sqrt(Y * Z / X) # Choose positive root
+        """
+        if np.abs(X) < 1e-6 and np.abs(Y) < 1e-6:
+            # Avoid dividing with small numbers
+            c = .5 * np.sqrt(1 - xvec[0] + yvec[1] - zvec[2])
+            d = np.sqrt(c**2 + .5 * (zvec[2] - yvec[1]))
+            b = np.sqrt(.5 * (1 - zvec[2]) - c**2)
+            a = np.sqrt(1 - b**2 - c**2 - d**2)
+        else:
+        """
+        d = np.sqrt(np.abs(Y * Z / X)) # Choose positive root
         c = d * X / Y
         b = X / c
         a = (xvec[1]/2 - b*c) / d
         # qarray has the scalar part as the last index
-        quat = np.array([b, c, d, a])
+        quat = qa.norm(np.array([b, c, d, a]))
+        # DEBUG begin
+        errors = np.array([
+            np.dot(qa.rotate(quat, [1, 0, 0]), xvec),
+            np.dot(qa.rotate(quat, [0, 1, 0]), yvec),
+            np.dot(qa.rotate(quat, [0, 0, 1]), zvec)])
+        errors[errors > 1] = 1
+        errors = np.degrees(np.arccos(errors))
+        if np.any(errors > 1) or np.any(np.isnan(errors)):
+            raise RuntimeError('Quaternion is not right: ({}), ({} {} {})'
+                               ''.format(errors, X, Y, Z))
+        # DEBUG end
         return quat
 
     def free_azel_quats(self):

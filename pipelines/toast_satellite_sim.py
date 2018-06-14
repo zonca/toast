@@ -4,7 +4,7 @@
 # All rights reserved.  Use of this source code is governed by
 # a BSD-style license that can be found in the LICENSE file.
 
-from toast.mpi import MPI
+from toast.mpi import MPI, finalize
 
 import os
 import sys
@@ -39,11 +39,18 @@ def add_sky_signal(args, comm, data, totalname, signalname):
                 cachename_in = '{}_{}'.format(signalname, det)
                 cachename_out = '{}_{}'.format(totalname, det)
                 ref_in = tod.cache.reference(cachename_in)
+                if comm.comm_world.rank == 0 and args.debug:
+                    print('add_sky_signal', signalname, 'to', totalname, flush=args.flush)
+                    print(signalname, 'min max', ref_in.min(), ref_in.max())
                 if tod.cache.exists(cachename_out):
                     ref_out = tod.cache.reference(cachename_out)
+                    if comm.comm_world.rank == 0 and args.debug:
+                        print(totalname, 'min max', ref_out.min(), ref_out.max())
                     ref_out += ref_in
                 else:
                     ref_out = tod.cache.put(cachename_out, ref_in)
+                if comm.comm_world.rank == 0 and args.debug:
+                    print('final', 'min max', ref_out.min(), ref_out.max())
                 del ref_in, ref_out
 
     return
@@ -94,15 +101,23 @@ def simulate_sky_signal(args, comm, data, mem_counter, focalplanes, subnpix, loc
     op_sim_pysm = ttm.OpSimPySM(comm=comm.comm_rank,
                                out=signalname,
                                pysm_model=args.input_pysm_model,
+                               pysm_precomputed_cmb_K_CMB=args.input_pysm_precomputed_cmb_K_CMB,
                                focalplanes=focalplanes,
                                nside=args.nside,
                                subnpix=subnpix, localsm=localsm,
-                               apply_beam=args.apply_beam)
+                               apply_beam=args.apply_beam,
+                               debug=args.debug,
+                               coord="E")
     op_sim_pysm.exec(data)
     stop = MPI.Wtime()
     if comm.comm_world.rank == 0:
         print('PySM took {:.2f} seconds'.format(stop-start),
               flush=args.flush)
+        tod = data.obs[0]['tod']
+        for det in tod.local_dets:
+            ref = tod.cache.reference(signalname + "_" + det)
+            print('PySM signal first observation min max', det, ref.min(), ref.max())
+            del ref
 
     mem_counter.exec(data)
 
@@ -202,6 +217,9 @@ def main():
     parser.add_argument('--input_pysm_model', required=False,
                         help='Comma separated models for on-the-fly PySM '
                         'simulation, e.g. s3,d6,f1,a2"')
+    parser.add_argument('--input_pysm_precomputed_cmb_K_CMB', required=False,
+                        help='Precomputed CMB map for PySM in K_CMB'
+                        'it overrides any model defined in input_pysm_model"')
     parser.add_argument('--apply_beam', required=False, action='store_true',
                         help='Apply beam convolution to input map with gaussian '
                         'beam parameters defined in focalplane')
@@ -286,8 +304,8 @@ def main():
     if args.debug:
         if comm.comm_world.rank == 0:
             outfile = "{}_focalplane.png".format(args.outdir)
-            set_backend()
-            tt.plot_focalplane(fp, 10.0, 10.0, outfile)
+            #set_backend()
+            #tt.plot_focalplane(fp, 10.0, 10.0, outfile)
 
     # Since we are simulating noise timestreams, we want
     # them to be contiguous and reproducible over the whole
@@ -356,6 +374,7 @@ def main():
             comm.comm_group,
             detquats,
             obsrange[ob].samples,
+            firstsamp=obsrange[ob].first,
             firsttime=obsrange[ob].start,
             rate=args.samplerate,
             spinperiod=args.spinperiod,
@@ -397,8 +416,8 @@ def main():
         # Constantly slewing precession axis
         degday = 360.0 / 365.25
         precquat = tt.slew_precession_axis(nsim=tod.local_samples[1],
-            firstsamp=obsoffset, samplerate=args.samplerate,
-            degday=degday)
+            firstsamp=(obsoffset + tod.local_samples[0]),
+            samplerate=args.samplerate, degday=degday)
 
         tod.set_prec_axis(qprec=precquat)
 
@@ -425,24 +444,34 @@ def main():
     localpix, localsm, subnpix = get_submaps(args, comm, data)
 
     signalname = "signal"
+    has_signal = False
     if args.input_pysm_model:
+        has_signal = True
         simulate_sky_signal(args, comm, data, mem_counter,
                                          [fp], subnpix, localsm, signalname=signalname)
 
     if args.input_dipole:
         print("Simulating dipole")
+        has_signal = True
         op_sim_dipole = tt.OpSimDipole(mode=args.input_dipole,
                 solar_speed=args.input_dipole_solar_speed_kms,
                 solar_gal_lat=args.input_dipole_solar_gal_lat_deg,
                 solar_gal_lon=args.input_dipole_solar_gal_lon_deg,
-                out=signalname,
+                out="dipole",
                 keep_quats=True,
                 keep_vel=False,
                 subtract=False,
-                coord="G",
+                coord="E",
                 freq=0,  # we could use frequency for quadrupole correction
                 flag_mask=255, common_flag_mask=255)
         op_sim_dipole.exec(data)
+
+        for obs in data.obs:
+            tod = obs["tod"]
+            for det in tod.local_dets:
+                ref_out = tod.cache.reference(signalname + "_" + det)
+                ref_out += tod.cache.reference("dipole" + "_" + det)
+                del ref_out
 
     # Mapmaking.  For purposes of this simulation, we use detector noise
     # weights based on the NET (white noise level).  If the destriping
@@ -454,184 +483,7 @@ def main():
         detweights[d] = 1.0 / (args.samplerate * net * net)
 
     if not args.madam:
-        if comm.comm_world.rank == 0:
-            print("Not using Madam, will only make a binned map!", flush=True)
-
-        # get locally hit pixels
-        lc = tm.OpLocalPixels()
-        localpix = lc.exec(data)
-
-        # find the locally hit submaps.
-        localsm = np.unique(np.floor_divide(localpix, subnpix))
-
-        # construct distributed maps to store the covariance,
-        # noise weighted map, and hits
-
-        invnpp = tm.DistPixels(comm=comm.comm_world, size=npix, nnz=6,
-            dtype=np.float64, submap=subnpix, local=localsm)
-        hits = tm.DistPixels(comm=comm.comm_world, size=npix, nnz=1,
-            dtype=np.int64, submap=subnpix, local=localsm)
-        zmap = tm.DistPixels(comm=comm.comm_world, size=npix, nnz=3,
-            dtype=np.float64, submap=subnpix, local=localsm)
-
-        # compute the hits and covariance once, since the pointing and noise
-        # weights are fixed.
-
-        invnpp.data.fill(0.0)
-        hits.data.fill(0)
-
-        build_invnpp = tm.OpAccumDiag(detweights=detweights, invnpp=invnpp,
-            hits=hits)
-        build_invnpp.exec(data)
-
-        invnpp.allreduce()
-        hits.allreduce()
-
-        comm.comm_world.barrier()
-        stop = MPI.Wtime()
-        elapsed = stop - start
-        if comm.comm_world.rank == 0:
-            print("Building hits and N_pp^-1 took {:.3f} s".format(elapsed),
-                flush=True)
-        start = stop
-
-        hits.write_healpix_fits("{}_hits.fits".format(args.outdir))
-        invnpp.write_healpix_fits("{}_invnpp.fits".format(args.outdir))
-
-        comm.comm_world.barrier()
-        stop = MPI.Wtime()
-        elapsed = stop - start
-        if comm.comm_world.rank == 0:
-            print("Writing hits and N_pp^-1 took {:.3f} s".format(elapsed),
-                flush=True)
-        start = stop
-
-        # invert it
-        tm.covariance_invert(invnpp, 1.0e-3)
-
-        comm.comm_world.barrier()
-        stop = MPI.Wtime()
-        elapsed = stop - start
-        if comm.comm_world.rank == 0:
-            print("Inverting N_pp^-1 took {:.3f} s".format(elapsed),
-                flush=True)
-        start = stop
-
-        invnpp.write_healpix_fits("{}_npp.fits".format(args.outdir))
-
-        comm.comm_world.barrier()
-        stop = MPI.Wtime()
-        elapsed = stop - start
-        if comm.comm_world.rank == 0:
-            print("Writing N_pp took {:.3f} s".format(elapsed),
-                flush=True)
-        start = stop
-
-        # in debug mode, print out data distribution information
-        if args.debug:
-            handle = None
-            if comm.comm_world.rank == 0:
-                handle = open("{}_distdata.txt".format(args.outdir), "w")
-            data.info(handle)
-            if comm.comm_world.rank == 0:
-                handle.close()
-
-            comm.comm_world.barrier()
-            stop = MPI.Wtime()
-            elapsed = stop - start
-            if comm.comm_world.rank == 0:
-                print("Dumping debug data distribution took "
-                    "{:.3f} s".format(elapsed), flush=True)
-            start = stop
-
-        mcstart = start
-
-        # Loop over Monte Carlos
-
-        firstmc = int(args.MC_start)
-        nmc = int(args.MC_count)
-
-        for mc in range(firstmc, firstmc+nmc):
-            # create output directory for this realization
-            outpath = "{}_{:03d}".format(args.outdir, mc)
-            if comm.comm_world.rank == 0:
-                if not os.path.isdir(outpath):
-                    os.makedirs(outpath)
-
-            comm.comm_world.barrier()
-            stop = MPI.Wtime()
-            elapsed = stop - start
-            if comm.comm_world.rank == 0:
-                print("Creating output dir {:04d} took {:.3f} s".format(mc,
-                    elapsed), flush=True)
-            start = stop
-
-            # clear all signal data from the cache, so that we can generate
-            # new noise timestreams.
-            tod.cache.clear("tot_signal_.*")
-
-            # simulate noise
-
-            nse = tt.OpSimNoise(out="tot_signal", realization=mc)
-            nse.exec(data)
-
-            # add sky signal
-            add_sky_signal(args, comm, data, totalname="tot_signal", signalname=signalname)
-
-            if mc == firstmc:
-                # For the first realization, optionally export the
-                # timestream data to a TIDAS volume.
-                if args.tidas is not None:
-                    from toast.tod.tidas import OpTidasExport
-                    tidas_path = os.path.abspath(args.tidas)
-                    export = OpTidasExport(tidas_path, name="tot_signal")
-                    export.exec(data)
-
-            comm.comm_world.barrier()
-            stop = MPI.Wtime()
-            elapsed = stop - start
-            if comm.comm_world.rank == 0:
-                print("  Noise simulation {:04d} took {:.3f} s".format(mc,
-                    elapsed), flush=True)
-            start = stop
-
-            zmap.data.fill(0.0)
-            build_zmap = tm.OpAccumDiag(zmap=zmap, name="tot_signal",
-                                        detweights=detweights)
-            build_zmap.exec(data)
-            zmap.allreduce()
-
-            comm.comm_world.barrier()
-            stop = MPI.Wtime()
-            elapsed = stop - start
-            if comm.comm_world.rank == 0:
-                print("  Building noise weighted map {:04d} took {:.3f} s".format(
-                    mc, elapsed), flush=True)
-            start = stop
-
-            tm.covariance_apply(invnpp, zmap)
-
-            comm.comm_world.barrier()
-            stop = MPI.Wtime()
-            elapsed = stop - start
-            if comm.comm_world.rank == 0:
-                print("  Computing binned map {:04d} took {:.3f} s".format(mc,
-                    elapsed), flush=True)
-            start = stop
-
-            zmap.write_healpix_fits(os.path.join(outpath, "binned.fits"))
-
-            comm.comm_world.barrier()
-            stop = MPI.Wtime()
-            elapsed = stop - start
-            if comm.comm_world.rank == 0:
-                print("  Writing binned map {:04d} took {:.3f} s".format(mc,
-                    elapsed), flush=True)
-            elapsed = stop - mcstart
-            if comm.comm_world.rank == 0:
-                print("  Mapmaking {:04d} took {:.3f} s".format(mc, elapsed),
-                    flush=True)
-            start = stop
+        pass
 
     else:
 
@@ -680,7 +532,9 @@ def main():
         for mc in range(firstmc, firstmc+nmc):
             # clear all total signal data from the cache, so that we can generate
             # new noise timestreams.
-            tod.cache.clear("tot_signal_.*")
+            for obs in data.obs:
+                tod = obs['tod']
+                tod.cache.clear("tot_signal_.*")
 
             # simulate noise
 
@@ -688,7 +542,8 @@ def main():
             nse.exec(data)
 
             # add sky signal
-            add_sky_signal(args, comm, data, totalname="tot_signal", signalname=signalname)
+            if has_signal:
+                add_sky_signal(args, comm, data, totalname="tot_signal", signalname=signalname)
 
             comm.comm_world.barrier()
             stop = MPI.Wtime()
@@ -730,13 +585,93 @@ def main():
     if comm.comm_world.rank == 0:
         print("Total Time:  {:.2f} seconds".format(elapsed), flush=True)
 
+    import healpy
+    from astropy.io import fits
+    for obs in data.obs:
+        tod = obs['tod']
+        times = tod.read_times()
+        glflags = tod.local_common_flags()
+
+        for det in tod.local_dets:
+            flags = tod.local_flags(det)
+
+            pixels = tod.cache.reference('pixels_{0}'.format(det))
+            quat = tod.cache.reference('quat_{0}'.format(det))
+            theta, phi, psi = qa.to_angles(quat, IAU=True)
+
+            total_tod = tod.cache.reference('tot_signal_{0}'.format(det))
+            dipole_tod = tod.cache.reference('dipole_{0}'.format(det))
+            signal_tod = tod.cache.reference('signal_{0}'.format(det))
+
+            hdu = fits.BinTableHDU.from_columns([fits.Column(name='TIME',
+                                                             format='D',
+                                                             unit='s',
+                                                             array=times),
+                                                 fits.Column(name='THETA',
+                                                             format='E',
+                                                             unit='rad',
+                                                             array=theta),
+                                                 fits.Column(name='PHI',
+                                                             format='E',
+                                                             unit='rad',
+                                                             array=phi),
+                                                 fits.Column(name='PSI',
+                                                             format='E',
+                                                             unit='rad',
+                                                             array=psi),
+                                                 fits.Column(name='FGTOD',
+                                                             format='E',
+                                                             unit='K',
+                                                             array=signal_tod),
+                                                 fits.Column(name='DIPTOD',
+                                                             format='E',
+                                                             unit='K',
+                                                             array=dipole_tod),
+                                                 fits.Column(name='TOTALTOD',
+                                                             format='E',
+                                                             unit='V',
+                                                             array=total_tod),
+                                                 fits.Column(name='FLAGS',
+                                                             format='I',
+                                                             unit='',
+                                                             array=flags),
+                                                 fits.Column(name='GLFLAGS',
+                                                             format='I',
+                                                             unit='',
+                                                             array=glflags)])
+            hdu.header['COMMENT'] = 'Angles are expressed in the Ecliptic system'
+            hdu.header['FIRSTT'] = (times[0], 'Time of the first sample [s]')
+            hdu.header['LASTT'] = (times[-1], 'Time of the last sample [s]')
+            #hdu.header['GAIN'] = (det.gain, 'Detector gain [V/K]')
+            hdu.header['NAME'] = (det, 'Name of the detector')
+            hdu.header['VERSION'] = ("0.1",
+                                     'Version of the code used to create '
+                                     'this file')
+
+            hdu.header['net'] = (NET[det], 'net')
+            hdu.header['ALPHA'] = (alpha[det], 'Slope of the 1/f noise')
+            hdu.header['FKNEE'] = (fknee[det],
+                                   'Knee frequency of the 1/f noise [Hz]')
+
+            output_file = os.path.join(args.outdir + "_000",
+                                       ('tod_{}_{}.fits'
+                                        .format(det, obs["name"])))
+
+            # Save a copy of the parameter file into the primary HDU of the file,
+            # so that it will be always possible to know the value of the input parameters
+            # used to create it
+            prim_hdu = fits.PrimaryHDU()
+            hdu_list = fits.HDUList([prim_hdu, hdu])
+            hdu_list.writeto(output_file, overwrite=True)
+
+            del pixels, quat, signal_tod, dipole_tod, total_tod, flags
+        del glflags
 
 if __name__ == "__main__":
     try:
         main()
         tman = timing.timing_manager()
         tman.report()
-        MPI.Finalize()
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
@@ -744,3 +679,4 @@ if __name__ == "__main__":
         print("".join(lines), flush=True)
         toast.raise_error(6) # typical error code for SIGABRT
         MPI.COMM_WORLD.Abort(6)
+    finalize()
